@@ -11,6 +11,6 @@ sleep 5
 ./backup-db.sh
 
 echo "🔄 Running database cleanup..."
-npx ts-node prisma/clean-db.ts
+node prisma/clean-db.js
 
 echo "✨ Database cleanup completed!" 
