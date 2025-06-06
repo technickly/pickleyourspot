@@ -1,0 +1,14 @@
+[Unit]
+Description=Next.js application
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/pickleyourspot/frontend
+Environment=NODE_ENV=production
+ExecStart=/usr/bin/npm start
+Restart=always
+
+[Install]
+WantedBy=multi-user.target 
