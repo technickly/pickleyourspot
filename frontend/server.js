@@ -13,7 +13,7 @@ const httpsOptions = {
   cert: fs.readFileSync(path.join(__dirname, 'localhost.pem'))
 };
 
-const port = parseInt(process.env.PORT, 10) || 3443;
+const port = parseInt(process.env.PORT, 10) || 443;
 
 app.prepare().then(() => {
   createServer(httpsOptions, (req, res) => {
