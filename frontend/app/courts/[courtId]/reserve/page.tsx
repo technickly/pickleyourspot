@@ -237,7 +237,7 @@ export default function ReservePage({ params }: PageProps) {
           </div>
 
           <div>
-            <h2 className="text-xl font-semibold mb-4">Choose Time Slots</h2>
+            <h2 className="text-xl font-semibold mb-4">Pick Your Time Slots</h2>
             <p className="text-sm text-gray-600 mb-4">
               Available time slots are shown in Pacific Time (PT). You can reserve up to 3 hours.
               Operating hours: 8 AM - 6 PM daily.

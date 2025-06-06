@@ -6,6 +6,7 @@ import { Prisma } from '@prisma/client';
 
 interface CreateReservationBody {
   courtId: string;
+  name: string;
   startTime: string;
   endTime: string;
   description?: string | null;
@@ -21,10 +22,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { courtId, startTime, endTime, participantIds, description, paymentRequired, paymentInfo } = await request.json() as CreateReservationBody;
+    const { courtId, name, startTime, endTime, participantIds, description, paymentRequired, paymentInfo } = await request.json() as CreateReservationBody;
 
     // Validate required fields
-    if (!courtId || !startTime || !endTime) {
+    if (!courtId || !name || !startTime || !endTime) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
@@ -49,6 +50,7 @@ export async function POST(request: Request) {
     }
 
     const reservationData: Prisma.ReservationCreateInput = {
+      name: name.trim(),
       court: { connect: { id: courtId } },
       startTime: new Date(startTime),
       endTime: new Date(endTime),

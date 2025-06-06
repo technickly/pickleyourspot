@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { addHours, format, parse } from 'date-fns';
+import { addMinutes, format, parse, setHours, setMinutes } from 'date-fns';
 import { toZonedTime, getTimezoneOffset } from 'date-fns-tz';
 
 const TIME_ZONE = 'America/Los_Angeles';
@@ -21,35 +21,20 @@ export async function GET(
       );
     }
 
-    // Parse the date and create a PT date object
+    // Parse the input date
     const selectedDate = parse(date, 'yyyy-MM-dd', new Date());
-    
-    // Create 8 AM PT time
-    const startTimePT = new Date(
-      selectedDate.getFullYear(),
-      selectedDate.getMonth(),
-      selectedDate.getDate(),
-      8, // 8 AM PT
-      0  // 0 minutes
-    );
 
-    // Create 6 PM PT time
-    const endTimePT = new Date(
-      selectedDate.getFullYear(),
-      selectedDate.getMonth(),
-      selectedDate.getDate(),
-      18, // 6 PM PT
-      0   // 0 minutes
-    );
+    // Set the start time to 8 AM PT
+    const startTime = setMinutes(setHours(selectedDate, 8), 0);
+    // Convert to UTC accounting for timezone
+    const tzOffset = getTimezoneOffset(TIME_ZONE, startTime);
+    const startTimeUTC = new Date(startTime.getTime() - tzOffset);
 
-    // Get timezone offset in milliseconds
-    const tzOffset = getTimezoneOffset(TIME_ZONE, startTimePT);
-    
-    // Convert PT times to UTC for database queries
-    const startTimeUTC = new Date(startTimePT.getTime() - tzOffset);
-    const endTimeUTC = new Date(endTimePT.getTime() - tzOffset);
+    // Set the end time to 6 PM PT
+    const endTime = setMinutes(setHours(selectedDate, 18), 0);
+    const endTimeUTC = new Date(endTime.getTime() - tzOffset);
 
-    // Find all reservations for this court on the selected day
+    // Find existing reservations
     const reservations = await prisma.reservation.findMany({
       where: {
         courtId,
@@ -64,54 +49,40 @@ export async function GET(
       },
     });
 
-    // Generate all possible 1-hour time slots
+    // Generate 30-minute time slots
     const timeSlots = [];
-    let currentTime = startTimeUTC;
+    let currentSlot = startTimeUTC;
 
-    while (currentTime < endTimeUTC) {
-      const slotEndTime = addHours(currentTime, 1);
+    while (currentSlot < endTimeUTC) {
+      const slotEndTime = addMinutes(currentSlot, 30);
       
-      // Check if this slot overlaps with any existing reservation
-      const isAvailable = !reservations.some(reservation => 
-        (currentTime >= new Date(reservation.startTime) && currentTime < new Date(reservation.endTime)) ||
-        (slotEndTime > new Date(reservation.startTime) && slotEndTime <= new Date(reservation.endTime))
-      );
+      // Convert times to PT for checking availability
+      const slotStartPT = toZonedTime(currentSlot, TIME_ZONE);
+      const slotEndPT = toZonedTime(slotEndTime, TIME_ZONE);
 
-      // Calculate how many more consecutive slots are available after this one
-      let maxExtensionSlots = 0;
-      if (isAvailable) {
-        let checkTime = slotEndTime;
-        while (
-          maxExtensionSlots < 2 && // Max 3 hours (3 slots total)
-          checkTime < endTimeUTC &&
-          !reservations.some(reservation =>
-            checkTime >= new Date(reservation.startTime) && checkTime < new Date(reservation.endTime)
-          )
-        ) {
-          maxExtensionSlots++;
-          checkTime = addHours(checkTime, 1);
-        }
-      }
-
-      // Convert UTC times back to PT for client display
-      const ptStartTime = toZonedTime(currentTime, TIME_ZONE);
-      const ptEndTime = toZonedTime(slotEndTime, TIME_ZONE);
-
-      timeSlots.push({
-        startTime: ptStartTime.toISOString(),
-        endTime: ptEndTime.toISOString(),
-        isAvailable,
-        maxExtensionSlots
+      const isAvailable = !reservations.some(reservation => {
+        const reservationStart = toZonedTime(reservation.startTime, TIME_ZONE);
+        const reservationEnd = toZonedTime(reservation.endTime, TIME_ZONE);
+        return (
+          (slotStartPT >= reservationStart && slotStartPT < reservationEnd) ||
+          (slotEndPT > reservationStart && slotEndPT <= reservationEnd)
+        );
       });
 
-      currentTime = slotEndTime;
+      timeSlots.push({
+        startTime: currentSlot.toISOString(),
+        endTime: slotEndTime.toISOString(),
+        isAvailable,
+      });
+
+      currentSlot = slotEndTime;
     }
 
     return NextResponse.json(timeSlots);
   } catch (error) {
-    console.error('Failed to fetch time slots:', error);
+    console.error('Error generating time slots:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch time slots' },
+      { error: 'Failed to generate time slots' },
       { status: 500 }
     );
   }
