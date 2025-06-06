@@ -5,9 +5,10 @@ echo "Building Next.js application..."
 npm install
 npm run build
 
-# Copy nginx configuration
+# Set up nginx configuration
 echo "Setting up nginx configuration..."
-sudo cp nginx.conf /etc/nginx/sites-available/pickleyourspot.com
+sudo cp nginx.conf /etc/nginx/nginx.conf
+sudo cp pickleyourspot.conf /etc/nginx/sites-available/pickleyourspot.com
 
 # Create symbolic link if it doesn't exist
 if [ ! -L /etc/nginx/sites-enabled/pickleyourspot.com ]; then
@@ -26,15 +27,21 @@ sudo cp nextjs.service /etc/systemd/system/
 # Reload systemd daemon
 sudo systemctl daemon-reload
 
+# Start services
+echo "Starting services..."
+sudo systemctl enable nextjs
+sudo systemctl start nextjs
+
+# Test nginx configuration
+echo "Testing nginx configuration..."
+sudo nginx -t
+
+# Start nginx
+sudo systemctl restart nginx
+
 # Install and setup SSL certificate
 echo "Setting up SSL certificate..."
 sudo certbot --nginx -d pickleyourspot.com -d www.pickleyourspot.com --non-interactive --agree-tos --email nick@pickleyourspot.com
-
-# Start/restart services
-echo "Starting services..."
-sudo systemctl enable nextjs
-sudo systemctl restart nextjs
-sudo systemctl restart nginx
 
 # Show status
 echo "Checking service status..."
