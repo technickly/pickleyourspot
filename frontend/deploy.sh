@@ -1,52 +1,66 @@
 #!/bin/bash
 
-# Build the Next.js application
-echo "Building Next.js application..."
+# Configuration
+SERVER="ubuntu@18.204.218.155"
+REMOTE_DIR="/home/ubuntu/pickleyourspot/frontend"
+
+# Build the Next.js application locally
+echo "Building Next.js application locally..."
 npm install
 npm run build
 
-# Set up nginx configuration
-echo "Setting up nginx configuration..."
-sudo cp nginx.conf /etc/nginx/nginx.conf
-sudo cp pickleyourspot.conf /etc/nginx/sites-available/pickleyourspot.com
+# Create a temporary directory for the files we want to copy
+echo "Preparing files for transfer..."
+TEMP_DIR=$(mktemp -d)
+cp -r \
+    .next \
+    app \
+    public \
+    lib \
+    prisma \
+    types \
+    package.json \
+    package-lock.json \
+    next.config.cjs \
+    tsconfig.json \
+    postcss.config.js \
+    tailwind.config.js \
+    .env \
+    "$TEMP_DIR/"
 
-# Create symbolic link if it doesn't exist
-if [ ! -L /etc/nginx/sites-enabled/pickleyourspot.com ]; then
-    sudo ln -s /etc/nginx/sites-available/pickleyourspot.com /etc/nginx/sites-enabled/
-fi
+# Ensure the remote directory exists
+echo "Creating remote directory..."
+ssh $SERVER "mkdir -p $REMOTE_DIR"
 
-# Remove default nginx site if it exists
-if [ -L /etc/nginx/sites-enabled/default ]; then
-    sudo rm /etc/nginx/sites-enabled/default
-fi
+# Copy files to the server
+echo "Copying files to server..."
+scp -r "$TEMP_DIR"/* "$SERVER:$REMOTE_DIR/"
 
-# Copy systemd service file
-echo "Setting up systemd service..."
-sudo cp nextjs.service /etc/systemd/system/
+# Clean up temporary directory
+rm -rf "$TEMP_DIR"
 
-# Reload systemd daemon
-sudo systemctl daemon-reload
+# SSH into the server and set up the application
+echo "Setting up application on server..."
+ssh $SERVER "cd $REMOTE_DIR && \
+    npm install && \
+    sudo cp nginx.conf /etc/nginx/nginx.conf && \
+    sudo cp pickleyourspot.conf /etc/nginx/sites-available/pickleyourspot.com && \
+    sudo ln -sf /etc/nginx/sites-available/pickleyourspot.com /etc/nginx/sites-enabled/ && \
+    sudo rm -f /etc/nginx/sites-enabled/default && \
+    sudo cp nextjs.service /etc/systemd/system/ && \
+    sudo systemctl daemon-reload && \
+    sudo systemctl enable nextjs && \
+    sudo systemctl restart nextjs && \
+    sudo nginx -t && \
+    sudo systemctl restart nginx"
 
-# Start services
-echo "Starting services..."
-sudo systemctl enable nextjs
-sudo systemctl start nextjs
-
-# Test nginx configuration
-echo "Testing nginx configuration..."
-sudo nginx -t
-
-# Start nginx
-sudo systemctl restart nginx
-
-# Install and setup SSL certificate
+# Set up SSL certificate
 echo "Setting up SSL certificate..."
-sudo certbot --nginx -d pickleyourspot.com -d www.pickleyourspot.com --non-interactive --agree-tos --email nick@pickleyourspot.com
+ssh $SERVER "sudo certbot --nginx -d pickleyourspot.com -d www.pickleyourspot.com --non-interactive --agree-tos --email nick@pickleyourspot.com"
 
 # Show status
 echo "Checking service status..."
-sudo systemctl status nextjs
-sudo systemctl status nginx
+ssh $SERVER "sudo systemctl status nextjs && sudo systemctl status nginx"
 
 echo "Deployment complete! Testing URLs:"
 echo "https://pickleyourspot.com"
