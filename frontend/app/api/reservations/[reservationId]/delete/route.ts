@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import prisma from '@/lib/prisma';
+import { authOptions } from '@/app/api/auth/[...nextauth]/auth';
 
 export async function DELETE(
   request: Request,
@@ -12,17 +12,23 @@ export async function DELETE(
     const { reservationId } = await context.params;
     
     if (!session?.user?.email) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
     }
 
-    // Get the reservation and check ownership
+    // Check if the user is the owner
     const reservation = await prisma.reservation.findUnique({
       where: { id: reservationId },
       include: { owner: true },
     });
 
     if (!reservation) {
-      return NextResponse.json({ error: 'Reservation not found' }, { status: 404 });
+      return NextResponse.json(
+        { error: 'Reservation not found' },
+        { status: 404 }
+      );
     }
 
     if (reservation.owner.email !== session.user.email) {
@@ -32,23 +38,12 @@ export async function DELETE(
       );
     }
 
-    // Delete all related records first
-    await prisma.$transaction([
-      // Delete messages
-      prisma.message.deleteMany({
-        where: { reservationId: reservationId },
-      }),
-      // Delete payment statuses
-      prisma.paymentStatus.deleteMany({
-        where: { reservationId: reservationId },
-      }),
-      // Delete the reservation
-      prisma.reservation.delete({
-        where: { id: reservationId },
-      }),
-    ]);
+    // Delete the reservation
+    await prisma.reservation.delete({
+      where: { id: reservationId },
+    });
 
-    return NextResponse.json({ message: 'Reservation deleted successfully' });
+    return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Failed to delete reservation:', error);
     return NextResponse.json(

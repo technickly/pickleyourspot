@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { addHours, format, parse } from 'date-fns';
-import { toZonedTime } from 'date-fns-tz';
+import { toZonedTime, getTimezoneOffset } from 'date-fns-tz';
 
 const TIME_ZONE = 'America/Los_Angeles';
 
@@ -21,7 +21,7 @@ export async function GET(
       );
     }
 
-    // Parse the date in PT
+    // Parse the date and create a PT date object
     const selectedDate = parse(date, 'yyyy-MM-dd', new Date());
     
     // Create 8 AM PT time
@@ -33,9 +33,6 @@ export async function GET(
       0  // 0 minutes
     );
 
-    // Convert PT time to UTC for database queries
-    const startTimeUTC = new Date(startTimePT.getTime() + (7 * 60 * 60 * 1000)); // Add 7 hours for PT->UTC
-
     // Create 6 PM PT time
     const endTimePT = new Date(
       selectedDate.getFullYear(),
@@ -45,8 +42,12 @@ export async function GET(
       0   // 0 minutes
     );
 
-    // Convert PT time to UTC for database queries
-    const endTimeUTC = new Date(endTimePT.getTime() + (7 * 60 * 60 * 1000)); // Add 7 hours for PT->UTC
+    // Get timezone offset in milliseconds
+    const tzOffset = getTimezoneOffset(TIME_ZONE, startTimePT);
+    
+    // Convert PT times to UTC for database queries
+    const startTimeUTC = new Date(startTimePT.getTime() - tzOffset);
+    const endTimeUTC = new Date(endTimePT.getTime() - tzOffset);
 
     // Find all reservations for this court on the selected day
     const reservations = await prisma.reservation.findMany({

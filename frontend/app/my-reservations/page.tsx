@@ -23,6 +23,8 @@ export default function MyReservationsPage() {
   const { data: session, status } = useSession();
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     if (session?.user?.email) {
@@ -46,6 +48,27 @@ export default function MyReservationsPage() {
       setReservations([]); // Reset to empty array on error
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleDeleteReservation = async (reservationId: string) => {
+    setIsDeleting(true);
+    try {
+      const response = await fetch(`/api/reservations/${reservationId}/delete`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete reservation');
+      }
+
+      toast.success('Reservation deleted successfully');
+      await fetchReservations(); // Refresh the list
+    } catch (error) {
+      toast.error('Failed to delete reservation');
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteConfirm(null);
     }
   };
 
@@ -82,13 +105,14 @@ export default function MyReservationsPage() {
 
         <div className="grid gap-4">
           {reservations.map((reservation) => (
-            <div
+            <Link
               key={reservation.id}
-              className="border rounded-lg p-4 hover:shadow-lg transition-shadow"
+              href={`/reservations/${reservation.id}`}
+              className="block border rounded-lg p-4 hover:shadow-lg transition-all hover:border-blue-200 cursor-pointer"
             >
               <div className="flex justify-between items-start">
                 <div>
-                  <h3 className="text-xl font-semibold">{reservation.courtName}</h3>
+                  <h3 className="text-xl font-semibold text-gray-900">{reservation.courtName}</h3>
                   <p className="text-gray-600">
                     {formatInTimeZone(new Date(reservation.startTime), timeZone, 'EEEE, MMMM d, yyyy')} at{' '}
                     {formatInTimeZone(new Date(reservation.startTime), timeZone, 'h:mm a')} -{' '}
@@ -113,23 +137,44 @@ export default function MyReservationsPage() {
                   >
                     {reservation.isOwner ? 'Owner' : 'Participant'}
                   </span>
+                  {reservation.isOwner && (
+                    <div className="flex gap-2" onClick={(e) => e.preventDefault()}>
+                      <Link
+                        href={`/reservations/${reservation.id}/edit`}
+                        className="text-blue-600 hover:text-blue-800 text-sm"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        Edit
+                      </Link>
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setShowDeleteConfirm(reservation.id);
+                        }}
+                        className="text-red-600 hover:text-red-800 text-sm"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
 
               <div className="mt-4 flex gap-4 items-center">
-                <Link
-                  href={`/reservations/${reservation.id}`}
-                  className="text-blue-500 hover:underline"
-                >
-                  View Details
-                </Link>
+                <span className="text-blue-500">View Details →</span>
                 <div className="h-4 w-px bg-gray-300" />
-                <CopyButton 
-                  text={typeof window !== 'undefined' ? `${window.location.origin}/r/${reservation.shortUrl}` : `${process.env.NEXT_PUBLIC_URL || ''}/r/${reservation.shortUrl}`}
-                  label="Share"
-                />
+                <div onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                }}>
+                  <CopyButton 
+                    text={typeof window !== 'undefined' ? `${window.location.origin}/r/${reservation.shortUrl}` : `${process.env.NEXT_PUBLIC_URL || ''}/r/${reservation.shortUrl}`}
+                    label="Share"
+                  />
+                </div>
               </div>
-            </div>
+            </Link>
           ))}
 
           {reservations.length === 0 && (
@@ -139,6 +184,34 @@ export default function MyReservationsPage() {
           )}
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg p-6 max-w-sm w-full">
+            <h3 className="text-lg font-semibold mb-4">Delete Reservation</h3>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to delete this reservation? This action cannot be undone.
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setShowDeleteConfirm(null)}
+                className="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium"
+                disabled={isDeleting}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleDeleteReservation(showDeleteConfirm)}
+                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 font-medium disabled:bg-red-300"
+                disabled={isDeleting}
+              >
+                {isDeleting ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 } 

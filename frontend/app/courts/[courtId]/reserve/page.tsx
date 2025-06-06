@@ -48,6 +48,7 @@ export default function ReservePage({ params }: PageProps) {
   const [description, setDescription] = useState<string>('');
   const [paymentRequired, setPaymentRequired] = useState(false);
   const [paymentInfo, setPaymentInfo] = useState('');
+  const [reservationName, setReservationName] = useState('');
   const { courtId } = React.use(params);
 
   useEffect(() => {
@@ -58,6 +59,14 @@ export default function ReservePage({ params }: PageProps) {
 
     fetchCourt();
   }, [session, status, router, courtId]);
+
+  useEffect(() => {
+    if (selectedDate && court && session?.user) {
+      // Set default reservation name
+      const defaultName = `${session.user.name || 'Your'}'s ${format(selectedDate, 'EEEE')} ${court.name} Reservation`;
+      setReservationName(defaultName);
+    }
+  }, [selectedDate, court, session]);
 
   useEffect(() => {
     if (selectedDate) {
@@ -151,6 +160,11 @@ export default function ReservePage({ params }: PageProps) {
       return;
     }
 
+    if (!reservationName.trim()) {
+      toast.error('Please provide a name for the reservation');
+      return;
+    }
+
     try {
       const response = await fetch('/api/reservations', {
         method: 'POST',
@@ -159,6 +173,7 @@ export default function ReservePage({ params }: PageProps) {
         },
         body: JSON.stringify({
           courtId: courtId,
+          name: reservationName.trim(),
           startTime: selectedTimeSlots[0].startTime,
           endTime: getReservationEndTime(),
           participantIds: participants.map(p => p.email),
@@ -170,7 +185,7 @@ export default function ReservePage({ params }: PageProps) {
 
       if (response.ok) {
         toast.success('Reservation created successfully');
-        router.push('/');
+        router.push('/my-reservations');
       } else {
         const data = await response.json();
         toast.error(data.error || 'Failed to create reservation');
@@ -196,6 +211,17 @@ export default function ReservePage({ params }: PageProps) {
 
         <div className="space-y-8">
           <div>
+            <h2 className="text-xl font-semibold mb-4">Reservation Name</h2>
+            <input
+              type="text"
+              value={reservationName}
+              onChange={(e) => setReservationName(e.target.value)}
+              placeholder="Enter a name for your reservation"
+              className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+          </div>
+
+          <div>
             <h2 className="text-xl font-semibold mb-4">Select Date</h2>
             <select
               value={format(selectedDate, 'yyyy-MM-dd')}
@@ -211,7 +237,7 @@ export default function ReservePage({ params }: PageProps) {
           </div>
 
           <div>
-            <h2 className="text-xl font-semibold mb-4">Select Time Slot</h2>
+            <h2 className="text-xl font-semibold mb-4">Choose Time Slots</h2>
             <p className="text-sm text-gray-600 mb-4">
               Available time slots are shown in Pacific Time (PT). You can reserve up to 3 hours.
               Operating hours: 8 AM - 6 PM daily.
