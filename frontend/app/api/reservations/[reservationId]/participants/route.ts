@@ -3,9 +3,15 @@ import { getServerSession } from 'next-auth';
 import prisma from '@/lib/prisma';
 import { authOptions } from '../../../auth/[...nextauth]/auth';
 
+type RouteContext = {
+  params: {
+    reservationId: string;
+  };
+};
+
 export async function POST(
   request: NextRequest,
-  context: { params: { reservationId: string } }
+  { params }: RouteContext
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -21,7 +27,7 @@ export async function POST(
 
     // Verify the user is the owner of the reservation
     const reservation = await prisma.reservation.findUnique({
-      where: { id: context.params.reservationId },
+      where: { id: params.reservationId },
       include: {
         owner: true,
         participants: true,
@@ -56,7 +62,7 @@ export async function POST(
 
     // Add the participant
     const updatedReservation = await prisma.reservation.update({
-      where: { id: context.params.reservationId },
+      where: { id: params.reservationId },
       data: {
         participants: {
           connect: { email },
@@ -85,7 +91,7 @@ export async function POST(
 
 export async function DELETE(
   request: NextRequest,
-  context: { params: { reservationId: string } }
+  { params }: RouteContext
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -109,7 +115,7 @@ export async function DELETE(
 
     // Verify the user is the owner of the reservation
     const reservation = await prisma.reservation.findUnique({
-      where: { id: context.params.reservationId },
+      where: { id: params.reservationId },
       include: {
         owner: true,
       },
@@ -131,7 +137,7 @@ export async function DELETE(
 
     // Remove the participant
     const updatedReservation = await prisma.reservation.update({
-      where: { id: context.params.reservationId },
+      where: { id: params.reservationId },
       data: {
         participants: {
           disconnect: { email },
