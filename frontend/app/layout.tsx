@@ -7,6 +7,12 @@ import NavigationBar from './components/NavigationBar';
 
 const inter = Inter({ subsets: ['latin'] });
 
+export const viewport = {
+  themeColor: '#FFDE59',
+  width: 'device-width',
+  initialScale: 1.0,
+};
+
 export const metadata = {
   title: 'Pickle Your Spot',
   description: 'Reserve your next pickleball match in San Francisco',
@@ -21,8 +27,6 @@ export const metadata = {
     shortcut: [{ url: '/favicon.ico' }],
   },
   manifest: '/manifest.json',
-  themeColor: '#FFDE59',
-  viewport: 'width=device-width, initial-scale=1.0',
 };
 
 export default function RootLayout({

@@ -387,3 +387,78 @@ server {
 - Server IP: 18.204.218.155
 - Domain: pickleyourspot.com
 - Infrastructure: AWS EC2, Ubuntu, nginx, Next.js 
+
+## June 2024 - Web Icon and PWA Updates
+
+### Icon Implementation (MacBook Local Development)
+- Created custom pickleball-themed SVG icon
+- Generated multiple icon formats using ImageMagick on macOS:
+  - `favicon.ico` (32x32) for browser tabs
+  - `icon.png` (192x192) for PWA and larger displays
+  - `apple-icon.png` (180x180) for iOS devices
+- Icons stored in `/frontend/public/` directory
+
+### Icon Design Details
+- Custom pickleball SVG with:
+  - Yellow ball background (#FFDE59)
+  - Court lines representation
+  - Non-volley zone (kitchen) indicator
+  - Ball texture details
+  - Professional shine effect
+
+### Next.js Integration
+- Updated `app/layout.tsx` with comprehensive icon metadata:
+```typescript
+export const metadata = {
+  icons: {
+    icon: [
+      { url: '/favicon.ico', sizes: '32x32', type: 'image/x-icon' },
+      { url: '/icon.png', sizes: '192x192', type: 'image/png' },
+    ],
+    apple: [
+      { url: '/apple-icon.png', sizes: '180x180', type: 'image/png' },
+    ],
+    shortcut: [{ url: '/favicon.ico' }],
+  },
+  manifest: '/manifest.json',
+  themeColor: '#FFDE59',
+  viewport: 'width=device-width, initial-scale=1.0',
+}
+```
+
+### PWA Support
+- Added `manifest.json` for Progressive Web App capabilities:
+```json
+{
+  "name": "Pickle Your Spot",
+  "short_name": "PickleSpot",
+  "description": "Reserve your next pickleball match in San Francisco",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#FFDE59"
+}
+```
+
+### Technical Implementation Notes
+- Used ImageMagick on macOS (not Linux) for image conversion
+- Command used: `convert icon.svg -resize [size] [output]`
+- Original SVG created at 512x512 for high-quality scaling
+- Files generated locally on MacBook before deployment
+
+### Icon Visibility
+- Browser tabs
+- Bookmarks
+- iOS/Android home screen when added
+- PWA installations
+- Browser history
+- Favorites/Reading lists
+
+### Development Environment
+- Platform: MacBook (macOS)
+- Tools:
+  - ImageMagick for conversion
+  - Next.js 15.3.3
+  - SVG editor for icon creation
+
+// ... existing content ... 
