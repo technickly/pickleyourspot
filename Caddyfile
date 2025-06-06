@@ -1,0 +1,8 @@
+{
+    email admin@example.com
+}
+
+# Replace example.com with your actual domain
+example.com {
+    reverse_proxy nextjs:3000
+} 

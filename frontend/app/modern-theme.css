@@ -1,0 +1,263 @@
+/* Modern Theme Styles */
+:root {
+  --primary-color: #4F46E5;
+  --primary-hover: #4338CA;
+  --background-gradient: linear-gradient(135deg, #F5F7FF 0%, #FFFFFF 100%);
+  --light-background: linear-gradient(135deg, #F5F7FF 0%, #FFFFFF 100%);
+  --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --card-hover-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --transition: all 0.3s ease;
+  --nav-height: 4rem;
+}
+
+/* Light theme by default */
+.modern-theme {
+  background: var(--light-background);
+  padding-top: var(--nav-height);
+  color: #1f2937;
+}
+
+.modern-theme .nav-bar {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(229, 231, 235, 0.5);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--nav-height);
+  z-index: 50;
+  display: flex;
+  align-items: center;
+}
+
+.modern-theme .nav-bar .button-primary {
+  background: var(--primary-color);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  transition: var(--transition);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  white-space: nowrap;
+}
+
+.modern-theme .nav-bar .button-primary:hover {
+  background: var(--primary-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+/* User info section in nav */
+.modern-theme .nav-bar .user-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.5rem 1rem;
+  background: rgba(249, 250, 251, 0.8);
+  border-radius: 0.5rem;
+  border: 1px solid rgba(229, 231, 235, 0.5);
+}
+
+.modern-theme .nav-bar .user-info .user-name {
+  color: #1f2937;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.modern-theme .card {
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 1rem;
+  box-shadow: var(--card-shadow);
+  transition: var(--transition);
+  border: 1px solid rgba(229, 231, 235, 0.5);
+  color: #1f2937;
+}
+
+.modern-theme .card:hover {
+  box-shadow: var(--card-hover-shadow);
+  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 1);
+}
+
+.modern-theme .button-primary {
+  background: var(--primary-color);
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.75rem;
+  font-weight: 500;
+  transition: var(--transition);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.modern-theme .button-primary:hover {
+  background: var(--primary-hover);
+  transform: translateY(-1px);
+}
+
+.modern-theme .input, 
+.modern-theme .select, 
+.modern-theme .textarea {
+  border-radius: 0.75rem;
+  border: 1px solid rgba(209, 213, 219, 0.8);
+  padding: 0.75rem 1rem;
+  transition: var(--transition);
+  background: rgba(255, 255, 255, 0.9);
+  color: #1f2937;
+}
+
+.modern-theme .input:focus,
+.modern-theme .select:focus,
+.modern-theme .textarea:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+.modern-theme .heading {
+  font-weight: 700;
+  color: #1f2937;
+}
+
+/* Animation classes */
+.modern-theme .hover-lift {
+  transition: var(--transition);
+}
+
+.modern-theme .hover-lift:hover {
+  transform: translateY(-2px);
+}
+
+/* Glass effect for cards */
+.modern-theme .glass-card {
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(229, 231, 235, 0.5);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  color: #1f2937;
+}
+
+/* Participant card styles */
+.modern-theme .participant-card {
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(229, 231, 235, 0.8);
+  border-radius: 1rem;
+  padding: 1rem;
+  margin-bottom: 0.75rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  transition: var(--transition);
+}
+
+.modern-theme .participant-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  background: rgba(255, 255, 255, 1);
+}
+
+.modern-theme .participant-card.owner {
+  border: 2px solid var(--primary-color);
+  background: rgba(79, 70, 229, 0.05);
+}
+
+.modern-theme .participant-card .participant-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+}
+
+.modern-theme .participant-card .participant-details {
+  display: flex;
+  flex: 1;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modern-theme .participant-card .name-section {
+  display: flex;
+  flex-direction: column;
+}
+
+.modern-theme .participant-card .payment-section {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.modern-theme .participant-card .participant-name {
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.modern-theme .participant-card .participant-email {
+  color: #6b7280;
+  font-size: 0.875rem;
+}
+
+.modern-theme .participant-card .owner-badge {
+  background: var(--primary-color);
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.modern-theme .participant-card .payment-status {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.375rem 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: var(--transition);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.modern-theme .participant-card .payment-status.paid {
+  background: rgba(34, 197, 94, 0.1);
+  color: rgb(21, 128, 61);
+  border: 1px solid rgba(34, 197, 94, 0.2);
+}
+
+.modern-theme .participant-card .payment-status.unpaid {
+  background: rgba(239, 68, 68, 0.1);
+  color: rgb(185, 28, 28);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.modern-theme .participant-card .payment-status:hover {
+  transform: translateY(-1px);
+}
+
+.modern-theme .participant-card .payment-status.paid:hover {
+  background: rgba(34, 197, 94, 0.15);
+}
+
+.modern-theme .participant-card .payment-status.unpaid:hover {
+  background: rgba(239, 68, 68, 0.15);
+}
+
+.modern-theme .participant-card .payment-time {
+  color: #6b7280;
+  font-size: 0.75rem;
+}
+
+.modern-theme .participant-card .remove-button {
+  color: rgb(239, 68, 68);
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  transition: var(--transition);
+}
+
+.modern-theme .participant-card .remove-button:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: rgb(185, 28, 28);
+} 

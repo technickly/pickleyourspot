@@ -1,0 +1,72 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                String          @id @default(uuid())
+  email             String          @unique
+  name              String?
+  image             String?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  messages          Message[]
+  reservations      Reservation[]   @relation("UserReservations")
+  participants      Reservation[]   @relation("ReservationParticipants")
+  paymentStatuses   paymentStatus[]
+}
+
+model Court {
+  id           String        @id @default(uuid())
+  name         String
+  description  String
+  imageUrl     String
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  reservations Reservation[]
+}
+
+model Reservation {
+  id              String          @id @default(uuid())
+  startTime       DateTime
+  endTime         DateTime
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  courtId         String
+  ownerId         String
+  description     String?
+  shortUrl        String          @unique @default(uuid())
+  paymentRequired Boolean         @default(false)
+  paymentInfo     String?
+  messages        Message[]
+  court           Court           @relation(fields: [courtId], references: [id])
+  owner           User            @relation("UserReservations", fields: [ownerId], references: [id])
+  participants    User[]          @relation("ReservationParticipants")
+  paymentStatuses paymentStatus[]
+}
+
+model paymentStatus {
+  id            String      @id @default(uuid())
+  hasPaid       Boolean     @default(false)
+  updatedAt     DateTime    @updatedAt
+  userId        String
+  reservationId String
+  user          User        @relation(fields: [userId], references: [id])
+  reservation   Reservation @relation(fields: [reservationId], references: [id])
+
+  @@unique([userId, reservationId])
+}
+
+model Message {
+  id            String      @id @default(uuid())
+  content       String
+  createdAt     DateTime    @default(now())
+  userId        String
+  reservationId String
+  reservation   Reservation @relation(fields: [reservationId], references: [id])
+  user          User        @relation(fields: [userId], references: [id])
+}

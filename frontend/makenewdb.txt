@@ -1,0 +1,10 @@
+createdb -h new_host -U new_user court_reservation_db
+psql -h new_host -U new_user -d court_reservation_db < database_backup.sql
+DATABASE_URL="postgresql://new_user:new_password@new_host:5432/court_reservation_db"
+npx prisma generate
+
+First, copy these files to the new server:
+database_backup.sql (the dump we just created)
+prisma/schema.prisma
+.env (but modify it with the new database connection details)
+
