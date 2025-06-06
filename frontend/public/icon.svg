@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Ball background -->
+  <circle cx="256" cy="256" r="240" fill="#FFDE59"/>
+  
+  <!-- Ball outer ring -->
+  <circle cx="256" cy="256" r="240" stroke="#000000" stroke-width="16" fill="none"/>
+  
+  <!-- Pickleball holes pattern -->
+  <g stroke="#000000" stroke-width="12">
+    <!-- Vertical and horizontal lines -->
+    <line x1="256" y1="16" x2="256" y2="496" />
+    <line x1="16" y1="256" x2="496" y2="256" />
+    
+    <!-- Kitchen line (non-volley zone) represented as circles -->
+    <circle cx="256" cy="256" r="120" fill="none"/>
+    
+    <!-- Diagonal court lines -->
+    <line x1="96" y1="96" x2="416" y2="416" />
+    <line x1="416" y1="96" x2="96" y2="416" />
+  </g>
+  
+  <!-- Ball shine effect -->
+  <path d="M160 120 Q 256 180 352 120" stroke="#FFFFFF" stroke-width="16" fill="none" opacity="0.6"/>
+</svg> 

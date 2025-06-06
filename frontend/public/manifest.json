@@ -1,0 +1,21 @@
+{
+  "name": "Pickle Your Spot",
+  "short_name": "PickleSpot",
+  "description": "Reserve your next pickleball match in San Francisco",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#FFDE59",
+  "icons": [
+    {
+      "src": "/icon.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/apple-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ]
+} 
