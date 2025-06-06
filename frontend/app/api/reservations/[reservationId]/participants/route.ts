@@ -1,11 +1,11 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import prisma from '@/lib/prisma';
-import { authOptions } from '../../../auth/[...nextauth]/route';
+import { authOptions } from '../../../auth/[...nextauth]/auth';
 
 export async function POST(
-  request: Request,
-  { params }: { params: { reservationId: string } }
+  request: NextRequest,
+  context: { params: { reservationId: string } }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -21,7 +21,7 @@ export async function POST(
 
     // Verify the user is the owner of the reservation
     const reservation = await prisma.reservation.findUnique({
-      where: { id: params.reservationId },
+      where: { id: context.params.reservationId },
       include: {
         owner: true,
         participants: true,
@@ -56,7 +56,7 @@ export async function POST(
 
     // Add the participant
     const updatedReservation = await prisma.reservation.update({
-      where: { id: params.reservationId },
+      where: { id: context.params.reservationId },
       data: {
         participants: {
           connect: { email },
@@ -84,8 +84,8 @@ export async function POST(
 }
 
 export async function DELETE(
-  request: Request,
-  { params }: { params: { reservationId: string } }
+  request: NextRequest,
+  context: { params: { reservationId: string } }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -97,7 +97,7 @@ export async function DELETE(
       );
     }
 
-    const { searchParams } = new URL(request.url);
+    const { searchParams } = request.nextUrl;
     const email = searchParams.get('email');
 
     if (!email) {
@@ -109,7 +109,7 @@ export async function DELETE(
 
     // Verify the user is the owner of the reservation
     const reservation = await prisma.reservation.findUnique({
-      where: { id: params.reservationId },
+      where: { id: context.params.reservationId },
       include: {
         owner: true,
       },
@@ -131,7 +131,7 @@ export async function DELETE(
 
     // Remove the participant
     const updatedReservation = await prisma.reservation.update({
-      where: { id: params.reservationId },
+      where: { id: context.params.reservationId },
       data: {
         participants: {
           disconnect: { email },
