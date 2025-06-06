@@ -265,3 +265,125 @@ If you encounter issues:
 3. Ensure all migrations have been applied
 4. Check server logs for any error messages
 5. Use Prisma Studio to manually verify database state 
+
+# Updates Log
+
+## June 2024 - SSL Certificate Rate Limit and HTTP Fallback
+
+### Current Status
+- **Date**: June 2024
+- **Issue**: Let's Encrypt rate limit exceeded
+- **Domain**: pickleyourspot.com and www.pickleyourspot.com
+- **Current Setup**: HTTP only, with HTTPS redirecting to HTTP
+- **Next SSL Window**: June 8th, 2025, 08:09:48 UTC
+
+### SSL Rate Limit Details
+- Hit maximum of 5 certificates issued for same domains in 168 hours
+- Error: "too many certificates already issued for this exact set of domains"
+- Implemented temporary HTTP-only solution with HTTPS redirection
+
+### Current HTTP Configuration
+```nginx
+server {
+    listen 80;
+    listen 443;  # Listen on HTTPS port
+    server_name pickleyourspot.com www.pickleyourspot.com;
+
+    # Redirect HTTPS to HTTP temporarily
+    if ($scheme = "https") {
+        return 302 http://$host$request_uri;
+    }
+
+    location / {
+        proxy_pass http://localhost:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+```
+
+### Implementation Steps Taken
+1. Removed SSL configuration
+2. Updated nginx to serve HTTP and redirect HTTPS
+3. Updated DNS settings
+4. Configured nginx as reverse proxy for Next.js
+5. Set up monitoring for HTTP functionality
+6. Added temporary HTTPS to HTTP redirection
+
+### Testing Procedures
+1. **Basic HTTP Test Commands**:
+   ```bash
+   sudo nginx -t
+   sudo systemctl status nginx
+   curl -I http://pickleyourspot.com
+   curl -I http://www.pickleyourspot.com
+   ```
+
+2. **Monitoring Commands**:
+   ```bash
+   sudo tail -f /var/log/nginx/access.log
+   sudo tail -f /var/log/nginx/error.log
+   ```
+
+### SSL Re-enablement Plan (After June 8th, 2025)
+
+#### Pre-deployment Checklist
+1. [ ] Verify rate limit reset (after June 8th, 2025, 08:09:48 UTC)
+2. [ ] Backup nginx configuration
+3. [ ] Test current HTTP setup
+4. [ ] Ensure Next.js app is running properly
+
+#### Deployment Steps
+1. Stop nginx:
+   ```bash
+   sudo systemctl stop nginx
+   ```
+
+2. Request new certificate:
+   ```bash
+   sudo certbot --nginx -d pickleyourspot.com -d www.pickleyourspot.com
+   ```
+
+3. Verify and start:
+   ```bash
+   sudo certbot certificates
+   sudo nginx -t
+   sudo systemctl start nginx
+   ```
+
+#### Post-deployment Verification
+1. [ ] Test HTTPS access
+2. [ ] Verify HTTP to HTTPS redirect
+3. [ ] Check certificate details in browser
+4. [ ] Verify auto-renewal setup
+
+### Backup and Recovery
+- HTTP configuration backup location: `/etc/nginx/sites-available/pickleyourspot.conf.http.backup`
+- Full nginx backup: `~/nginx-config-backup-[DATE].tar.gz`
+- Recovery command if needed:
+  ```bash
+  sudo cp /etc/nginx/sites-available/pickleyourspot.conf.http.backup /etc/nginx/sites-available/pickleyourspot.conf
+  ```
+
+### Important Paths
+- Nginx configuration: `/etc/nginx/sites-available/pickleyourspot.conf`
+- SSL certificates (when re-enabled):
+  - Live certs: `/etc/letsencrypt/live/pickleyourspot.com/`
+  - Archive: `/etc/letsencrypt/archive/pickleyourspot.com/`
+- Log files:
+  - Access log: `/var/log/nginx/access.log`
+  - Error log: `/var/log/nginx/error.log`
+
+### Next Steps
+1. Monitor HTTP functionality
+2. Set calendar reminder for SSL renewal
+3. Document any issues with HTTP-only setup
+4. Prepare for SSL re-enablement in June 2025
+
+### Contact Information
+- Server IP: 18.204.218.155
+- Domain: pickleyourspot.com
+- Infrastructure: AWS EC2, Ubuntu, nginx, Next.js 
