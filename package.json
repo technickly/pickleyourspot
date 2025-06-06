@@ -9,7 +9,7 @@
     "lint": "next lint",
     "add-courts": "ts-node scripts/add-sf-courts.ts",
     "ssl:setup": "openssl req -x509 -out localhost.pem -keyout localhost-key.pem -newkey rsa:2048 -nodes -sha256 -subj '/CN=localhost' -days 365",
-    "dev:ssl": "local-ssl-proxy --source 443 --target 3000 --cert localhost.pem --key localhost-key.pem & next dev"
+    "dev:ssl": "local-ssl-proxy --source 3443 --target 3000 --cert localhost.pem --key localhost-key.pem & next dev"
   },
   "dependencies": {
     "@prisma/client": "^6.8.2",
