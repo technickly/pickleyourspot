@@ -51,16 +51,17 @@ export default function EditReservationPage({ params }: PageProps) {
   const router = useRouter();
   const { data: session, status } = useSession();
   const [reservation, setReservation] = useState<Reservation | null>(null);
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date>(startOfDay(new Date()));
   const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([]);
   const [selectedTimeSlots, setSelectedTimeSlots] = useState<TimeSlot[]>([]);
-  const [description, setDescription] = useState('');
+  const [description, setDescription] = useState<string>('');
   const [paymentRequired, setPaymentRequired] = useState(false);
   const [paymentInfo, setPaymentInfo] = useState('');
   const [name, setName] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [participants, setParticipants] = useState<User[]>([]);
+  const [interval, setInterval] = useState<'30' | '60'>('60');
   const { reservationId } = React.use(params);
 
   useEffect(() => {
@@ -104,7 +105,7 @@ export default function EditReservationPage({ params }: PageProps) {
     
     try {
       const response = await fetch(
-        `/api/courts/${reservation.court.id}/time-slots?date=${format(selectedDate, 'yyyy-MM-dd')}`
+        `/api/courts/${reservation.court.id}/time-slots?date=${format(selectedDate, 'yyyy-MM-dd')}&interval=${interval}`
       );
       if (!response.ok) throw new Error('Failed to fetch time slots');
       
@@ -149,9 +150,12 @@ export default function EditReservationPage({ params }: PageProps) {
         });
       }
 
-      // Check if the slot is consecutive and within 3-hour limit (3 slots of 1 hour each)
-      if (slotIndex === lastSelectedIndex + 1 && current.length < 3) {
-        return [...current, slot];
+      // Check if the slot is consecutive and within time limit
+      if (slotIndex === lastSelectedIndex + 1) {
+        const maxSlots = interval === '30' ? 6 : 3; // 6 half-hour slots or 3 one-hour slots
+        if (current.length < maxSlots) {
+          return [...current, slot];
+        }
       }
 
       return [slot];
@@ -266,10 +270,36 @@ export default function EditReservationPage({ params }: PageProps) {
           </div>
 
           <div>
+            <h2 className="text-xl font-semibold mb-4">Time Slot Interval</h2>
+            <div className="flex gap-4 mb-4">
+              <label className="flex items-center">
+                <input
+                  type="radio"
+                  value="60"
+                  checked={interval === '60'}
+                  onChange={(e) => setInterval(e.target.value as '30' | '60')}
+                  className="mr-2"
+                />
+                1 Hour
+              </label>
+              <label className="flex items-center">
+                <input
+                  type="radio"
+                  value="30"
+                  checked={interval === '30'}
+                  onChange={(e) => setInterval(e.target.value as '30' | '60')}
+                  className="mr-2"
+                />
+                30 Minutes
+              </label>
+            </div>
+          </div>
+
+          <div>
             <h2 className="text-xl font-semibold mb-4">Choose Time Slots</h2>
             <p className="text-sm text-gray-600 mb-4">
-              Available time slots are shown in Pacific Time (PT). You can reserve up to 3 hours.
-              Operating hours: 8 AM - 6 PM daily.
+              Available time slots are shown in Pacific Time (PT). You can reserve up to {interval === '30' ? '6 half-hour slots' : '3 one-hour slots'} (3 hours total).
+              Operating hours: 8 AM - 8 PM daily.
             </p>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
               {timeSlots.map((slot) => {

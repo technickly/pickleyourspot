@@ -49,6 +49,7 @@ export default function ReservePage({ params }: PageProps) {
   const [paymentRequired, setPaymentRequired] = useState(false);
   const [paymentInfo, setPaymentInfo] = useState('');
   const [reservationName, setReservationName] = useState('');
+  const [interval, setInterval] = useState<'30' | '60'>('60');
   const { courtId } = React.use(params);
 
   useEffect(() => {
@@ -72,7 +73,7 @@ export default function ReservePage({ params }: PageProps) {
     if (selectedDate) {
       fetchTimeSlots();
     }
-  }, [selectedDate]);
+  }, [selectedDate, interval]);
 
   const fetchCourt = async () => {
     try {
@@ -87,11 +88,11 @@ export default function ReservePage({ params }: PageProps) {
   const fetchTimeSlots = async () => {
     try {
       const response = await fetch(
-        `/api/courts/${courtId}/time-slots?date=${format(selectedDate, 'yyyy-MM-dd')}`
+        `/api/courts/${courtId}/time-slots?date=${format(selectedDate, 'yyyy-MM-dd')}&interval=${interval}`
       );
       const data = await response.json();
       setTimeSlots(data);
-      setSelectedTimeSlots([]); // Reset selection when date changes
+      setSelectedTimeSlots([]); // Reset selection when date or interval changes
     } catch (error) {
       toast.error('Failed to fetch available time slots');
     }
@@ -133,8 +134,11 @@ export default function ReservePage({ params }: PageProps) {
 
       // Check if the slot is consecutive
       if (slotIndex === lastSelectedIndex + 1) {
-        // Check if we're within the 3-hour limit (3 slots of 1 hour each)
-        if (current.length < 3) {
+        // Calculate maximum allowed slots based on interval
+        const maxSlots = interval === '30' ? 6 : 3; // 6 half-hour slots or 3 one-hour slots
+        
+        // Check if we're within the 3-hour limit
+        if (current.length < maxSlots) {
           return [...current, slot];
         }
       }
@@ -237,10 +241,36 @@ export default function ReservePage({ params }: PageProps) {
           </div>
 
           <div>
+            <h2 className="text-xl font-semibold mb-4">Time Slot Interval</h2>
+            <div className="flex gap-4 mb-4">
+              <label className="flex items-center">
+                <input
+                  type="radio"
+                  value="60"
+                  checked={interval === '60'}
+                  onChange={(e) => setInterval(e.target.value as '30' | '60')}
+                  className="mr-2"
+                />
+                1 Hour
+              </label>
+              <label className="flex items-center">
+                <input
+                  type="radio"
+                  value="30"
+                  checked={interval === '30'}
+                  onChange={(e) => setInterval(e.target.value as '30' | '60')}
+                  className="mr-2"
+                />
+                30 Minutes
+              </label>
+            </div>
+          </div>
+
+          <div>
             <h2 className="text-xl font-semibold mb-4">Pick Your Time Slots</h2>
             <p className="text-sm text-gray-600 mb-4">
-              Available time slots are shown in Pacific Time (PT). You can reserve up to 3 hours.
-              Operating hours: 8 AM - 6 PM daily.
+              Available time slots are shown in Pacific Time (PT). You can reserve up to {interval === '30' ? '6 half-hour slots' : '3 one-hour slots'} (3 hours total).
+              Operating hours: 8 AM - 8 PM daily.
             </p>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
               {timeSlots.map((slot) => {
@@ -273,8 +303,8 @@ export default function ReservePage({ params }: PageProps) {
                         ? isSelected
                           ? 'Selected'
                           : slot.isAvailable 
-                            ? 'Pick Your Slot'
-                            : '1 hour'
+                            ? interval === '30' ? '30 min' : '1 hour'
+                            : interval === '30' ? '30 min' : '1 hour'
                         : 'Booked'}
                     </div>
                   </button>

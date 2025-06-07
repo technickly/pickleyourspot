@@ -13,6 +13,7 @@ export async function GET(
     const { courtId } = await context.params;
     const url = new URL(request.url);
     const date = url.searchParams.get('date');
+    const interval = url.searchParams.get('interval') || '60'; // Default to 60 minutes
 
     if (!date) {
       return NextResponse.json(
@@ -30,8 +31,8 @@ export async function GET(
     const tzOffset = getTimezoneOffset(TIME_ZONE, startTime);
     const startTimeUTC = new Date(startTime.getTime() - tzOffset);
 
-    // Set the end time to 6 PM PT
-    const endTime = setMinutes(setHours(selectedDate, 18), 0);
+    // Set the end time to 8 PM PT
+    const endTime = setMinutes(setHours(selectedDate, 20), 0);
     const endTimeUTC = new Date(endTime.getTime() - tzOffset);
 
     // Find existing reservations
@@ -49,12 +50,13 @@ export async function GET(
       },
     });
 
-    // Generate 1-hour time slots (changed from 30-minute slots)
+    // Generate time slots based on the interval
     const timeSlots = [];
     let currentSlot = startTimeUTC;
+    const intervalMinutes = parseInt(interval);
 
     while (currentSlot < endTimeUTC) {
-      const slotEndTime = addMinutes(currentSlot, 60); // Changed from 30 to 60 minutes
+      const slotEndTime = addMinutes(currentSlot, intervalMinutes);
       
       // Convert times to PT for checking availability
       const slotStartPT = toZonedTime(currentSlot, TIME_ZONE);
