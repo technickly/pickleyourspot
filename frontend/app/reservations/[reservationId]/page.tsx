@@ -119,7 +119,6 @@ export default function ReservationPage({ params }: PageProps) {
 
   const fetchReservation = async () => {
     try {
-      setIsLoading(true);
       const response = await fetch(`/api/reservations/${reservationId}`);
       if (!response.ok) {
         throw new Error('Failed to fetch reservation');
@@ -136,8 +135,6 @@ export default function ReservationPage({ params }: PageProps) {
         toast.error('Failed to fetch reservation details');
         router.push('/my-reservations');
       }
-    } finally {
-      setIsLoading(false);
     }
   };
 

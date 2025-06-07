@@ -9,11 +9,12 @@ export default function LoadingScreen() {
           <div className="absolute inset-0 border-4 border-blue-200 rounded-full animate-ping"></div>
           <div className="absolute inset-0 border-4 border-blue-500 rounded-full animate-spin border-t-transparent"></div>
           <Image
-            src="/logo.png"
+            src="/images/logo.svg"
             alt="Pickle Your Spot"
             width={48}
             height={48}
             className="absolute inset-0 m-auto"
+            priority
           />
         </div>
         <p className="text-gray-600 animate-pulse">Loading...</p>
