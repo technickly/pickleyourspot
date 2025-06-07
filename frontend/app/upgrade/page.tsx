@@ -4,7 +4,55 @@ import { useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import MembershipTiers from '@/app/components/MembershipTiers';
-import { FaArrowLeft } from 'react-icons/fa';
+import { FaArrowLeft, FaCheck, FaTimes } from 'react-icons/fa';
+
+interface Feature {
+  name: string;
+  free: string;
+  basic: string;
+  supr: string;
+}
+
+const features: Feature[] = [
+  {
+    name: 'Active Reservations',
+    free: '3',
+    basic: '10',
+    supr: 'Unlimited'
+  },
+  {
+    name: 'Participants per Reservation',
+    free: '6',
+    basic: '16',
+    supr: 'Unlimited'
+  },
+  {
+    name: 'Reservation Statistics',
+    free: 'None',
+    basic: 'Basic',
+    supr: 'Advanced'
+  },
+  {
+    name: 'Invitations',
+    free: 'Link Only',
+    basic: 'Email',
+    supr: 'Email & Text'
+  },
+  {
+    name: 'Tournament Tools',
+    free: 'View Only',
+    basic: 'Basic',
+    supr: 'Advanced'
+  },
+  {
+    name: 'Support',
+    free: 'Standard',
+    basic: 'Priority',
+    supr: 'VIP'
+  }
+];
+
+type TierType = 'free' | 'basic' | 'supr';
 
 export default function UpgradePage() {
   const { data: session, status } = useSession();
@@ -43,55 +91,43 @@ export default function UpgradePage() {
           <h2 className="text-2xl font-semibold text-gray-900 mb-6 text-center">
             Compare Plan Features
           </h2>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b-2 border-gray-200">
-                  <th className="text-left py-4 px-4">Feature</th>
-                  <th className="text-center py-4 px-4">Free</th>
-                  <th className="text-center py-4 px-4">Basic</th>
-                  <th className="text-center py-4 px-4">Supr</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr className="border-b border-gray-100">
-                  <td className="py-4 px-4">Active Reservations</td>
-                  <td className="text-center py-4 px-4">3</td>
-                  <td className="text-center py-4 px-4">10</td>
-                  <td className="text-center py-4 px-4">Unlimited</td>
-                </tr>
-                <tr className="border-b border-gray-100">
-                  <td className="py-4 px-4">Participants per Reservation</td>
-                  <td className="text-center py-4 px-4">4</td>
-                  <td className="text-center py-4 px-4">16</td>
-                  <td className="text-center py-4 px-4">Unlimited</td>
-                </tr>
-                <tr className="border-b border-gray-100">
-                  <td className="py-4 px-4">Reservation Statistics</td>
-                  <td className="text-center py-4 px-4">None</td>
-                  <td className="text-center py-4 px-4">✓</td>
-                  <td className="text-center py-4 px-4">Advanced</td>
-                </tr>
-                <tr className="border-b border-gray-100">
-                  <td className="py-4 px-4">Invitations</td>
-                  <td className="text-center py-4 px-4">Link Only</td>
-                  <td className="text-center py-4 px-4">Email</td>
-                  <td className="text-center py-4 px-4">Email & Text</td>
-                </tr>
-                <tr className="border-b border-gray-100">
-                  <td className="py-4 px-4">Tournament Tools</td>
-                  <td className="text-center py-4 px-4">View Only</td>
-                  <td className="text-center py-4 px-4">Basic</td>
-                  <td className="text-center py-4 px-4">Advanced</td>
-                </tr>
-                <tr className="border-b border-gray-100">
-                  <td className="py-4 px-4">Support</td>
-                  <td className="text-center py-4 px-4">Standard</td>
-                  <td className="text-center py-4 px-4">Priority</td>
-                  <td className="text-center py-4 px-4">VIP</td>
-                </tr>
-              </tbody>
-            </table>
+          
+          {/* Mobile View - Vertical Cards */}
+          <div className="md:hidden space-y-8">
+            {['Free', 'Basic', 'Supr'].map((tier) => (
+              <div key={tier} className="bg-white rounded-lg shadow-md p-6">
+                <h3 className="text-xl font-semibold mb-4 text-center">{tier}</h3>
+                <div className="space-y-4">
+                  {features.map((feature) => (
+                    <div key={feature.name} className="flex justify-between items-center border-b pb-2">
+                      <span className="text-gray-600">{feature.name}</span>
+                      <span className="font-medium">
+                        {feature[tier.toLowerCase() as TierType]}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop View - Table */}
+          <div className="hidden md:block">
+            <div className="grid grid-cols-4 gap-4">
+              <div className="font-semibold">Feature</div>
+              <div className="text-center font-semibold">Free</div>
+              <div className="text-center font-semibold">Basic</div>
+              <div className="text-center font-semibold">Supr</div>
+              
+              {features.map((feature) => (
+                <>
+                  <div className="py-4 border-t">{feature.name}</div>
+                  <div className="py-4 border-t text-center">{feature.free}</div>
+                  <div className="py-4 border-t text-center">{feature.basic}</div>
+                  <div className="py-4 border-t text-center">{feature.supr}</div>
+                </>
+              ))}
+            </div>
           </div>
         </div>
 
@@ -117,7 +153,7 @@ export default function UpgradePage() {
             </div>
           </div>
           <MembershipTiers 
-            currentTier={session?.user?.role || 'FREE'} 
+            currentTier={(session?.user as any)?.role || 'FREE'} 
             showComparison={false}
           />
         </div>

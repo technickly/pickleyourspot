@@ -13,6 +13,7 @@ import MessageSystem from '@/app/components/MessageSystem';
 import ParticipantList from '@/app/components/ParticipantList';
 import ReservationTitle from '@/app/components/ReservationTitle';
 import ReservationActions from '@/app/components/ReservationActions';
+import { useLoading } from '@/app/providers/LoadingProvider';
 
 interface User {
   name: string | null;
@@ -66,6 +67,7 @@ const timeZone = 'America/Los_Angeles';
 export default function ReservationPage({ params }: PageProps) {
   const router = useRouter();
   const { data: session, status } = useSession();
+  const { setIsLoading } = useLoading();
   const unwrappedParams = React.use(params);
   const [reservation, setReservation] = useState<Reservation | null>(null);
   const [newMessage, setNewMessage] = useState('');
@@ -117,6 +119,7 @@ export default function ReservationPage({ params }: PageProps) {
 
   const fetchReservation = async () => {
     try {
+      setIsLoading(true);
       const response = await fetch(`/api/reservations/${reservationId}`);
       if (!response.ok) {
         throw new Error('Failed to fetch reservation');
@@ -133,6 +136,8 @@ export default function ReservationPage({ params }: PageProps) {
         toast.error('Failed to fetch reservation details');
         router.push('/my-reservations');
       }
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -196,6 +201,7 @@ export default function ReservationPage({ params }: PageProps) {
     if (!reservation) return;
 
     try {
+      setIsLoading(true);
       const response = await fetch(`/api/reservations/${reservation.id}/participants`, {
         method: 'POST',
         headers: {
@@ -213,6 +219,8 @@ export default function ReservationPage({ params }: PageProps) {
     } catch (error) {
       console.error('Error adding participant:', error);
       toast.error('Failed to add participant');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -346,6 +354,7 @@ export default function ReservationPage({ params }: PageProps) {
                   <ParticipantList
                     participants={reservation.participants}
                     reservationId={reservation.id}
+                    reservationName={reservation.name}
                     isOwner={isOwner}
                     ownerEmail={reservation.owner.email}
                     ownerName={reservation.owner.name}
@@ -360,7 +369,7 @@ export default function ReservationPage({ params }: PageProps) {
 
             <div>
               <h2 className="text-xl font-semibold mb-4">Messages</h2>
-              <div className="mt-8">
+              <div className="fixed bottom-0 right-0 w-[calc(50%-2rem)] h-[calc(100vh-12rem)] bg-white border-l border-t shadow-lg rounded-tl-lg overflow-hidden">
                 <MessageSystem 
                   reservationId={reservationId} 
                   initialMessages={messages}
