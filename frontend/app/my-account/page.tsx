@@ -204,17 +204,10 @@ export default function MyAccountPage() {
           </div>
         )}
 
-        {/* Conditionally render sections based on membership tier */}
-        {userStats && userStats.membershipTier === 'FREE' && (
-          <div id="membership-tiers" className="mb-8">
-            <MembershipTiers currentTier={userStats.membershipTier} />
-          </div>
-        )}
-
-        {/* Reservation Statistics with conditional blur */}
+        {/* Reservation Statistics with reduced blur */}
         {reservationStats && (
           <div className={`relative ${userStats?.membershipTier === 'FREE' ? 'pointer-events-none' : ''}`}>
-            <div className={`bg-white rounded-lg shadow-lg p-6 mb-8 ${userStats?.membershipTier === 'FREE' ? 'blur-sm' : ''}`}>
+            <div className={`bg-white rounded-lg shadow-lg p-6 mb-8 ${userStats?.membershipTier === 'FREE' ? 'blur-[2px]' : ''}`}>
               <h2 className="text-xl font-semibold text-gray-900 mb-4">Reservation Statistics</h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="bg-purple-50 rounded-lg p-4">
@@ -272,10 +265,10 @@ export default function MyAccountPage() {
             {/* Upgrade overlay for free users */}
             {userStats?.membershipTier === 'FREE' && (
               <div className="absolute inset-0 flex items-center justify-center">
-                <div className="bg-white/90 rounded-lg p-6 text-center max-w-md">
-                  <h3 className="text-xl font-semibold mb-2">Unlock Detailed Statistics</h3>
+                <div className="bg-white/80 rounded-lg p-6 text-center max-w-md shadow-lg">
+                  <h3 className="text-xl font-semibold mb-2">Unlock Full Statistics</h3>
                   <p className="text-gray-600 mb-4">
-                    Upgrade to Basic to access detailed reservation and participant statistics
+                    Upgrade to Basic to access complete reservation analytics
                   </p>
                   <button
                     onClick={() => {
@@ -294,8 +287,8 @@ export default function MyAccountPage() {
           </div>
         )}
 
-        {/* Membership Tiers for non-free users */}
-        {userStats && userStats.membershipTier !== 'FREE' && (
+        {/* Membership Tiers */}
+        {userStats && (
           <div id="membership-tiers">
             <MembershipTiers currentTier={userStats.membershipTier} />
           </div>
