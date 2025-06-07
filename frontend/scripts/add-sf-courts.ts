@@ -4,6 +4,16 @@ const prisma = new PrismaClient();
 
 const courts = [
   {
+    name: "Goldman Tennis Center",
+    description: "8 dedicated pickleball courts with permanent nets. Professional facility with lights for night play, restrooms, and pro shop. Courts can be reserved up to 7 days in advance.",
+    imageUrl: "https://source.unsplash.com/random/800x600/?pickleball,court,goldman"
+  },
+  {
+    name: "Stern Grove",
+    description: "4 pickleball courts with permanent nets. Beautiful outdoor setting surrounded by eucalyptus trees. Courts available on first-come, first-served basis during park hours.",
+    imageUrl: "https://source.unsplash.com/random/800x600/?pickleball,court,grove"
+  },
+  {
     name: "Buena Vista",
     description: "4 reservable pickleball courts on Buena Vista Tennis Court #1. Players must bring their own net.",
     imageUrl: "https://source.unsplash.com/random/800x600/?pickleball,court,1"
