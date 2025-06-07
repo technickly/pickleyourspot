@@ -1,3 +1,91 @@
+# Pickle Your Spot Updates
+
+## Latest Updates (March 2024)
+
+### Sign Out Confirmation
+- Added a confirmation dialog when users attempt to sign out
+- Improved user experience by preventing accidental sign-outs
+- Consistent dialog design with other confirmation modals
+
+### Membership Tier System Implementation
+- Introduced three membership tiers:
+  - Free ($0/month)
+    - 3 active reservations
+    - Basic court management
+    - Standard support
+  - Basic ($9.99/month)
+    - 10 active reservations
+    - Custom event creation
+    - Priority email support
+    - Basic analytics
+  - Premium ($24.99/month)
+    - Unlimited reservations
+    - Advanced court management tools
+    - Priority 24/7 support
+    - Advanced analytics and reporting
+- Added interactive pricing cards in MembershipTiers component
+- Implemented visual indicators for current plan
+- Prepared system for future Stripe payment integration
+
+### User Interface Improvements
+- My Account Page Updates:
+  - Moved subscription box below statistics for better flow
+  - Changed "Current Tier" label to "Tier Status"
+  - Added visual indicators for current plan
+  - Implemented smooth scrolling to membership section
+  - Enhanced responsive design
+- Navigation Updates:
+  - Removed redundant "Home" button
+  - Improved mobile navigation menu
+  - Added user profile image display
+- Dialog Improvements:
+  - Updated InviteParticipantDialog with new "See membership options" button
+  - Added redirection to My Account page with smooth scroll
+  - Enhanced confirmation dialogs for better user experience
+
+### Participant Management
+- Fixed participant display issue showing names next to going status
+- Enhanced participant list UI with clearer status indicators
+- Improved participant invitation flow
+- Added confirmation dialogs for status changes
+
+### Backend Improvements
+- Updated API endpoints to include complete user details
+- Enhanced reservation deletion with proper cascade handling
+- Implemented proper foreign key constraints
+- Added comprehensive error handling
+- Updated database schema with improved relationships
+- Added proper type annotations for API endpoints
+- Implemented transaction handling for deletion operations
+
+### Bug Fixes
+- Fixed cascade deletion for reservations and related records
+- Resolved participant name display issues
+- Fixed reservation deletion handling
+- Corrected API response structures
+- Addressed mobile responsive design issues
+
+### Technical Improvements
+- Enhanced type safety across components
+- Improved error handling and user feedback
+- Optimized database queries
+- Enhanced API response structures
+- Improved code organization and modularity
+
+### Security Enhancements
+- Improved authentication flow
+- Enhanced authorization checks
+- Added proper validation for user actions
+- Implemented secure API endpoints
+
+## Coming Soon
+- Stripe payment integration
+- Advanced analytics dashboard
+- Court availability notifications
+- Enhanced mobile experience
+- Community features
+- Tournament organization tools
+
 # Recent Updates to Pickleball Court Reservation System
 
 ## UI and Landing Page Improvements (Latest)
@@ -612,3 +700,61 @@ The join process is handled by a dedicated API endpoint that:
 - Added placeholder for Stripe payment integration
 - Updated tier status display in user profile
 - Implemented responsive design for all screen sizes 
+
+## Recent Updates
+
+### Membership Tier Updates
+- Changed "Premium" tier to "Supr" across all components
+- Updated membership tiers in schema, components, and documentation
+- Modified tier-related UI elements and messaging
+
+### Participant List Layout Improvements
+- Restructured participant cards for better visual organization
+- Stacked status buttons (Going/Not Going, Paid/Unpaid) below participant info
+- Enhanced button styling and spacing
+- Improved mobile responsiveness
+- Added participant-specific button controls:
+  - Only owners can modify other participants' status
+  - Participants can only modify their own status
+  - Non-clickable buttons for other participants' status
+
+### Navigation Enhancements
+- Added Home button to navigation bar
+- Implemented in both desktop and mobile views
+- Added conditional rendering to hide when on home page
+- Maintained consistent styling with existing navigation
+
+### My Reservations Page Updates
+- Added "Make New Reservation" button in top right
+- Included plus icon and consistent styling
+- Links to courts page for new reservations
+- Improved header layout with flexbox
+- Added Active/Past reservation filter:
+  - "Active" shows upcoming reservations
+  - "Past" shows completed reservations (based on date/time)
+  - Sorted by date (soonest first for active, most recent first for past)
+
+### Real-time Status Updates
+- Implemented optimistic updates for status changes
+- Added immediate UI feedback for payment and attendance status
+- Added confirmation dialogs for status changes:
+  - Confirmation when switching Going/Not Going status
+  - Confirmation when changing payment status
+  - Clear messaging in confirmation dialogs
+- Included error handling with state reversion
+- Maintained server consistency while improving UX
+
+### Shared Reservation Links
+- Automatic participant addition when accessing shared URLs
+- Seamless Google authentication integration:
+  - Users are prompted to sign in if not authenticated
+  - After authentication, automatically added to participant list
+  - Redirect back to reservation page
+- Error handling for invalid or expired links
+
+## Technical Improvements
+- Enhanced real-time updates across components
+- Improved error handling and user feedback
+- Better mobile responsiveness
+- Optimized database queries
+- Consistent styling and UI patterns 

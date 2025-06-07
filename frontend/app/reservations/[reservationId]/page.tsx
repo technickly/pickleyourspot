@@ -91,10 +91,11 @@ export default function ReservationPage({ params }: PageProps) {
     fetchMessages();
     fetchPaymentStatuses();
 
-    // Set up polling for new messages and payment statuses
+    // Set up polling for new messages, payment statuses, and participant updates
     const interval = setInterval(() => {
       fetchMessages();
       fetchPaymentStatuses();
+      fetchReservation(); // Added to poll for participant updates
     }, 5000);
     return () => clearInterval(interval);
   }, [session, status, router, reservationId]);
@@ -121,9 +122,17 @@ export default function ReservationPage({ params }: PageProps) {
         throw new Error('Failed to fetch reservation');
       }
       const data = await response.json();
-      setReservation(data);
+      
+      // Only update if there are changes to avoid unnecessary re-renders
+      if (JSON.stringify(data) !== JSON.stringify(reservation)) {
+        setReservation(data);
+      }
     } catch (error) {
-      toast.error('Failed to fetch reservation details');
+      console.error('Error fetching reservation:', error);
+      if (!reservation) { // Only show error and redirect if initial load fails
+        toast.error('Failed to fetch reservation details');
+        router.push('/my-reservations');
+      }
     }
   };
 

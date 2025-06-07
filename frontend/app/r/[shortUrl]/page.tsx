@@ -37,6 +37,17 @@ export default function SharedReservationPage({ params }: { params: Promise<{ sh
   const [hasAttemptedJoin, setHasAttemptedJoin] = useState(false);
   const resolvedParams = React.use(params);
 
+  // Add polling interval for real-time updates
+  useEffect(() => {
+    const pollInterval = setInterval(() => {
+      if (reservation) {
+        fetchReservation();
+      }
+    }, 10000); // Poll every 10 seconds
+
+    return () => clearInterval(pollInterval);
+  }, [reservation]);
+
   useEffect(() => {
     fetchReservation();
   }, [resolvedParams.shortUrl]);
@@ -72,11 +83,17 @@ export default function SharedReservationPage({ params }: { params: Promise<{ sh
         throw new Error('Failed to fetch reservation');
       }
       const data = await response.json();
-      setReservation(data);
+      
+      // Only update if there are changes to avoid unnecessary re-renders
+      if (JSON.stringify(data) !== JSON.stringify(reservation)) {
+        setReservation(data);
+      }
     } catch (error) {
       console.error('Error fetching reservation:', error);
-      toast.error('Failed to fetch reservation details');
-      router.push('/');
+      if (!reservation) { // Only show error and redirect if initial load fails
+        toast.error('Failed to fetch reservation details');
+        router.push('/');
+      }
     } finally {
       setIsLoading(false);
     }
