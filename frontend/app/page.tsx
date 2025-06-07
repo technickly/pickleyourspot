@@ -21,7 +21,7 @@ export default function HomePage() {
             <span className="block text-primary mt-2">in San Francisco</span>
           </h1>
           <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-            Track your court time, coordinate with players, and manage game details - all in one collaborative space.
+            Track your court reservations, coordinate with friends for events or tournaments, and manage game details and split payments - all in one collaborative space!
           </p>
           {status === 'loading' ? (
             <div className="animate-pulse">Loading...</div>
@@ -43,7 +43,7 @@ export default function HomePage() {
               </Link>
               <Link
                 href="/my-reservations"
-                className="bg-secondary text-white px-8 py-4 rounded-full font-semibold text-lg hover:bg-secondary-hover transition-colors shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200"
+                className="bg-primary text-white px-8 py-4 rounded-full font-semibold text-lg hover:bg-primary-hover transition-colors shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200"
               >
                 My Reservations
               </Link>
@@ -96,25 +96,6 @@ export default function HomePage() {
               </p>
             </div>
           </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-3xl font-bold mb-6 text-gray-900">Ready to Coordinate?</h2>
-          <p className="text-xl text-gray-600 mb-8">
-            Join the San Francisco pickleball community and make game planning easier.
-          </p>
-          {!session && (
-            <button
-              onClick={handleSignIn}
-              className="bg-primary text-white px-8 py-4 rounded-full font-semibold text-lg hover:bg-primary-hover transition-colors inline-flex items-center gap-2 shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200"
-            >
-              <FaGoogle className="text-xl" />
-              Sign Up Now
-            </button>
-          )}
         </div>
       </section>
 

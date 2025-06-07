@@ -46,7 +46,7 @@ export async function POST(
 
     // Verify the user is the owner of the reservation
     const reservation = await prisma.reservation.findUnique({
-      where: { id: await params.reservationId },
+      where: { id: params.reservationId },
       include: {
         owner: true,
         participants: {
@@ -87,7 +87,7 @@ export async function POST(
     const participantStatus = await prisma.participantStatus.create({
       data: {
         userId: userToAdd.id,
-        reservationId: await params.reservationId,
+        reservationId: params.reservationId,
         isGoing: true,
         hasPaid: false,
       },
@@ -145,7 +145,7 @@ export async function DELETE(
 
     // Verify the user is the owner of the reservation
     const reservation = await prisma.reservation.findUnique({
-      where: { id: await params.reservationId },
+      where: { id: params.reservationId },
       include: {
         owner: true,
       },
@@ -181,14 +181,14 @@ export async function DELETE(
     await prisma.participantStatus.deleteMany({
       where: {
         userId: userToRemove.id,
-        reservationId: await params.reservationId,
+        reservationId: params.reservationId,
       },
     });
 
     // Get updated participants list
     const updatedParticipants = await prisma.participantStatus.findMany({
       where: {
-        reservationId: await params.reservationId,
+        reservationId: params.reservationId,
       },
       include: {
         user: {
