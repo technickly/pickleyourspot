@@ -69,15 +69,12 @@ function formatReservationName(userName: string | null, startTime: Date, courtNa
 }
 
 async function createParticipantStatus(userId: string, reservationId: string, userEmail: string, userName: string | null, userImage: string | null) {
-  return await (prisma as any).ParticipantStatus.create({
+  return await prisma.participantStatus.create({
     data: {
       userId,
       reservationId,
-      hasPaid: false,
       isGoing: true,
-      userEmail,
-      userName,
-      userImage,
+      hasPaid: false,
     },
   });
 }
