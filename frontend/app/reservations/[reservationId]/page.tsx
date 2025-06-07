@@ -10,16 +10,20 @@ import Image from 'next/image';
 import UserSearch from '@/app/components/UserSearch';
 import CopyButton from '@/app/components/CopyButton';
 import MessageSystem from '@/app/components/MessageSystem';
+import ParticipantList from '@/app/components/ParticipantList';
+import ReservationTitle from '@/app/components/ReservationTitle';
+import ReservationActions from '@/app/components/ReservationActions';
 
 interface User {
-  id?: string;
   name: string | null;
   email: string;
   image: string | null;
-  paymentStatus?: {
-    hasPaid: boolean;
-    updatedAt: string;
-  };
+}
+
+interface Participant extends User {
+  hasPaid: boolean;
+  isGoing: boolean;
+  userId: string;
 }
 
 interface Message {
@@ -34,21 +38,20 @@ interface Message {
 
 interface Reservation {
   id: string;
-  shortUrl: string;
-  startTime: string;
-  endTime: string;
-  description?: string | null;
+  name: string;
+  startTime: Date;
+  endTime: Date;
+  description: string | null;
   paymentRequired: boolean;
-  paymentInfo?: string | null;
+  paymentInfo: string | null;
+  shortUrl: string;
   court: {
     name: string;
     description: string;
+    imageUrl: string;
   };
-  owner: {
-    name: string;
-    email: string;
-  };
-  participants: User[];
+  owner: User;
+  participants: Participant[];
   messages: Message[];
 }
 
@@ -68,8 +71,6 @@ export default function ReservationPage({ params }: PageProps) {
   const [newMessage, setNewMessage] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
   const [paymentStatuses, setPaymentStatuses] = useState<Record<string, boolean>>({});
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
   const [isMessagesActive, setIsMessagesActive] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [showUserSearch, setShowUserSearch] = useState(false);
@@ -182,27 +183,27 @@ export default function ReservationPage({ params }: PageProps) {
     }
   };
 
-  const handleAddParticipant = async (user: User) => {
+  const handleAddParticipant = async (email: string) => {
+    if (!reservation) return;
+
     try {
-      const response = await fetch(`/api/reservations/${reservationId}/participants`, {
+      const response = await fetch(`/api/reservations/${reservation.id}/participants`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email: user.email }),
+        body: JSON.stringify({ email }),
       });
 
       if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Failed to add participant');
+        throw new Error('Failed to add participant');
       }
 
-      const updatedParticipants = await response.json();
-      setReservation(prev => prev ? { ...prev, participants: updatedParticipants } : null);
-      setShowUserSearch(false);
+      await fetchReservation();
       toast.success('Participant added successfully');
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to add participant');
+      console.error('Error adding participant:', error);
+      toast.error('Failed to add participant');
     }
   };
 
@@ -254,28 +255,6 @@ export default function ReservationPage({ params }: PageProps) {
     }
   };
 
-  const handleDeleteReservation = async () => {
-    if (!isOwner) return;
-    
-    setIsDeleting(true);
-    try {
-      const response = await fetch(`/api/reservations/${reservationId}/delete`, {
-        method: 'DELETE',
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to delete reservation');
-      }
-
-      toast.success('Reservation deleted successfully');
-      router.push('/my-reservations');
-    } catch (error) {
-      toast.error('Failed to delete reservation');
-      setIsDeleting(false);
-      setShowDeleteConfirm(false);
-    }
-  };
-
   if (status === 'loading' || !reservation) {
     return <div className="flex justify-center items-center min-h-screen">Loading...</div>;
   }
@@ -288,10 +267,14 @@ export default function ReservationPage({ params }: PageProps) {
         <div className="bg-white rounded-lg shadow-sm p-6 space-y-8">
           <header className="mb-8">
             <div className="flex justify-between items-start">
-              <div>
-                <h1 className="text-3xl font-bold">{reservation.court.name}</h1>
-                <p className="text-gray-600 mt-2">{reservation.court.description}</p>
-              </div>
+              <ReservationTitle
+                courtName={reservation.court.name}
+                courtDescription={reservation.court.description}
+                startTime={reservation.startTime}
+                endTime={reservation.endTime}
+                ownerName={reservation.owner.name}
+                ownerEmail={reservation.owner.email}
+              />
               <div className="flex flex-col items-end gap-2">
                 <span
                   className={`px-3 py-1 rounded-full text-sm ${
@@ -300,45 +283,10 @@ export default function ReservationPage({ params }: PageProps) {
                 >
                   {isOwner ? 'Owner' : 'Participant'}
                 </span>
-                {isOwner && (
-                  <button
-                    onClick={() => setShowDeleteConfirm(true)}
-                    className="text-red-600 hover:text-red-800 text-sm font-medium"
-                  >
-                    Delete Reservation
-                  </button>
-                )}
+                {isOwner && <ReservationActions reservationId={reservationId} isOwner={isOwner} />}
               </div>
             </div>
           </header>
-
-          {/* Delete Confirmation Modal */}
-          {showDeleteConfirm && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-              <div className="bg-white rounded-lg p-6 max-w-sm w-full">
-                <h3 className="text-lg font-semibold mb-4">Delete Reservation</h3>
-                <p className="text-gray-600 mb-6">
-                  Are you sure you want to delete this reservation? This action cannot be undone.
-                </p>
-                <div className="flex justify-end gap-3">
-                  <button
-                    onClick={() => setShowDeleteConfirm(false)}
-                    className="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium"
-                    disabled={isDeleting}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleDeleteReservation}
-                    className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 font-medium disabled:bg-red-300"
-                    disabled={isDeleting}
-                  >
-                    {isDeleting ? 'Deleting...' : 'Delete'}
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
 
           <div className="grid md:grid-cols-2 gap-8">
             <div>
@@ -385,96 +333,17 @@ export default function ReservationPage({ params }: PageProps) {
                   </div>
                 </div>
 
-                <div>
-                  <div className="flex justify-between items-center mb-2">
-                    <h3 className="font-medium text-gray-700">Participants</h3>
-                    {isOwner && (
-                      <button
-                        onClick={() => setShowUserSearch(!showUserSearch)}
-                        className="text-blue-500 hover:text-blue-600 text-sm"
-                      >
-                        {showUserSearch ? 'Cancel' : '+ Add Participant'}
-                      </button>
-                    )}
-                  </div>
-                  
-                  {showUserSearch && isOwner && (
-                    <div className="mb-4">
-                      <UserSearch
-                        onSelect={handleAddParticipant}
-                        selectedUsers={reservation.participants}
-                        placeholder="Search users by name or email..."
-                      />
-                    </div>
-                  )}
-
-                  {reservation.participants.length > 0 ? (
-                    <div className="space-y-4">
-                      {reservation.participants.map((participant) => (
-                        <div 
-                          key={participant.email} 
-                          className={`participant-card ${participant.email === reservation.owner.email ? 'owner' : ''}`}
-                        >
-                          <div className="participant-info">
-                            {participant.image && (
-                              <Image
-                                src={participant.image}
-                                alt={participant.name || participant.email}
-                                width={40}
-                                height={40}
-                                className="rounded-full"
-                              />
-                            )}
-                            <div className="participant-details">
-                              <div className="name-section">
-                                <div className="flex items-center gap-2">
-                                  <span className="participant-name">
-                                    {participant.name || participant.email}
-                                  </span>
-                                  {participant.email === reservation.owner.email && (
-                                    <span className="owner-badge">
-                                      Owner
-                                    </span>
-                                  )}
-                                </div>
-                                <div className="participant-email">{participant.email}</div>
-                              </div>
-
-                              <div className="payment-section">
-                                {reservation.paymentRequired && (
-                                  <div>
-                                    {participant.email === session?.user?.email ? (
-                                      <button
-                                        onClick={togglePaymentStatus}
-                                        className={`payment-status ${paymentStatuses[participant.email] ? 'paid' : 'unpaid'}`}
-                                      >
-                                        {paymentStatuses[participant.email] ? 'Paid' : 'Mark as Paid'}
-                                      </button>
-                                    ) : (
-                                      <span className={`payment-status ${paymentStatuses[participant.email] ? 'paid' : 'unpaid'}`}>
-                                        {paymentStatuses[participant.email] ? 'Paid' : 'Unpaid'}
-                                      </span>
-                                    )}
-                                  </div>
-                                )}
-
-                                {isOwner && participant.email !== session.user.email && (
-                                  <button
-                                    onClick={() => handleRemoveParticipant(participant.email)}
-                                    className="remove-button"
-                                  >
-                                    Remove
-                                  </button>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-gray-500">No additional participants</p>
-                  )}
+                <div className="mt-6">
+                  <ParticipantList
+                    participants={reservation.participants}
+                    reservationId={reservation.id}
+                    isOwner={isOwner}
+                    ownerEmail={reservation.owner.email}
+                    paymentRequired={reservation.paymentRequired}
+                    userEmail={session?.user?.email || undefined}
+                    onAddParticipant={handleAddParticipant}
+                    onRemoveParticipant={handleRemoveParticipant}
+                  />
                 </div>
               </div>
             </div>
