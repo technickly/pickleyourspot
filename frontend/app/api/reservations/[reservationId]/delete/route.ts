@@ -38,7 +38,18 @@ export async function DELETE(
       );
     }
 
-    // Delete the reservation
+    // Delete all related records in the correct order
+    // 1. Delete all messages
+    await prisma.message.deleteMany({
+      where: { reservationId },
+    });
+
+    // 2. Delete all participant statuses
+    await prisma.participantStatus.deleteMany({
+      where: { reservationId },
+    });
+
+    // 3. Delete the reservation
     await prisma.reservation.delete({
       where: { id: reservationId },
     });

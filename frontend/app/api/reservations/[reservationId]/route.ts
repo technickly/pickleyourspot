@@ -3,6 +3,20 @@ import { getServerSession } from 'next-auth';
 import prisma from '@/lib/prisma';
 import { authOptions } from '@/app/api/auth/[...nextauth]/auth';
 
+interface User {
+  id: string;
+  name: string | null;
+  email: string;
+  image: string | null;
+}
+
+interface ParticipantStatus {
+  userId: string;
+  hasPaid: boolean;
+  isGoing: boolean;
+  user: User;
+}
+
 export async function GET(
   request: Request,
   context: { params: Promise<{ reservationId: string }> }
@@ -23,7 +37,11 @@ export async function GET(
       include: {
         court: true,
         owner: true,
-        participants: true,
+        participants: {
+          include: {
+            user: true
+          }
+        }
       },
     });
 
@@ -37,7 +55,7 @@ export async function GET(
     // Check if user has access to view this reservation
     const isOwner = reservation.owner.email === session.user.email;
     const isParticipant = reservation.participants.some(
-      (p) => p.userEmail === session.user.email
+      (p: ParticipantStatus) => p.user.email === session.user.email
     );
 
     if (!isOwner && !isParticipant) {
@@ -67,9 +85,11 @@ export async function GET(
         email: reservation.owner.email,
         image: reservation.owner.image,
       },
-      participants: reservation.participants.map(participant => ({
-        name: participant.userName,
-        email: participant.userEmail,
+      participants: reservation.participants.map((participant: ParticipantStatus) => ({
+        userId: participant.userId,
+        name: participant.user.name,
+        email: participant.user.email,
+        image: participant.user.image,
         hasPaid: participant.hasPaid,
         isGoing: participant.isGoing,
       })),
@@ -100,10 +120,14 @@ export async function PUT(
       );
     }
 
-    // Check if the user is the owner
+    const body = await request.json();
+
+    // Verify the user is the owner of the reservation
     const existingReservation = await prisma.reservation.findUnique({
       where: { id: reservationId },
-      include: { owner: true },
+      include: {
+        owner: true,
+      },
     });
 
     if (!existingReservation) {
@@ -115,63 +139,8 @@ export async function PUT(
 
     if (existingReservation.owner.email !== session.user.email) {
       return NextResponse.json(
-        { error: 'Only the reservation owner can update the reservation' },
+        { error: 'Only the reservation owner can update it' },
         { status: 403 }
-      );
-    }
-
-    const body = await request.json();
-    const {
-      name,
-      startTime,
-      endTime,
-      description,
-      paymentRequired,
-      paymentInfo,
-    } = body;
-
-    // Validate required fields
-    if (!name || !startTime || !endTime) {
-      return NextResponse.json(
-        { error: 'Missing required fields' },
-        { status: 400 }
-      );
-    }
-
-    // Validate payment info if required
-    if (paymentRequired && !paymentInfo?.trim()) {
-      return NextResponse.json(
-        { error: 'Payment information is required when payment is required' },
-        { status: 400 }
-      );
-    }
-
-    // Check for overlapping reservations
-    const overlappingReservations = await prisma.reservation.findMany({
-      where: {
-        id: { not: reservationId }, // Exclude current reservation
-        courtId: existingReservation.courtId,
-        OR: [
-          {
-            AND: [
-              { startTime: { lte: new Date(startTime) } },
-              { endTime: { gt: new Date(startTime) } },
-            ],
-          },
-          {
-            AND: [
-              { startTime: { lt: new Date(endTime) } },
-              { endTime: { gte: new Date(endTime) } },
-            ],
-          },
-        ],
-      },
-    });
-
-    if (overlappingReservations.length > 0) {
-      return NextResponse.json(
-        { error: 'This time slot overlaps with another reservation' },
-        { status: 400 }
       );
     }
 
@@ -179,17 +148,21 @@ export async function PUT(
     const updatedReservation = await prisma.reservation.update({
       where: { id: reservationId },
       data: {
-        name,
-        startTime: new Date(startTime),
-        endTime: new Date(endTime),
-        description: description?.trim(),
-        paymentRequired,
-        paymentInfo: paymentInfo?.trim(),
+        name: body.name,
+        description: body.description,
+        startTime: new Date(body.startTime),
+        endTime: new Date(body.endTime),
+        paymentRequired: body.paymentRequired,
+        paymentInfo: body.paymentInfo,
       },
       include: {
         court: true,
         owner: true,
-        participants: true,
+        participants: {
+          include: {
+            user: true
+          }
+        }
       },
     });
 
@@ -213,9 +186,11 @@ export async function PUT(
         email: updatedReservation.owner.email,
         image: updatedReservation.owner.image,
       },
-      participants: updatedReservation.participants.map(participant => ({
-        name: participant.userName,
-        email: participant.userEmail,
+      participants: updatedReservation.participants.map((participant: ParticipantStatus) => ({
+        userId: participant.userId,
+        name: participant.user.name,
+        email: participant.user.email,
+        image: participant.user.image,
         hasPaid: participant.hasPaid,
         isGoing: participant.isGoing,
       })),

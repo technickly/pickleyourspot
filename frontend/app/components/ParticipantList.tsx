@@ -388,10 +388,6 @@ export default function ParticipantList({
         onClose={() => setShowInviteDialog(false)}
         reservationId={reservationId}
         reservationName={reservationName}
-        onInviteSent={() => {
-          setShowInviteDialog(false);
-          toast.success('Invitation sent successfully');
-        }}
       />
     </div>
   );

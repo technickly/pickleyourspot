@@ -1,21 +1,38 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import prisma from '@/lib/prisma';
-import { Prisma } from '@prisma/client';
 
-type ReservationWithRelations = Prisma.ReservationGetPayload<{
-  include: {
-    court: true;
-    owner: true;
-    participants: true;
-  };
-}>;
-
-interface FormattedParticipant {
+interface User {
+  id: string;
   name: string | null;
   email: string;
+  image: string | null;
+}
+
+interface ParticipantStatus {
+  userId: string;
   hasPaid: boolean;
   isGoing: boolean;
+  user: User;
+}
+
+interface Court {
+  name: string;
+  description: string;
+  imageUrl: string;
+}
+
+interface Reservation {
+  id: string;
+  shortUrl: string;
+  name: string;
+  startTime: Date;
+  endTime: Date;
+  description: string | null;
+  paymentRequired: boolean;
+  paymentInfo: string | null;
+  court: Court;
+  participants: ParticipantStatus[];
 }
 
 interface FormattedReservation {
@@ -28,7 +45,14 @@ interface FormattedReservation {
   description: string | null;
   paymentRequired: boolean;
   paymentInfo: string | null;
-  participants: FormattedParticipant[];
+  participants: {
+    userId: string;
+    name: string | null;
+    email: string;
+    image: string | null;
+    hasPaid: boolean;
+    isGoing: boolean;
+  }[];
   isOwner: boolean;
 }
 
@@ -79,7 +103,11 @@ export async function GET(
       include: {
         court: true,
         owner: true,
-        participants: true,
+        participants: {
+          include: {
+            user: true
+          }
+        }
       },
     });
 
@@ -95,13 +123,17 @@ export async function GET(
       include: {
         court: true,
         owner: true,
-        participants: true,
+        participants: {
+          include: {
+            user: true
+          }
+        }
       },
     });
 
     // Format the response to include whether the user is the owner
     const allReservations: FormattedReservation[] = [
-      ...ownedReservations.map((reservation) => ({
+      ...ownedReservations.map((reservation: Reservation) => ({
         id: reservation.id,
         shortUrl: reservation.shortUrl,
         name: reservation.name,
@@ -111,15 +143,17 @@ export async function GET(
         description: reservation.description,
         paymentRequired: reservation.paymentRequired,
         paymentInfo: reservation.paymentInfo,
-        participants: reservation.participants.map((participant) => ({
-          name: participant.userName,
-          email: participant.userEmail,
+        participants: reservation.participants.map((participant: ParticipantStatus) => ({
+          userId: participant.userId,
+          name: participant.user.name,
+          email: participant.user.email,
+          image: participant.user.image,
           hasPaid: participant.hasPaid,
           isGoing: participant.isGoing,
         })),
         isOwner: true,
       })),
-      ...participatedReservations.map((reservation) => ({
+      ...participatedReservations.map((reservation: Reservation) => ({
         id: reservation.id,
         shortUrl: reservation.shortUrl,
         name: reservation.name,
@@ -129,9 +163,11 @@ export async function GET(
         description: reservation.description,
         paymentRequired: reservation.paymentRequired,
         paymentInfo: reservation.paymentInfo,
-        participants: reservation.participants.map((participant) => ({
-          name: participant.userName,
-          email: participant.userEmail,
+        participants: reservation.participants.map((participant: ParticipantStatus) => ({
+          userId: participant.userId,
+          name: participant.user.name,
+          email: participant.user.email,
+          image: participant.user.image,
           hasPaid: participant.hasPaid,
           isGoing: participant.isGoing,
         })),

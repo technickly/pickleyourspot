@@ -1,13 +1,13 @@
 import { useState, useRef } from 'react';
 import { toast } from 'react-hot-toast';
 import { FaCrown } from 'react-icons/fa';
+import { useRouter } from 'next/navigation';
 
 interface Props {
   isOpen: boolean;
   onClose: () => void;
   reservationId: string;
   reservationName: string;
-  onInviteSent: () => void;
 }
 
 export default function InviteParticipantDialog({
@@ -15,7 +15,21 @@ export default function InviteParticipantDialog({
   onClose,
   reservationName,
 }: Props) {
+  const router = useRouter();
+
   if (!isOpen) return null;
+
+  const handleMembershipClick = () => {
+    onClose();
+    router.push('/my-account');
+    // Add a small delay to ensure the page has loaded before scrolling
+    setTimeout(() => {
+      const membershipSection = document.querySelector('#membership-tiers');
+      if (membershipSection) {
+        membershipSection.scrollIntoView({ behavior: 'smooth' });
+      }
+    }, 100);
+  };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
@@ -63,10 +77,11 @@ export default function InviteParticipantDialog({
             </li>
           </ul>
           <button
-            onClick={onClose}
-            className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition-colors"
+            onClick={handleMembershipClick}
+            className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium flex items-center justify-center gap-2"
           >
-            Got it
+            <FaCrown className="text-yellow-300" />
+            See Membership Options
           </button>
         </div>
       </div>

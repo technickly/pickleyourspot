@@ -189,7 +189,7 @@ export default function MyAccountPage() {
             <h2 className="text-xl font-semibold text-gray-900 mb-4">Current Membership</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="bg-blue-50 rounded-lg p-4">
-                <p className="text-sm text-gray-600">Current Tier</p>
+                <p className="text-sm text-gray-600">Tier Status</p>
                 <p className={`text-2xl font-bold ${getTierColor(userStats.membershipTier)}`}>
                   {userStats.membershipTier}
                 </p>
@@ -204,14 +204,9 @@ export default function MyAccountPage() {
           </div>
         )}
 
-        {/* Membership Tiers */}
-        {userStats && (
-          <MembershipTiers currentTier={userStats.membershipTier} />
-        )}
-
         {/* Reservation Statistics */}
         {reservationStats && (
-          <div className="bg-white rounded-lg shadow-lg p-6">
+          <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
             <h2 className="text-xl font-semibold text-gray-900 mb-4">Reservation Statistics</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="bg-purple-50 rounded-lg p-4">
@@ -268,7 +263,7 @@ export default function MyAccountPage() {
         )}
 
         {/* Contact Section */}
-        <div className="bg-white rounded-lg shadow-lg p-6 mt-8">
+        <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Get in Touch</h2>
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <a
@@ -290,6 +285,13 @@ export default function MyAccountPage() {
             </a>
           </div>
         </div>
+
+        {/* Membership Tiers */}
+        {userStats && (
+          <div id="membership-tiers">
+            <MembershipTiers currentTier={userStats.membershipTier} />
+          </div>
+        )}
       </div>
     </div>
   );

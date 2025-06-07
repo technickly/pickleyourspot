@@ -122,11 +122,8 @@ export async function GET(
       ? totalParticipants / ownedReservations.length
       : 0;
 
-    // Determine membership tier based on activity
-    let membershipTier = 'Bronze';
-    if (ownedReservations.length >= 10) membershipTier = 'Silver';
-    if (ownedReservations.length >= 25) membershipTier = 'Gold';
-    if (ownedReservations.length >= 50) membershipTier = 'Platinum';
+    // Always return FREE tier for now
+    const membershipTier = 'FREE';
 
     const response = {
       userStats: {
