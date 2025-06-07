@@ -1,6 +1,5 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { toast } from 'react-hot-toast';
-import { CopyToClipboard } from 'react-copy-to-clipboard';
 
 interface Props {
   isOpen: boolean;
@@ -21,6 +20,7 @@ export default function InviteParticipantDialog({
   const [isSending, setIsSending] = useState(false);
   const [inviteLink, setInviteLink] = useState('');
   const [showLinkSection, setShowLinkSection] = useState(false);
+  const linkInputRef = useRef<HTMLInputElement>(null);
 
   const handleSendInvite = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,6 +49,49 @@ export default function InviteParticipantDialog({
       toast.error('Failed to send invitation');
     } finally {
       setIsSending(false);
+    }
+  };
+
+  const handleCopyLink = async () => {
+    try {
+      // Try the modern clipboard API first
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(inviteLink);
+        toast.success('Link copied to clipboard');
+        return;
+      }
+
+      // Fallback for older browsers or non-HTTPS
+      if (linkInputRef.current) {
+        // Select the text
+        linkInputRef.current.select();
+        linkInputRef.current.setSelectionRange(0, 99999); // For mobile devices
+
+        // Try using the deprecated execCommand
+        if (document.execCommand('copy')) {
+          toast.success('Link copied to clipboard');
+          return;
+        }
+
+        // If execCommand fails, guide the user
+        toast.success('Press Ctrl+C or Cmd+C to copy the link');
+      }
+    } catch (error) {
+      console.error('Failed to copy:', error);
+      
+      // If all methods fail, guide the user to manual copy
+      if (linkInputRef.current) {
+        linkInputRef.current.focus();
+        linkInputRef.current.select();
+        toast.error('Please manually copy the link (Ctrl+C or Cmd+C)');
+      } else {
+        toast.error('Failed to copy link');
+      }
+    } finally {
+      // Deselect the text (on mobile this is helpful for UX)
+      if (document.getSelection()) {
+        document.getSelection()?.removeAllRanges();
+      }
     }
   };
 
@@ -121,26 +164,28 @@ export default function InviteParticipantDialog({
                 <h4 className="text-sm font-medium text-gray-700 mb-2">Share Invite Link</h4>
                 <div className="flex items-center gap-2">
                   <input
+                    ref={linkInputRef}
                     type="text"
                     value={inviteLink}
                     readOnly
                     className="flex-1 px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm"
+                    onClick={(e) => (e.target as HTMLInputElement).select()}
                   />
-                  <CopyToClipboard 
-                    text={inviteLink}
-                    onCopy={() => toast.success('Link copied to clipboard')}
+                  <button
+                    type="button"
+                    onClick={handleCopyLink}
+                    className="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                    title="Copy to clipboard"
                   >
-                    <button
-                      type="button"
-                      className="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                        <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" />
-                        <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z" />
-                      </svg>
-                    </button>
-                  </CopyToClipboard>
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                      <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" />
+                      <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z" />
+                    </svg>
+                  </button>
                 </div>
+                <p className="text-xs text-gray-500 mt-2">
+                  Click the link to select it or use the copy button
+                </p>
               </div>
             </div>
           )}
