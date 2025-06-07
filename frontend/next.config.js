@@ -24,6 +24,7 @@ const nextConfig = {
       allowedOrigins: ['localhost:3000', 'pickleyourspot.com'],
     },
   },
+  allowedDevOrigins: ['pickleyourspot.com'],
 }
 
 module.exports = nextConfig 

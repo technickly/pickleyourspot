@@ -3,8 +3,9 @@
 import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { format } from 'date-fns';
+import { format, differenceInDays } from 'date-fns';
 import { toast } from 'react-hot-toast';
+import ReservationActions from '@/app/components/ReservationActions';
 
 interface Participant {
   name: string | null;
@@ -30,6 +31,7 @@ interface Reservation {
   paymentInfo?: string | null;
   participants: Participant[];
   status: 'active' | 'past';
+  isOwner: boolean;
 }
 
 export default function MyReservationsPage() {
@@ -60,11 +62,16 @@ export default function MyReservationsPage() {
         status: new Date(res.endTime) > now ? 'active' : 'past'
       }));
 
-      // Sort reservations: active first, then by date
+      // Sort reservations: active first, then by date (soonest first)
       const sortedReservations = reservationsWithStatus.sort((a: Reservation, b: Reservation) => {
+        // First sort by active/past
         if (a.status === 'active' && b.status === 'past') return -1;
         if (a.status === 'past' && b.status === 'active') return 1;
-        return new Date(a.startTime).getTime() - new Date(b.startTime).getTime();
+        
+        // Then sort by date (soonest first)
+        const dateA = new Date(a.startTime);
+        const dateB = new Date(b.startTime);
+        return dateA.getTime() - dateB.getTime();
       });
 
       setReservations(sortedReservations);
@@ -135,6 +142,14 @@ export default function MyReservationsPage() {
     }
   };
 
+  const getDaysUntilReservation = (startTime: string) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Reset time to start of day for accurate day calculation
+    const reservationDate = new Date(startTime);
+    reservationDate.setHours(0, 0, 0, 0);
+    return differenceInDays(reservationDate, today);
+  };
+
   if (isLoading) {
     return <div className="flex justify-center items-center min-h-screen">Loading...</div>;
   }
@@ -155,12 +170,21 @@ export default function MyReservationsPage() {
           >
             <div className="flex justify-between items-start">
               <div className="space-y-3">
-                <div>
-                  <h2 className="text-2xl font-semibold mb-2">
+                <div className="flex items-center gap-3">
+                  <h2 className="text-2xl font-semibold">
                     {reservation.name.split(' ').map(word => 
                       word.charAt(0).toUpperCase() + word.slice(1)
                     ).join(' ')}
                   </h2>
+                  <span
+                    className={`px-3 py-1 rounded-full text-sm ${
+                      reservation.isOwner
+                        ? 'bg-blue-100 text-blue-800'
+                        : 'bg-gray-100 text-gray-800'
+                    }`}
+                  >
+                    {reservation.isOwner ? 'Owner' : 'Participant'}
+                  </span>
                 </div>
 
                 <div>
@@ -257,7 +281,7 @@ export default function MyReservationsPage() {
                   </div>
                 )}
               </div>
-              <div>
+              <div className="flex flex-col items-end gap-3">
                 <div
                   className={`text-2xl font-bold mb-2 ${
                     reservation.status === 'active'
@@ -274,8 +298,16 @@ export default function MyReservationsPage() {
                       : 'bg-red-100 text-red-800'
                   }`}
                 >
-                  {reservation.status === 'active' ? 'Upcoming' : 'Completed'}
+                  {reservation.status === 'active' 
+                    ? `Upcoming in ${getDaysUntilReservation(reservation.startTime)} Days`
+                    : 'Completed'}
                 </div>
+                {reservation.isOwner && (
+                  <ReservationActions
+                    reservationId={reservation.id}
+                    isOwner={true}
+                  />
+                )}
               </div>
             </div>
           </div>

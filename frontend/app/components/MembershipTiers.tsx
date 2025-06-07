@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { FaCrown, FaStar, FaCheck } from 'react-icons/fa';
 import { toast } from 'react-hot-toast';
 
@@ -8,8 +9,17 @@ interface MembershipTierProps {
 }
 
 export default function MembershipTiers({ currentTier }: MembershipTierProps) {
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [selectedTier, setSelectedTier] = useState<string>('');
+
   const handleUpgrade = (tier: string) => {
-    toast.success('Stripe payment integration coming soon! Stay tuned for upgrades.');
+    setSelectedTier(tier);
+    setShowUpgradeModal(true);
+  };
+
+  const closeUpgradeModal = () => {
+    setShowUpgradeModal(false);
+    setSelectedTier('');
   };
 
   return (
@@ -44,11 +54,11 @@ export default function MembershipTiers({ currentTier }: MembershipTierProps) {
               </li>
               <li className="flex items-center gap-3">
                 <FaCheck className="text-green-500 flex-shrink-0" />
-                <span>Payment tracking</span>
+                <span>Group messaging for each reservation</span>
               </li>
               <li className="flex items-center gap-3">
                 <FaCheck className="text-green-500 flex-shrink-0" />
-                <span>Access to SF public courts</span>
+                <span>Create/Delete reservations (up to 4 participants)</span>
               </li>
             </ul>
             <div className="text-center">
@@ -89,15 +99,15 @@ export default function MembershipTiers({ currentTier }: MembershipTierProps) {
               </li>
               <li className="flex items-center gap-3">
                 <FaCheck className="text-green-500 flex-shrink-0" />
-                <span>Up to 10 active reservations</span>
+                <span>Track Active vs Past reservations</span>
               </li>
               <li className="flex items-center gap-3">
                 <FaCheck className="text-green-500 flex-shrink-0" />
-                <span>Custom events & tournaments</span>
+                <span>Custom event share URL</span>
               </li>
               <li className="flex items-center gap-3">
                 <FaCheck className="text-green-500 flex-shrink-0" />
-                <span>Email payment reminders</span>
+                <span>Reservations/Tournaments (up to 16 participants)</span>
               </li>
               <li className="flex items-center gap-3">
                 <FaCheck className="text-green-500 flex-shrink-0" />
@@ -186,6 +196,49 @@ export default function MembershipTiers({ currentTier }: MembershipTierProps) {
           </p>
         </div>
       </div>
+
+      {/* Upgrade Confirmation Modal */}
+      {showUpgradeModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-semibold">Upgrade to {selectedTier}</h3>
+              <button
+                onClick={closeUpgradeModal}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="mb-6">
+              <div className="bg-blue-50 text-blue-800 p-4 rounded-lg mb-4">
+                <p className="font-medium mb-2">🚧 Development in Progress</p>
+                <p className="text-sm">
+                  We're currently implementing Stripe payment processing. This feature will be available soon!
+                </p>
+              </div>
+              <p className="text-gray-600 text-sm">
+                Once available, you'll be able to:
+              </p>
+              <ul className="mt-2 space-y-2 text-sm text-gray-600">
+                <li>• Securely process payments</li>
+                <li>• Manage your subscription</li>
+                <li>• Access premium features instantly</li>
+              </ul>
+            </div>
+            <div className="flex justify-end">
+              <button
+                onClick={closeUpgradeModal}
+                className="px-4 py-2 text-white bg-primary rounded-lg hover:bg-primary-hover transition-colors"
+              >
+                Got it
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 } 
