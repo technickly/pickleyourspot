@@ -110,49 +110,37 @@ export default function NavigationBar() {
         )}
 
         {/* Desktop navigation */}
-        <div className="hidden md:flex items-center gap-3">
+        <div className="hidden md:flex items-center gap-4">
           {status === 'authenticated' ? (
             <>
-              <div className="flex items-center gap-2">
-                {!isCurrentPath('/my-account') && (
-                  <Link
-                    href="/my-account"
-                    className="button-primary"
-                  >
-                    My Account
-                  </Link>
-                )}
+              {!isCurrentPath('/my-account') && (
+                <Link
+                  href="/my-account"
+                  className="button-primary"
+                >
+                  My Account
+                </Link>
+              )}
 
-                {session ? (
-                  <button
-                    onClick={handleSignOut}
-                    className="button-secondary"
-                  >
-                    Sign Out
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => signIn('google')}
-                    className="button-primary"
-                  >
-                    Sign In
-                  </button>
-                )}
-              </div>
-
-              <div className="user-info">
+              <div className="flex items-center gap-3 pl-2 border-l border-gray-200">
                 {session.user?.image && (
                   <Image
                     src={session.user.image}
                     alt={session.user.name || 'User'}
-                    width={24}
-                    height={24}
+                    width={32}
+                    height={32}
                     className="rounded-full"
                   />
                 )}
-                <span className="user-name hidden sm:inline">
+                <span className="text-gray-700">
                   {session.user?.name?.split(' ')[0] || 'Guest'}
                 </span>
+                <button
+                  onClick={handleSignOut}
+                  className="button-primary text-sm"
+                >
+                  Sign Out
+                </button>
               </div>
             </>
           ) : (
@@ -182,30 +170,21 @@ export default function NavigationBar() {
                     <Image
                       src={session.user.image}
                       alt={session.user.name || 'User'}
-                      width={24}
-                      height={24}
+                      width={32}
+                      height={32}
                       className="rounded-full"
                     />
                   )}
-                  <span className="text-sm text-gray-700">
+                  <span className="text-gray-700">
                     {session.user?.name?.split(' ')[0] || 'Guest'}
                   </span>
-                </div>
-                {session ? (
                   <button
                     onClick={handleSignOut}
-                    className="text-sm text-red-600 hover:text-red-700 transition-colors"
+                    className="button-primary text-sm ml-2"
                   >
                     Sign Out
                   </button>
-                ) : (
-                  <button
-                    onClick={() => signIn('google')}
-                    className="text-sm text-red-600 hover:text-red-700 transition-colors"
-                  >
-                    Sign In
-                  </button>
-                )}
+                </div>
               </div>
             </div>
           </div>

@@ -7,6 +7,8 @@ import { toast } from 'react-hot-toast';
 import { formatInTimeZone } from 'date-fns-tz';
 import CopyButton from '@/app/components/CopyButton';
 import { useRouter } from 'next/navigation';
+import ReservationFilters, { FilterOptions } from '@/app/components/ReservationFilters';
+import { format } from 'date-fns';
 
 interface Participant {
   name: string | null;
@@ -28,41 +30,101 @@ interface Reservation {
   paymentRequired: boolean;
   paymentInfo?: string | null;
   participants: Participant[];
+  courtId: string;
+  court: {
+    id: string;
+    name: string;
+  };
+  status: 'active' | 'past';
+}
+
+interface Court {
+  id: string;
+  name: string;
 }
 
 const timeZone = 'America/Los_Angeles';
 
 export default function MyReservationsPage() {
   const { data: session, status } = useSession();
+  const router = useRouter();
   const [reservations, setReservations] = useState<Reservation[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [courts, setCourts] = useState<Court[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [filteredReservations, setFilteredReservations] = useState<Reservation[]>([]);
+  const [currentFilters, setCurrentFilters] = useState<FilterOptions>({
+    status: ['active'], // Default to showing active reservations
+    courts: [],
+    date: null,
+  });
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
-  const router = useRouter();
 
   useEffect(() => {
-    if (session?.user?.email) {
-      fetchReservations();
+    if (status === 'unauthenticated') {
+      router.push('/');
     }
-  }, [session]);
+  }, [status, router]);
 
-  const fetchReservations = async () => {
+  const fetchData = async () => {
     try {
-      setIsLoading(true);
-      const response = await fetch(`/api/reservations/user?email=${encodeURIComponent(session?.user?.email || '')}`);
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to fetch reservations');
-      }
-      const data = await response.json();
-      setReservations(data);
+      // Fetch courts
+      const courtsResponse = await fetch('/api/courts');
+      const courtsData = await courtsResponse.json();
+      setCourts(courtsData);
+
+      // Fetch reservations
+      const reservationsResponse = await fetch('/api/reservations/my');
+      const reservationsData = await reservationsResponse.json();
+      
+      // Add status to each reservation
+      const now = new Date();
+      const reservationsWithStatus = reservationsData.map((res: Omit<Reservation, 'status'>) => ({
+        ...res,
+        status: new Date(res.endTime) > now ? 'active' : 'past'
+      } as Reservation));
+
+      setReservations(reservationsWithStatus);
+      // Apply default filter (active reservations)
+      const activeReservations = reservationsWithStatus.filter(res => res.status === 'active');
+      setFilteredReservations(activeReservations);
     } catch (error) {
-      console.error('Error fetching reservations:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to fetch reservations');
-      setReservations([]); // Reset to empty array on error
+      console.error('Error fetching data:', error);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  useEffect(() => {
+    if (session?.user?.email) {
+      fetchData();
+    }
+  }, [session]);
+
+  const handleFilterChange = (filters: FilterOptions) => {
+    setCurrentFilters(filters);
+    let filtered = [...reservations];
+
+    // Filter by status
+    if (filters.status.length > 0) {
+      filtered = filtered.filter(res => filters.status.includes(res.status));
+    }
+
+    // Filter by courts
+    if (filters.courts.length > 0) {
+      filtered = filtered.filter(res => filters.courts.includes(res.courtId));
+    }
+
+    // Filter by date
+    if (filters.date) {
+      const filterDate = format(filters.date, 'yyyy-MM-dd');
+      filtered = filtered.filter(res => {
+        const resDate = format(new Date(res.startTime), 'yyyy-MM-dd');
+        return resDate === filterDate;
+      });
+    }
+
+    setFilteredReservations(filtered);
   };
 
   const handleDeleteReservation = async (reservationId: string) => {
@@ -77,7 +139,7 @@ export default function MyReservationsPage() {
       }
 
       toast.success('Reservation deleted successfully');
-      await fetchReservations(); // Refresh the list
+      await fetchData(); // Refresh the list
     } catch (error) {
       toast.error('Failed to delete reservation');
     } finally {
@@ -93,6 +155,47 @@ export default function MyReservationsPage() {
     newValue: boolean
   ) => {
     try {
+      // Optimistically update the UI
+      const updatedReservations = reservations.map(reservation => {
+        if (reservation.id === reservationId) {
+          return {
+            ...reservation,
+            participants: reservation.participants.map(participant => {
+              if (participant.userId === userId) {
+                return {
+                  ...participant,
+                  [type === 'payment' ? 'hasPaid' : 'isGoing']: newValue
+                };
+              }
+              return participant;
+            })
+          };
+        }
+        return reservation;
+      });
+
+      setReservations(updatedReservations);
+      setFilteredReservations(prevFiltered => 
+        prevFiltered.map(reservation => {
+          if (reservation.id === reservationId) {
+            return {
+              ...reservation,
+              participants: reservation.participants.map(participant => {
+                if (participant.userId === userId) {
+                  return {
+                    ...participant,
+                    [type === 'payment' ? 'hasPaid' : 'isGoing']: newValue
+                  };
+                }
+                return participant;
+              })
+            };
+          }
+          return reservation;
+        })
+      );
+
+      // Make API call
       const response = await fetch(`/api/reservations/${reservationId}/participant-status`, {
         method: 'PUT',
         headers: {
@@ -109,14 +212,15 @@ export default function MyReservationsPage() {
         throw new Error('Failed to update status');
       }
 
-      await fetchReservations(); // Refresh the list
       toast.success(`${type === 'payment' ? 'Payment' : 'Attendance'} status updated`);
     } catch (error) {
+      // Revert the optimistic update on error
+      await fetchData();
       toast.error(`Failed to update ${type} status`);
     }
   };
 
-  if (status === 'loading' || isLoading) {
+  if (isLoading) {
     return <div className="flex justify-center items-center min-h-screen">Loading...</div>;
   }
 
@@ -135,168 +239,165 @@ export default function MyReservationsPage() {
   }
 
   return (
-    <main className="min-h-screen p-8">
-      <div className="max-w-4xl mx-auto">
-        <header className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold">My Reservations</h1>
-          <Link
-            href="/courts"
-            className="button-primary hover-lift"
-          >
-            Make New Reservation
-          </Link>
-        </header>
+    <div className="max-w-6xl mx-auto px-4 py-8">
+      <h1 className="text-2xl font-bold mb-6">My Reservations</h1>
+      
+      <ReservationFilters
+        onFilterChange={handleFilterChange}
+        courts={courts}
+      />
 
-        <div className="grid gap-4">
-          {reservations.map((reservation) => (
-            <Link
-              key={reservation.id}
-              href={`/reservations/${reservation.id}`}
-              className="block border rounded-lg p-4 hover:shadow-lg transition-all hover:border-blue-200 cursor-pointer"
-            >
-              <div className="flex justify-between items-start">
-                <div className="space-y-3 w-full">
+      <div className="grid gap-4">
+        {filteredReservations.map((reservation) => (
+          <div
+            key={reservation.id}
+            className={`rounded-lg shadow-md p-6 transition-shadow ${
+              reservation.status === 'active' 
+                ? 'bg-white border-l-8 border-l-green-500' 
+                : 'bg-gray-50 border-l-8 border-l-red-500'
+            }`}
+          >
+            <div className="flex justify-between items-start">
+              <div className="space-y-3">
+                {/* Title Section */}
+                <div>
+                  <h2 className="text-2xl font-semibold mb-2">
+                    {reservation.name.split(' ').map(word => 
+                      word.charAt(0).toUpperCase() + word.slice(1)
+                    ).join(' ')}
+                  </h2>
+                </div>
+
+                {/* Court Description Section */}
+                <div>
+                  <h3 className="text-sm font-medium text-gray-700 mb-1">Court Description:</h3>
+                  <p className="text-gray-600">{reservation.court.name}</p>
+                </div>
+
+                {/* Time Section */}
+                <div>
+                  <h3 className="text-sm font-medium text-gray-700 mb-1">Date & Time:</h3>
+                  <p className="text-gray-600">
+                    {format(new Date(reservation.startTime), 'EEEE, MMMM d, yyyy')}
+                    <br />
+                    {format(new Date(reservation.startTime), 'h:mm a')} -{' '}
+                    {format(new Date(reservation.endTime), 'h:mm a')}
+                  </p>
+                </div>
+
+                {/* Description Section */}
+                {reservation.description && (
                   <div>
-                    <h3 className="text-xl font-semibold text-gray-900">{reservation.name}</h3>
-                    <p className="text-gray-600">
-                      {reservation.courtName} • {formatInTimeZone(new Date(reservation.startTime), timeZone, 'EEEE, MMMM d, yyyy')} at{' '}
-                      {formatInTimeZone(new Date(reservation.startTime), timeZone, 'h:mm a')} -{' '}
-                      {formatInTimeZone(new Date(reservation.endTime), timeZone, 'h:mm a')} PT
+                    <h3 className="text-sm font-medium text-gray-700 mb-1">Description:</h3>
+                    <p className="text-gray-600 bg-gray-50 p-2 rounded">
+                      {reservation.description}
                     </p>
                   </div>
+                )}
 
-                  {reservation.description && (
-                    <div className="text-sm text-gray-600">
-                      <div className="p-2 bg-gray-50 rounded">
-                        <span className="font-medium">Notes: </span>
-                        {reservation.description}
-                      </div>
-                    </div>
-                  )}
-
-                  {reservation.paymentRequired && (
-                    <div className="text-sm">
-                      <div className="p-2 bg-yellow-50 rounded">
-                        <span className="font-medium text-yellow-800">💰 Payment Required • </span>
-                        <span className="text-yellow-700">{reservation.paymentInfo}</span>
-                      </div>
-                    </div>
-                  )}
-
-                  {reservation.participants.length > 0 && (
-                    <div className="text-sm">
-                      <div className="font-medium text-gray-700 mb-1">Participants:</div>
-                      <div className="grid grid-cols-1 gap-2">
-                        {reservation.participants.map((participant) => (
-                          <div
-                            key={participant.email}
-                            className="flex items-center justify-between p-2 rounded bg-gray-50"
-                            onClick={(e) => e.preventDefault()}
-                          >
-                            <span>{participant.name || participant.email}</span>
-                            <div className="flex gap-2">
+                {/* Participants Section */}
+                {reservation.participants.length > 0 && (
+                  <div className="mt-4">
+                    <h3 className="text-lg font-medium mb-2">Participants</h3>
+                    <div className="space-y-2">
+                      {reservation.participants.map((participant) => (
+                        <div
+                          key={participant.email}
+                          className="bg-gray-50 p-3 rounded-lg"
+                        >
+                          <div className="flex flex-col">
+                            <span className="font-medium">
+                              {participant.name || 'No name provided'}
+                            </span>
+                            <span className="text-sm text-gray-500">
+                              {participant.email}
+                            </span>
+                          </div>
+                          <div className="flex gap-2 mt-2">
+                            <button
+                              onClick={() => handleStatusUpdate(
+                                reservation.id,
+                                participant.userId,
+                                'attendance',
+                                !participant.isGoing
+                              )}
+                              className={`px-2 py-1 text-xs rounded cursor-pointer transition-colors ${
+                                participant.isGoing
+                                  ? 'bg-green-100 text-green-800 hover:bg-green-200'
+                                  : 'bg-red-100 text-red-800 hover:bg-red-200'
+                              }`}
+                            >
+                              {participant.isGoing ? '✓ Going' : '✗ Not Going'}
+                            </button>
+                            {reservation.paymentRequired && (
                               <button
-                                onClick={() =>
-                                  handleStatusUpdate(
-                                    reservation.id,
-                                    participant.userId,
-                                    'attendance',
-                                    !participant.isGoing
-                                  )
-                                }
-                                className={`px-2 py-1 rounded text-xs font-medium ${
-                                  participant.isGoing
+                                onClick={() => handleStatusUpdate(
+                                  reservation.id,
+                                  participant.userId,
+                                  'payment',
+                                  !participant.hasPaid
+                                )}
+                                className={`px-2 py-1 text-xs rounded cursor-pointer transition-colors ${
+                                  participant.hasPaid
                                     ? 'bg-green-100 text-green-800 hover:bg-green-200'
                                     : 'bg-red-100 text-red-800 hover:bg-red-200'
                                 }`}
                               >
-                                {participant.isGoing ? '✓ Going' : '✗ Not Going'}
+                                {participant.hasPaid ? '✓ Paid' : '✗ Not Paid'}
                               </button>
-                              {reservation.paymentRequired && (
-                                <button
-                                  onClick={() =>
-                                    handleStatusUpdate(
-                                      reservation.id,
-                                      participant.userId,
-                                      'payment',
-                                      !participant.hasPaid
-                                    )
-                                  }
-                                  className={`px-2 py-1 rounded text-xs font-medium ${
-                                    participant.hasPaid
-                                      ? 'bg-green-100 text-green-800 hover:bg-green-200'
-                                      : 'bg-red-100 text-red-800 hover:bg-red-200'
-                                  }`}
-                                >
-                                  {participant.hasPaid ? '✓ Paid' : '✗ Not Paid'}
-                                </button>
-                              )}
-                            </div>
+                            )}
                           </div>
-                        ))}
-                      </div>
+                        </div>
+                      ))}
                     </div>
-                  )}
+                  </div>
+                )}
+
+                {/* Payment Info Section */}
+                {reservation.paymentRequired && (
+                  <div className="mt-4">
+                    <div className="bg-yellow-50 p-3 rounded-lg">
+                      <span className="font-medium text-yellow-800">💰 Payment Required</span>
+                      {reservation.paymentInfo && (
+                        <p className="text-yellow-700 mt-1">{reservation.paymentInfo}</p>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div>
+                <div
+                  className={`text-2xl font-bold mb-2 ${
+                    reservation.status === 'active'
+                      ? 'text-green-600'
+                      : 'text-red-600'
+                  }`}
+                >
+                  {reservation.status === 'active' ? 'ACTIVE' : 'PAST'}
                 </div>
-                <div className="flex flex-col items-end gap-2">
-                  <span
-                    className={`px-2 py-1 rounded text-sm ${
-                      reservation.isOwner
-                        ? 'bg-blue-100 text-blue-800'
-                        : 'bg-gray-100 text-gray-800'
-                    }`}
-                  >
-                    {reservation.isOwner ? 'Owner' : 'Participant'}
-                  </span>
-                  {reservation.isOwner && (
-                    <div className="flex gap-2" onClick={(e) => e.preventDefault()}>
-                      <button
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          router.push(`/reservations/${reservation.id}/edit`);
-                        }}
-                        className="px-3 py-1 bg-blue-100 text-blue-800 rounded hover:bg-blue-200 text-sm font-medium transition-colors"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          setShowDeleteConfirm(reservation.id);
-                        }}
-                        className="px-3 py-1 bg-red-100 text-red-800 rounded hover:bg-red-200 text-sm font-medium transition-colors"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  )}
+                <div
+                  className={`text-sm px-4 py-2 rounded-full ${
+                    reservation.status === 'active'
+                      ? 'bg-green-100 text-green-800'
+                      : 'bg-red-100 text-red-800'
+                  }`}
+                >
+                  {reservation.status === 'active' ? 'Upcoming' : 'Completed'}
                 </div>
               </div>
+            </div>
+          </div>
+        ))}
 
-              <div className="mt-4 flex gap-4 items-center">
-                <span className="text-blue-500">View Details →</span>
-                <div className="h-4 w-px bg-gray-300" />
-                <div onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                }}>
-                  <CopyButton 
-                    text={typeof window !== 'undefined' ? `${window.location.origin}/r/${reservation.shortUrl}` : `${process.env.NEXT_PUBLIC_URL || ''}/r/${reservation.shortUrl}`}
-                    label="Share"
-                  />
-                </div>
-              </div>
-            </Link>
-          ))}
-
-          {reservations.length === 0 && (
-            <p className="text-gray-500 text-center py-8">
-              No reservations found. Make your first reservation!
+        {filteredReservations.length === 0 && (
+          <div className="text-center py-8">
+            <p className="text-gray-600">
+              {currentFilters.status.length > 0
+                ? `No ${currentFilters.status.join(' or ')} reservations found.`
+                : 'No reservations found matching your filters.'}
             </p>
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
       {/* Delete Confirmation Modal */}
@@ -326,6 +427,6 @@ export default function MyReservationsPage() {
           </div>
         </div>
       )}
-    </main>
+    </div>
   );
 } 

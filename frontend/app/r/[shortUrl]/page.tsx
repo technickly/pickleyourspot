@@ -34,6 +34,7 @@ export default function SharedReservationPage({ params }: { params: Promise<{ sh
   const [reservation, setReservation] = useState<Reservation | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isJoining, setIsJoining] = useState(false);
+  const [hasAttemptedJoin, setHasAttemptedJoin] = useState(false);
   const resolvedParams = React.use(params);
 
   useEffect(() => {
@@ -41,18 +42,28 @@ export default function SharedReservationPage({ params }: { params: Promise<{ sh
   }, [resolvedParams.shortUrl]);
 
   useEffect(() => {
-    // When user signs in, automatically try to join the reservation
-    if (session?.user?.email && reservation && !isJoining) {
-      const isAlreadyParticipant = reservation.participants.some(
-        p => p.email === session.user?.email
-      );
-      const isOwner = reservation.owner.email === session.user?.email;
+    const attemptJoin = async () => {
+      if (
+        session?.user?.email && 
+        reservation && 
+        !isJoining && 
+        !hasAttemptedJoin && 
+        status === 'authenticated'
+      ) {
+        const isAlreadyParticipant = reservation.participants.some(
+          p => p.email === session.user?.email
+        );
+        const isOwner = reservation.owner.email === session.user?.email;
 
-      if (!isAlreadyParticipant && !isOwner) {
-        handleJoinReservation();
+        if (!isAlreadyParticipant && !isOwner) {
+          setHasAttemptedJoin(true);
+          await handleJoinReservation();
+        }
       }
-    }
-  }, [session, reservation]);
+    };
+
+    attemptJoin();
+  }, [session, reservation, status]);
 
   const fetchReservation = async () => {
     try {
@@ -63,6 +74,7 @@ export default function SharedReservationPage({ params }: { params: Promise<{ sh
       const data = await response.json();
       setReservation(data);
     } catch (error) {
+      console.error('Error fetching reservation:', error);
       toast.error('Failed to fetch reservation details');
       router.push('/');
     } finally {
@@ -83,14 +95,17 @@ export default function SharedReservationPage({ params }: { params: Promise<{ sh
       });
 
       if (!response.ok) {
-        throw new Error('Failed to join reservation');
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to join reservation');
       }
 
-      toast.success('Successfully joined the reservation!');
       await fetchReservation(); // Refresh the reservation data
+      toast.success('Successfully joined the reservation!');
     } catch (error) {
       console.error('Error joining reservation:', error);
-      toast.error('Failed to join the reservation');
+      const message = error instanceof Error ? error.message : 'Failed to join the reservation';
+      toast.error(message);
+      setHasAttemptedJoin(false); // Reset to allow another attempt
     } finally {
       setIsJoining(false);
     }

@@ -5,7 +5,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { format } from 'date-fns';
-import { FaCamera, FaEnvelope, FaDiscord } from 'react-icons/fa';
+import { FaCamera } from 'react-icons/fa';
 import { toast } from 'react-hot-toast';
 import MembershipTiers from '@/app/components/MembershipTiers';
 
@@ -261,30 +261,6 @@ export default function MyAccountPage() {
             </div>
           </div>
         )}
-
-        {/* Contact Section */}
-        <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Get in Touch</h2>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <a
-              href="mailto:technickly@gmail.com"
-              className="inline-flex items-center gap-2 text-primary hover:text-primary-dark transition-colors"
-            >
-              <FaEnvelope className="text-xl" />
-              technickly@gmail.com
-            </a>
-            <span className="hidden sm:inline text-gray-400">|</span>
-            <a
-              href="https://discord.com/channels/1380819915467919420/1380819915467919423"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 text-primary hover:text-primary-dark transition-colors"
-            >
-              <FaDiscord className="text-xl" />
-              Join our Discord
-            </a>
-          </div>
-        </div>
 
         {/* Membership Tiers */}
         {userStats && (
