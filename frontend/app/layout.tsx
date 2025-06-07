@@ -4,6 +4,7 @@ import { Inter } from 'next/font/google';
 import AuthProvider from './providers/AuthProvider';
 import { Toaster } from 'react-hot-toast';
 import NavigationBar from './components/NavigationBar';
+import type { Metadata } from 'next';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -13,9 +14,9 @@ export const viewport = {
   initialScale: 1.0,
 };
 
-export const metadata = {
+export const metadata: Metadata = {
   title: 'Pickle Your Spot',
-  description: 'Reserve your next pickleball match in San Francisco',
+  description: 'Find and reserve pickleball courts in your area',
   icons: {
     icon: [
       { url: '/favicon.ico', sizes: '32x32', type: 'image/x-icon' },
