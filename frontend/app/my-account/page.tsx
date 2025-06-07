@@ -271,12 +271,7 @@ export default function MyAccountPage() {
                     Upgrade to Basic to access complete reservation analytics
                   </p>
                   <button
-                    onClick={() => {
-                      const membershipSection = document.querySelector('#membership-tiers');
-                      if (membershipSection) {
-                        membershipSection.scrollIntoView({ behavior: 'smooth' });
-                      }
-                    }}
+                    onClick={() => router.push('/upgrade')}
                     className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary-hover transition-colors"
                   >
                     View Plans
@@ -290,6 +285,15 @@ export default function MyAccountPage() {
         {/* Membership Tiers */}
         {userStats && (
           <div id="membership-tiers">
+            <div className="flex justify-between items-center mb-8">
+              <h2 className="text-2xl font-bold text-gray-900">Membership Plans</h2>
+              <button
+                onClick={() => router.push('/upgrade')}
+                className="px-4 py-2 text-primary hover:text-primary-hover transition-colors"
+              >
+                View All Plans
+              </button>
+            </div>
             <MembershipTiers currentTier={userStats.membershipTier} />
           </div>
         )}

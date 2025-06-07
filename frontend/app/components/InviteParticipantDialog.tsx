@@ -21,14 +21,7 @@ export default function InviteParticipantDialog({
 
   const handleMembershipClick = () => {
     onClose();
-    router.push('/my-account');
-    // Add a small delay to ensure the page has loaded before scrolling
-    setTimeout(() => {
-      const membershipSection = document.querySelector('#membership-tiers');
-      if (membershipSection) {
-        membershipSection.scrollIntoView({ behavior: 'smooth' });
-      }
-    }, 100);
+    router.push('/upgrade?returnTo=' + encodeURIComponent(window.location.pathname));
   };
 
   return (

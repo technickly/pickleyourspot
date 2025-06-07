@@ -6,9 +6,10 @@ import { toast } from 'react-hot-toast';
 
 interface MembershipTierProps {
   currentTier: string;
+  showComparison?: boolean;
 }
 
-export default function MembershipTiers({ currentTier }: MembershipTierProps) {
+export default function MembershipTiers({ currentTier, showComparison = true }: MembershipTierProps) {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [selectedTier, setSelectedTier] = useState<string>('');
 
