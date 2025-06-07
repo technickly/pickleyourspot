@@ -1,37 +1,16 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import prisma from '@/lib/prisma';
-import { Prisma, User, Reservation, Court } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 
 interface CreateReservationBody {
   courtId: string;
-  name: string;
   startTime: string;
   endTime: string;
   description?: string | null;
   participantIds: string[];
   paymentRequired?: boolean;
   paymentInfo?: string | null;
-}
-
-interface ParticipantWithUser {
-  id: string;
-  hasPaid: boolean;
-  isGoing: boolean;
-  user: {
-    name: string | null;
-    email: string;
-    image: string | null;
-  };
-  userId: string;
-  reservationId: string;
-  updatedAt: Date;
-}
-
-interface CompleteReservation extends Omit<Reservation, 'participants'> {
-  court: Pick<Court, 'name' | 'description' | 'imageUrl'>;
-  owner: Pick<User, 'name' | 'email' | 'image'>;
-  participants: ParticipantWithUser[];
 }
 
 function formatReservationName(userName: string | null, startTime: Date, courtName: string): string {
@@ -51,13 +30,64 @@ function formatReservationName(userName: string | null, startTime: Date, courtNa
     day: 'numeric',
   }).format(startTime);
 
-  // Format the time
-  const time = new Intl.DateTimeFormat('en-US', {
-    hour: 'numeric',
-    hour12: true,
-  }).format(startTime);
-
   return `${formattedName} ${date} Reservation at ${courtName}`;
+}
+
+async function createParticipantStatus(userId: string, reservationId: string) {
+  return await (prisma as any).ParticipantStatus.create({
+    data: {
+      userId,
+      reservationId,
+      hasPaid: false,
+      isGoing: true,
+    },
+  });
+}
+
+async function findUserByEmail(email: string) {
+  return await prisma.user.findUnique({
+    where: { email },
+  });
+}
+
+async function findCourtById(id: string) {
+  return await prisma.court.findUnique({
+    where: { id },
+  });
+}
+
+async function createReservation(data: {
+  courtId: string;
+  ownerId: string;
+  name: string;
+  startTime: Date;
+  endTime: Date;
+  description?: string | null;
+  paymentRequired?: boolean;
+  paymentInfo?: string | null;
+}) {
+  return await prisma.reservation.create({
+    data: {
+      ...data,
+      court: { connect: { id: data.courtId } },
+      owner: { connect: { id: data.ownerId } },
+    },
+  });
+}
+
+async function findReservationWithRelations(id: string) {
+  return await (prisma as any).reservation.findUnique({
+    where: { id },
+    include: {
+      court: true,
+      owner: true,
+      participants: {
+        include: {
+          user: true,
+        },
+      },
+    },
+  });
 }
 
 export async function POST(request: Request) {
@@ -86,20 +116,13 @@ export async function POST(request: Request) {
     }
 
     // Find the user making the reservation
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-    });
-
+    const user = await findUserByEmail(session.user.email);
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    // Get the court details to include in the reservation name
-    const court = await prisma.court.findUnique({
-      where: { id: courtId },
-      select: { name: true },
-    });
-
+    // Get the court details
+    const court = await findCourtById(courtId);
     if (!court) {
       return NextResponse.json({ error: 'Court not found' }, { status: 404 });
     }
@@ -108,48 +131,29 @@ export async function POST(request: Request) {
     const reservationName = formatReservationName(user.name, new Date(startTime), court.name);
 
     // Create the reservation
-    const reservation = await prisma.reservation.create({
-      data: {
-        name: reservationName,
-        court: { connect: { id: courtId } },
-        startTime: new Date(startTime),
-        endTime: new Date(endTime),
-        owner: { connect: { id: user.id } },
-        description: description?.trim(),
-        paymentRequired: paymentRequired || false,
-        paymentInfo: paymentInfo?.trim(),
-      } as Prisma.ReservationCreateInput,
+    const reservation = await createReservation({
+      courtId,
+      ownerId: user.id,
+      name: reservationName,
+      startTime: new Date(startTime),
+      endTime: new Date(endTime),
+      description: description?.trim(),
+      paymentRequired: paymentRequired || false,
+      paymentInfo: paymentInfo?.trim(),
     });
 
     // Add participants if any
     if (participantIds.length > 0) {
-      // Create participant status entries for each participant
       for (const email of participantIds) {
-        await (prisma as any).participantStatus.create({
-          data: {
-            user: { connect: { email } },
-            reservation: { connect: { id: reservation.id } },
-            hasPaid: false,
-            isGoing: true,
-          },
-        });
+        const participant = await findUserByEmail(email);
+        if (participant) {
+          await createParticipantStatus(participant.id, reservation.id);
+        }
       }
     }
 
     // Fetch the complete reservation with all relations
-    const completeReservation = await prisma.reservation.findUnique({
-      where: { id: reservation.id },
-      include: {
-        court: true,
-        owner: true,
-        participants: {
-          include: {
-            user: true
-          }
-        }
-      }
-    }) as CompleteReservation;
-
+    const completeReservation = await findReservationWithRelations(reservation.id);
     if (!completeReservation) {
       return NextResponse.json(
         { error: 'Failed to fetch created reservation' },
@@ -159,7 +163,16 @@ export async function POST(request: Request) {
 
     // Transform the response to include only the fields we need
     const transformedReservation = {
-      ...completeReservation,
+      id: completeReservation.id,
+      name: completeReservation.name,
+      startTime: completeReservation.startTime,
+      endTime: completeReservation.endTime,
+      description: completeReservation.description,
+      paymentRequired: completeReservation.paymentRequired,
+      paymentInfo: completeReservation.paymentInfo,
+      shortUrl: completeReservation.shortUrl,
+      createdAt: completeReservation.createdAt,
+      updatedAt: completeReservation.updatedAt,
       court: {
         name: completeReservation.court.name,
         description: completeReservation.court.description,
