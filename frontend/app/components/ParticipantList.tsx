@@ -111,6 +111,12 @@ export default function ParticipantList({
         throw new Error('Invalid user ID');
       }
 
+      // Only allow status updates if user is the owner or updating their own status
+      const participant = participants.find(p => p.userId === userId);
+      if (!participant || (!isOwner && participant.email !== userEmail)) {
+        return;
+      }
+
       if (type === 'payment') {
         if (newValue && !isOwner && userEmail !== ownerEmail) {
           setPendingPaymentUpdate({ userId, newValue });
@@ -121,14 +127,10 @@ export default function ParticipantList({
           setShowUnpaidConfirmation(true);
           return;
         }
-      } else if (type === 'attendance' && userEmail) {
-        // Only show confirmation for the current user changing their own status
-        const participant = participants.find(p => p.email === userEmail);
-        if (participant && participant.userId === userId) {
-          setPendingAttendanceUpdate({ userId, newValue });
-          setShowAttendanceConfirmation(true);
-          return;
-        }
+      } else if (type === 'attendance') {
+        setPendingAttendanceUpdate({ userId, newValue });
+        setShowAttendanceConfirmation(true);
+        return;
       }
 
       await updateParticipantStatus(userId, type, newValue);
@@ -221,7 +223,7 @@ export default function ParticipantList({
   });
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h3 className="font-medium text-gray-700">Participants</h3>
         {isOwner && (
@@ -255,20 +257,19 @@ export default function ParticipantList({
         </div>
       )}
 
-      {sortedParticipants.length > 0 ? (
-        <div className="space-y-3">
-          {sortedParticipants.map((participant) => (
-            <div
-              key={participant.email}
-              className={`bg-white rounded-lg shadow-sm border p-4 transition-all ${
-                participant.email === ownerEmail
-                  ? 'border-indigo-200 bg-indigo-50'
-                  : 'border-gray-200 hover:border-gray-300'
-              }`}
-            >
-              <div className="flex flex-col gap-3">
+      {participants.length > 0 ? (
+        <div className="space-y-4">
+          {participants.map((participant) => {
+            const isCurrentUser = participant.email === userEmail;
+            const canModifyStatus = isOwner || isCurrentUser;
+
+            return (
+              <div
+                key={participant.email}
+                className="bg-white rounded-lg shadow-sm border p-4"
+              >
                 {/* Participant Info Section */}
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center space-x-3">
                     {participant.image && (
                       <Image
@@ -311,23 +312,32 @@ export default function ParticipantList({
                 {/* Status Buttons Section */}
                 <div className="flex items-center gap-3 pt-1">
                   {/* Going/Not Going Status */}
-                  {(isOwner || participant.email === userEmail) ? (
+                  {canModifyStatus ? (
                     <button
                       onClick={() => handleStatusUpdate(participant.userId, 'attendance', !participant.isGoing)}
-                      disabled={!isOwner && participant.email !== userEmail}
-                      className={`inline-flex items-center px-4 py-2 rounded-md text-sm font-medium transition-colors min-w-[120px] justify-center ${
+                      className={`inline-flex items-center px-4 py-2 rounded-md text-sm font-medium transition-colors min-w-[120px] justify-center relative group ${
                         participant.isGoing
                           ? 'bg-green-100 text-green-800 hover:bg-green-200'
                           : 'bg-red-100 text-red-800 hover:bg-red-200'
-                      } ${!isOwner && participant.email !== userEmail ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      }`}
                     >
                       {participant.isGoing ? (
                         <>
                           <span className="mr-1">✓</span> Going
+                          {isCurrentUser && (
+                            <span className="absolute -top-7 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                              Click to mark as not going
+                            </span>
+                          )}
                         </>
                       ) : (
                         <>
                           <span className="mr-1">✗</span> Not Going
+                          {isCurrentUser && (
+                            <span className="absolute -top-7 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                              Click to mark as going
+                            </span>
+                          )}
                         </>
                       )}
                     </button>
@@ -353,23 +363,32 @@ export default function ParticipantList({
 
                   {/* Payment Status */}
                   {paymentRequired && (
-                    (isOwner || participant.email === userEmail) ? (
+                    canModifyStatus ? (
                       <button
                         onClick={() => handleStatusUpdate(participant.userId, 'payment', !participant.hasPaid)}
-                        disabled={!isOwner && participant.email !== userEmail}
-                        className={`inline-flex items-center px-4 py-2 rounded-md text-sm font-medium transition-colors min-w-[120px] justify-center ${
+                        className={`inline-flex items-center px-4 py-2 rounded-md text-sm font-medium transition-colors min-w-[120px] justify-center relative group ${
                           participant.hasPaid
                             ? 'bg-green-100 text-green-800 hover:bg-green-200'
                             : 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
-                        } ${!isOwner && participant.email !== userEmail ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        }`}
                       >
                         {participant.hasPaid ? (
                           <>
                             <span className="mr-1">✓</span> Paid
+                            {isCurrentUser && (
+                              <span className="absolute -top-7 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                                Click to mark as unpaid
+                              </span>
+                            )}
                           </>
                         ) : (
                           <>
                             <span className="mr-1">$</span> Unpaid
+                            {isCurrentUser && (
+                              <span className="absolute -top-7 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                                Click to mark as paid
+                              </span>
+                            )}
                           </>
                         )}
                       </button>
@@ -394,9 +413,16 @@ export default function ParticipantList({
                     )
                   )}
                 </div>
+
+                {/* Add visual hint for current user */}
+                {isCurrentUser && (
+                  <div className="mt-2 text-sm text-gray-500 italic">
+                    You can click the buttons above to update your status
+                  </div>
+                )}
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       ) : (
         <p className="text-gray-500 text-center py-4">No participants yet</p>

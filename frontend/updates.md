@@ -116,6 +116,94 @@
 - Improved mobile responsiveness
 - Streamlined upgrade flow
 
+## Time Interval Selection and Extended Hours Update (March 2024)
+
+### Overview
+Enhanced the reservation system with flexible time slot selection and extended operating hours to better accommodate user needs and provide more booking options.
+
+### Key Features
+
+1. **Flexible Time Intervals**
+   - Added option to choose between 30-minute and 1-hour time slots
+   - Default interval set to 1 hour for convenience
+   - Real-time slot updates when changing intervals
+   - Maximum duration remains 3 hours total:
+     - Up to 6 slots for 30-minute intervals
+     - Up to 3 slots for 1-hour intervals
+
+2. **Extended Operating Hours**
+   - Extended closing time from 6 PM to 8 PM PT
+   - Added 4 additional bookable hours per day
+   - Operating hours now: 8 AM - 8 PM PT daily
+
+3. **User Interface Improvements**
+   - Added radio button selection for interval choice
+   - Dynamic slot display based on selected interval
+   - Clear visual feedback for selected time slots
+   - Updated time slot cards to show interval duration
+   - Mobile-responsive design for all screen sizes
+
+### Technical Implementation
+
+1. **Time Slots API**
+   ```typescript
+   // Added interval parameter support
+   const interval = url.searchParams.get('interval') || '60'; // Default to 60 minutes
+   const intervalMinutes = parseInt(interval);
+   
+   // Generate slots based on interval
+   while (currentSlot < endTimeUTC) {
+     const slotEndTime = addMinutes(currentSlot, intervalMinutes);
+     // ... slot generation logic
+   }
+   ```
+
+2. **Reservation UI**
+   - Added interval state management:
+     ```typescript
+     const [interval, setInterval] = useState<'30' | '60'>('60');
+     ```
+   - Dynamic maximum slot calculation:
+     ```typescript
+     const maxSlots = interval === '30' ? 6 : 3; // 6 half-hour slots or 3 one-hour slots
+     ```
+   - Updated time slot display:
+     ```typescript
+     interval === '30' ? '30 min' : '1 hour'
+     ```
+
+3. **Consistency Updates**
+   - Updated all reservation-related components
+   - Modified edit reservation page to support intervals
+   - Maintained consistent UI patterns across pages
+
+### User Experience
+
+1. **Interval Selection**
+   - Simple radio button interface
+   - Clear labeling (30 Minutes / 1 Hour)
+   - Immediate visual feedback
+   - Maintains selection during session
+
+2. **Time Slot Display**
+   - Clear duration indicators
+   - Visual distinction between intervals
+   - Selected slot highlighting
+   - Available/unavailable status
+
+3. **Mobile Optimization**
+   - Responsive grid layout
+   - Touch-friendly controls
+   - Clear visual hierarchy
+   - Optimized spacing for small screens
+
+### Benefits
+- More flexible scheduling options
+- Better accommodation of different activity durations
+- Extended availability for evening bookings
+- Improved user control over reservation timing
+- Clearer visual feedback for time management
+
 ## Coming Soon
 - Stripe payment integration
 - Advanced analytics dashboard
