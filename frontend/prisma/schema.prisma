@@ -55,6 +55,9 @@ model ParticipantStatus {
   updatedAt     DateTime    @updatedAt
   userId        String
   reservationId String
+  userEmail     String
+  userName      String?
+  userImage     String?
   user          User        @relation(fields: [userId], references: [id])
   reservation   Reservation @relation(fields: [reservationId], references: [id])
 

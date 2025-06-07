@@ -13,6 +13,41 @@ interface CreateReservationBody {
   paymentInfo?: string | null;
 }
 
+interface ParticipantStatusType {
+  id: string;
+  hasPaid: boolean;
+  isGoing: boolean;
+  userId: string;
+  reservationId: string;
+  userEmail: string;
+  userName: string | null;
+  userImage: string | null;
+}
+
+interface ReservationType {
+  id: string;
+  name: string;
+  startTime: Date;
+  endTime: Date;
+  description: string | null;
+  paymentRequired: boolean;
+  paymentInfo: string | null;
+  shortUrl: string;
+  createdAt: Date;
+  updatedAt: Date;
+  court: {
+    name: string;
+    description: string;
+    imageUrl: string;
+  };
+  owner: {
+    name: string | null;
+    email: string;
+    image: string | null;
+  };
+  participants: ParticipantStatusType[];
+}
+
 function formatReservationName(userName: string | null, startTime: Date, courtName: string): string {
   // Format the user's name (First Name + Last Initial)
   const formattedName = userName ? userName.split(' ').map((part, index, arr) => {
@@ -33,13 +68,16 @@ function formatReservationName(userName: string | null, startTime: Date, courtNa
   return `${formattedName} ${date} Reservation at ${courtName}`;
 }
 
-async function createParticipantStatus(userId: string, reservationId: string) {
+async function createParticipantStatus(userId: string, reservationId: string, userEmail: string, userName: string | null, userImage: string | null) {
   return await (prisma as any).ParticipantStatus.create({
     data: {
       userId,
       reservationId,
       hasPaid: false,
       isGoing: true,
+      userEmail,
+      userName,
+      userImage,
     },
   });
 }
@@ -57,37 +95,34 @@ async function findCourtById(id: string) {
 }
 
 async function createReservation(data: {
-  courtId: string;
-  ownerId: string;
   name: string;
   startTime: Date;
   endTime: Date;
   description?: string | null;
   paymentRequired?: boolean;
   paymentInfo?: string | null;
+  courtId: string;
+  ownerId: string;
 }) {
   return await prisma.reservation.create({
-    data: {
-      ...data,
-      court: { connect: { id: data.courtId } },
-      owner: { connect: { id: data.ownerId } },
+    data,
+    include: {
+      court: true,
+      owner: true,
+      participants: true,
     },
-  });
+  }) as unknown as ReservationType;
 }
 
 async function findReservationWithRelations(id: string) {
-  return await (prisma as any).reservation.findUnique({
+  return await prisma.reservation.findUnique({
     where: { id },
     include: {
       court: true,
       owner: true,
-      participants: {
-        include: {
-          user: true,
-        },
-      },
+      participants: true,
     },
-  });
+  }) as unknown as ReservationType | null;
 }
 
 export async function POST(request: Request) {
@@ -132,14 +167,14 @@ export async function POST(request: Request) {
 
     // Create the reservation
     const reservation = await createReservation({
-      courtId,
-      ownerId: user.id,
       name: reservationName,
       startTime: new Date(startTime),
       endTime: new Date(endTime),
       description: description?.trim(),
       paymentRequired: paymentRequired || false,
       paymentInfo: paymentInfo?.trim(),
+      courtId,
+      ownerId: user.id,
     });
 
     // Add participants if any
@@ -147,7 +182,13 @@ export async function POST(request: Request) {
       for (const email of participantIds) {
         const participant = await findUserByEmail(email);
         if (participant) {
-          await createParticipantStatus(participant.id, reservation.id);
+          await createParticipantStatus(
+            participant.id,
+            reservation.id,
+            participant.email,
+            participant.name,
+            participant.image
+          );
         }
       }
     }
@@ -188,9 +229,9 @@ export async function POST(request: Request) {
         hasPaid: participant.hasPaid,
         isGoing: participant.isGoing,
         user: {
-          name: participant.user.name,
-          email: participant.user.email,
-          image: participant.user.image,
+          name: participant.userName,
+          email: participant.userEmail,
+          image: participant.userImage,
         },
       })),
     };
