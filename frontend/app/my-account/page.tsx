@@ -7,6 +7,7 @@ import Image from 'next/image';
 import { format } from 'date-fns';
 import { FaCamera, FaEnvelope, FaDiscord } from 'react-icons/fa';
 import { toast } from 'react-hot-toast';
+import MembershipTiers from '@/app/components/MembershipTiers';
 
 interface UserStats {
   joinDate: string;
@@ -185,7 +186,7 @@ export default function MyAccountPage() {
         {/* Membership Status */}
         {userStats && (
           <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Membership Status</h2>
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Current Membership</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="bg-blue-50 rounded-lg p-4">
                 <p className="text-sm text-gray-600">Current Tier</p>
@@ -201,6 +202,11 @@ export default function MyAccountPage() {
               </div>
             </div>
           </div>
+        )}
+
+        {/* Membership Tiers */}
+        {userStats && (
+          <MembershipTiers currentTier={userStats.membershipTier} />
         )}
 
         {/* Reservation Statistics */}

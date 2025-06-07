@@ -2,54 +2,47 @@
 
 A modern court reservation system for pickleball enthusiasts.
 
-## Strategy & Membership Tiers
+## Membership Tiers
 
-Our platform offers different membership tiers to accommodate various user needs, from casual players to event organizers.
+Our platform offers three membership tiers to accommodate various user needs:
 
-### 🎾 Free Tier
-Perfect for casual players who want to join games and make occasional reservations.
+### 🎾 Free Tier (Current Default)
+Perfect for all players to get started with our platform.
 
 **Features:**
-- Up to 3 active reservations at a time
-- Join any public reservation as a participant
+- Create and join reservations
 - Basic participant management
 - Payment tracking for participants
-- Access to public courts
-- Standard support via platform
+- Access to all SF public courts
+- Standard support
+- Up to 3 active reservations
+- Basic court information
 
-**Limitations:**
-- Cannot create custom event types
-- No email notifications for payments
-- Basic court information only
+### 💫 Basic Tier - Coming Soon
+Designed for regular players and small group organizers.
 
-### 💫 Basic Tier - $9.99/month
-Designed for regular players and small group organizers who need more flexibility and features.
-
-**Features:**
-- Everything in Free tier, plus:
-- Up to 10 active reservations at a time
+**Future Features:**
+- Everything in Free tier
+- Up to 10 active reservations
 - Create custom events and tournaments
-- Enhanced court/location management
-  - Add detailed court descriptions
-  - Multiple location support
-  - Court amenity listings
-- Email reminders for participant payments
-- Priority support with 24-hour response time
-- Custom reservation descriptions and rules
-
-**Perfect for:**
-- Regular players
-- Small group organizers
-- Local tournament coordinators
-- Club managers
+- Enhanced court information
+- Email reminders for payments
+- Priority support
+- Custom reservation descriptions
 
 ### 🌟 Premium Tier - Coming Soon
-*We're crafting the perfect premium experience. Stay tuned for announcements about our premium features and pricing.*
+For advanced users and event organizers.
 
-### ⚙️ Admin Tier
-*Internal use only - For system administrators and developers*
+**Future Features:**
+- Everything in Basic tier
+- Unlimited active reservations
+- Advanced tournament tools
+- Premium analytics
+- Priority court access
+- VIP support
+- Custom branding options
 
-This tier is not publicly available and is reserved for platform maintainers and authorized system administrators.
+**Note:** All accounts are currently on the Free tier. Basic and Premium features will be available in future updates.
 
 ## Why Choose Pickle Your Spot?
 
@@ -63,7 +56,7 @@ This tier is not publicly available and is reserved for platform maintainers and
 - Flexible reservation management
 - Participant tracking
 - Payment oversight
-- Custom event creation (Basic tier+)
+- Future: Custom event creation
 
 ### For Facilities
 - Court utilization optimization

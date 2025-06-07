@@ -21,7 +21,7 @@ export default function HomePage() {
             <span className="block text-primary mt-2">in San Francisco</span>
           </h1>
           <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-            Track your court reservations, coordinate with friends for events or tournaments, and manage game details and split payments - all in one collaborative space!
+            Effortlessly manage court time, organize tournaments, and coordinate with friends. From reservations to payment tracking, we've got your pickleball plans covered.
           </p>
           {status === 'loading' ? (
             <div className="animate-pulse">Loading...</div>

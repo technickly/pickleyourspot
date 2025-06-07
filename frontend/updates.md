@@ -1,5 +1,42 @@
 # Recent Updates to Pickleball Court Reservation System
 
+## UI and Landing Page Improvements (Latest)
+
+### Landing Page Updates
+- Updated main description text to be more concise and impactful:
+  - New text: "Effortlessly manage court time, organize tournaments, and coordinate with friends. From reservations to payment tracking, we've got your pickleball plans covered."
+  - Emphasizes key features: coordination, management, tournaments, and payments
+  - More engaging and action-oriented tone
+  - Better highlights the platform's comprehensive nature
+
+### Membership System Simplification
+- Streamlined membership tiers:
+  - Removed Bronze tier references
+  - Simplified to three tiers: Free, Basic, Premium
+  - Set all current and new users to Free tier by default
+- Updated tier documentation:
+  - Marked Basic and Premium as "Coming Soon"
+  - Clarified Free tier as current default
+  - Removed specific pricing information
+  - Updated feature lists for each tier
+
+### Color Scheme Update
+- Changed primary color scheme from purple to blue
+  - Primary: #2563EB (vibrant blue)
+  - Primary Hover: #1D4ED8 (darker blue)
+- Applied to:
+  - All primary buttons
+  - Interactive elements
+  - Text accents
+  - Links and CTAs
+
+### Button Styling Consistency
+- Unified "My Reservations" button styling with "New Reservation"
+  - Both now use primary blue color scheme
+  - Consistent hover effects
+  - Matching shadow and transition effects
+- Enhanced visual hierarchy in navigation
+
 ## Payment Requirements Feature
 
 ### Database Changes
@@ -533,3 +570,45 @@ The join process is handled by a dedicated API endpoint that:
   - The user is already a participant
   - The user is the owner
   - There are network issues 
+
+## Membership System Enhancement (Latest)
+
+### Membership Tiers Implementation
+- Added comprehensive membership tier display:
+  - Free Tier ($0/month)
+  - Basic Tier ($9.99/month)
+  - Premium Tier ($24.99/month)
+- Created interactive pricing cards with:
+  - Feature lists for each tier
+  - Upgrade buttons with future Stripe integration
+  - Visual indicators for current plan
+  - Hover effects and modern styling
+- Updated membership status display in My Account page
+- Added placeholder for future payment integration
+
+### Tier Features
+- Free Tier:
+  - Up to 3 active reservations
+  - Basic participant management
+  - Payment tracking
+  - Access to SF public courts
+- Basic Tier ($9.99/month):
+  - Everything in Free tier
+  - Up to 10 active reservations
+  - Custom events & tournaments
+  - Email payment reminders
+  - Priority support
+- Premium Tier ($24.99/month):
+  - Everything in Basic tier
+  - Unlimited reservations
+  - Advanced tournament tools
+  - Premium analytics
+  - VIP support
+  - Custom branding options
+
+### Technical Implementation
+- Created new MembershipTiers component
+- Integrated with existing user stats
+- Added placeholder for Stripe payment integration
+- Updated tier status display in user profile
+- Implemented responsive design for all screen sizes 
