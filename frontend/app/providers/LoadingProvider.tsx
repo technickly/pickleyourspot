@@ -1,3 +1,5 @@
+'use client';
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 import LoadingScreen from '../components/LoadingScreen';
