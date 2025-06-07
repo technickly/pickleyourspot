@@ -23,10 +23,16 @@ export default function LoadingProvider({ children }: { children: React.ReactNod
 
   // Show loading screen on route changes, except for specific pages
   useEffect(() => {
-    // Skip loading screen for messages and reservations pages
-    if (pathname?.includes('/messages') || 
-        pathname?.includes('/reservations') ||
-        pathname?.includes('/my-reservations')) {
+    // Skip loading for any pages that have real-time updates
+    const skipLoadingPaths = [
+      '/messages',
+      '/reservations',
+      '/my-reservations',
+      '/r/', // Short URLs for reservations
+    ];
+
+    // Check if current path matches any of the skip paths
+    if (skipLoadingPaths.some(path => pathname?.includes(path))) {
       return;
     }
 

@@ -107,6 +107,14 @@ export default function UpgradePage() {
           </div>
         </div>
 
+        {/* Membership Tiers Pricing */}
+        <div id="plans" className="mb-12">
+          <MembershipTiers 
+            currentTier={(session?.user as any)?.role || 'FREE'} 
+            showComparison={false}
+          />
+        </div>
+
         {/* Feature Comparison */}
         <div className="bg-white rounded-xl shadow-lg p-8 mb-12">
           <h2 className="text-2xl font-semibold text-gray-900 mb-6 text-center">
@@ -150,14 +158,6 @@ export default function UpgradePage() {
               ))}
             </div>
           </div>
-        </div>
-
-        {/* Membership Tiers Pricing */}
-        <div id="plans">
-          <MembershipTiers 
-            currentTier={(session?.user as any)?.role || 'FREE'} 
-            showComparison={false}
-          />
         </div>
 
         {/* FAQ Section */}
