@@ -387,6 +387,43 @@ export default function ReservationPage({ params }: PageProps) {
                 )}
               </button>
             </div>
+
+            {/* Message Preview */}
+            {!isMessagesActive && messages.length > 0 && (
+              <div className="bg-gray-50 rounded-lg p-4 mb-4 cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => setIsMessagesActive(true)}>
+                <div className="space-y-2">
+                  {messages.slice(-3).map((message) => (
+                    <div key={message.id} className="flex items-start gap-2">
+                      <div className="flex-shrink-0">
+                        <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+                          <span className="text-blue-600 text-sm font-medium">
+                            {message.user.name ? message.user.name[0].toUpperCase() : message.user.email[0].toUpperCase()}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900">
+                          {message.user.name || message.user.email.split('@')[0]}
+                        </p>
+                        <p className="text-sm text-gray-500 truncate">
+                          {message.content}
+                        </p>
+                      </div>
+                      <div className="flex-shrink-0">
+                        <p className="text-xs text-gray-400">
+                          {format(new Date(message.createdAt), 'h:mm a')}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-2 text-center">
+                  <span className="text-sm text-blue-500 font-medium">Click to view all messages</span>
+                </div>
+              </div>
+            )}
+
+            {/* Full Messages Section */}
             {isMessagesActive && (
               <div className="bg-white rounded-lg border shadow-sm">
                 <MessageSystem 
