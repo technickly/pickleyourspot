@@ -80,9 +80,22 @@ async function createParticipantStatus(userId: string, reservationId: string, us
 }
 
 async function findUserByEmail(email: string) {
-  return await prisma.user.findUnique({
+  // Try to find the user first
+  let user = await prisma.user.findUnique({
     where: { email },
   });
+
+  // If user doesn't exist, create them
+  if (!user) {
+    user = await prisma.user.create({
+      data: {
+        email,
+        name: email.split('@')[0], // Use the part before @ as a default name
+      },
+    });
+  }
+
+  return user;
 }
 
 async function findCourtById(id: string) {

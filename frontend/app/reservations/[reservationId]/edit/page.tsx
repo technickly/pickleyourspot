@@ -284,7 +284,7 @@ export default function EditReservationPage({ params }: PageProps) {
                     onClick={() => handleTimeSlotSelect(slot)}
                     disabled={!slot.isAvailable && !isSelected}
                     className={`
-                      p-3 rounded-lg text-sm transition-all
+                      p-3 rounded-lg text-sm transition-all relative
                       ${
                         isSelected
                           ? 'bg-blue-500 text-white shadow-md'
@@ -301,7 +301,7 @@ export default function EditReservationPage({ params }: PageProps) {
                       {slot.isAvailable || isSelected
                         ? isSelected
                           ? 'Selected'
-                          : '1 hour'
+                          : 'Pick Your Slot'
                         : 'Booked'}
                     </div>
                   </button>

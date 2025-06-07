@@ -94,6 +94,31 @@ export default function NavigationBar() {
                     My Reservations
                   </Link>
                 )}
+
+                {!isCurrentPath('/my-account') && (
+                  <Link
+                    href="/my-account"
+                    className="button-primary"
+                  >
+                    My Account
+                  </Link>
+                )}
+
+                {session ? (
+                  <button
+                    onClick={() => signOut()}
+                    className="button-secondary"
+                  >
+                    Sign Out
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => signIn('google')}
+                    className="button-primary"
+                  >
+                    Sign In
+                  </button>
+                )}
               </div>
 
               <div className="user-info">
@@ -109,12 +134,6 @@ export default function NavigationBar() {
                 <span className="user-name hidden sm:inline">
                   {session.user?.name?.split(' ')[0] || 'Guest'}
                 </span>
-                <button
-                  onClick={() => signOut()}
-                  className="text-sm text-red-600 hover:text-red-700 transition-colors"
-                >
-                  Logout
-                </button>
               </div>
             </>
           ) : status === 'loading' ? (
@@ -165,6 +184,15 @@ export default function NavigationBar() {
                 </Link>
               )}
 
+              {!isCurrentPath('/my-account') && (
+                <Link
+                  href="/my-account"
+                  className="button-primary"
+                >
+                  My Account
+                </Link>
+              )}
+
               <div className="flex items-center justify-between pt-2 mt-2 border-t border-gray-200">
                 <div className="flex items-center gap-2">
                   {session.user?.image && (
@@ -180,12 +208,21 @@ export default function NavigationBar() {
                     {session.user?.name?.split(' ')[0] || 'Guest'}
                   </span>
                 </div>
-                <button
-                  onClick={() => signOut()}
-                  className="text-sm text-red-600 hover:text-red-700 transition-colors"
-                >
-                  Logout
-                </button>
+                {session ? (
+                  <button
+                    onClick={() => signOut()}
+                    className="text-sm text-red-600 hover:text-red-700 transition-colors"
+                  >
+                    Sign Out
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => signIn('google')}
+                    className="text-sm text-red-600 hover:text-red-700 transition-colors"
+                  >
+                    Sign In
+                  </button>
+                )}
               </div>
             </div>
           </div>

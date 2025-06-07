@@ -30,16 +30,18 @@ export async function POST(
 
     const { email } = await request.json();
 
-    // Find the user by email first
-    const userToAdd = await prisma.user.findUnique({
+    // Find or create the user
+    let userToAdd = await prisma.user.findUnique({
       where: { email }
     });
 
     if (!userToAdd) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      );
+      userToAdd = await prisma.user.create({
+        data: {
+          email,
+          name: email.split('@')[0], // Use the part before @ as a default name
+        },
+      });
     }
 
     // Verify the user is the owner of the reservation

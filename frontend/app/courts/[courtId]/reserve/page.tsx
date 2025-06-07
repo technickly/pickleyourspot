@@ -255,12 +255,12 @@ export default function ReservePage({ params }: PageProps) {
                     onClick={() => handleTimeSlotSelect(slot)}
                     disabled={!slot.isAvailable}
                     className={`
-                      p-2 rounded text-sm
+                      p-3 rounded-lg text-sm transition-all relative
                       ${
                         isSelected
-                          ? 'bg-blue-500 text-white'
+                          ? 'bg-blue-500 text-white shadow-md'
                           : slot.isAvailable
-                          ? 'bg-white border border-gray-200 hover:border-blue-500'
+                          ? 'bg-white border-2 border-gray-200 hover:border-blue-500 hover:shadow'
                           : 'bg-gray-100 text-gray-400 cursor-not-allowed'
                       }
                     `}
@@ -272,7 +272,9 @@ export default function ReservePage({ params }: PageProps) {
                       {slot.isAvailable
                         ? isSelected
                           ? 'Selected'
-                          : '1 hour'
+                          : slot.isAvailable 
+                            ? 'Pick Your Slot'
+                            : '1 hour'
                         : 'Booked'}
                     </div>
                   </button>
