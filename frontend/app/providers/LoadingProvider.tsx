@@ -21,10 +21,17 @@ export default function LoadingProvider({ children }: { children: React.ReactNod
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  // Show loading screen on route changes
+  // Show loading screen on route changes, except for specific pages
   useEffect(() => {
+    // Skip loading screen for messages and reservations pages
+    if (pathname?.includes('/messages') || 
+        pathname?.includes('/reservations') ||
+        pathname?.includes('/my-reservations')) {
+      return;
+    }
+
     setIsLoading(true);
-    const timer = setTimeout(() => setIsLoading(false), 500); // Minimum loading time
+    const timer = setTimeout(() => setIsLoading(false), 500);
     return () => clearTimeout(timer);
   }, [pathname, searchParams]);
 

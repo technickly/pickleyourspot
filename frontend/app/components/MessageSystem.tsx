@@ -6,7 +6,6 @@ import { format } from 'date-fns';
 import { IoSend } from 'react-icons/io5';
 import { FiMessageSquare } from 'react-icons/fi';
 import { toast } from 'react-hot-toast';
-import { IconType } from 'react-icons';
 
 interface Message {
   id: string;
@@ -42,7 +41,6 @@ function generateUserColor(email: string) {
     hash = hash & hash;
   }
   
-  // Make sure hash is positive and map it to the colors array
   const index = Math.abs(hash) % colors.length;
   return colors[index];
 }
@@ -51,13 +49,11 @@ export default function MessageSystem({ reservationId, initialMessages }: Messag
   const { data: session } = useSession();
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [newMessage, setNewMessage] = useState('');
-  const [isExpanded, setIsExpanded] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Auto-resize textarea
+  // Auto-resize textarea when typing
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
@@ -65,17 +61,12 @@ export default function MessageSystem({ reservationId, initialMessages }: Messag
     }
   }, [newMessage]);
 
-  // Scroll to bottom only when new messages arrive and the chat is expanded
+  // Scroll to bottom when typing starts
   useEffect(() => {
-    if (isExpanded && messages.length > 0) {
+    if (isTyping) {
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
-    // Update unread count when messages change and chat is collapsed
-    if (!isExpanded) {
-      const newMessages = messages.length - initialMessages.length;
-      setUnreadCount(newMessages > 0 ? newMessages : 0);
-    }
-  }, [messages, isExpanded, initialMessages.length]);
+  }, [isTyping]);
 
   // Poll for new messages
   useEffect(() => {
@@ -84,7 +75,9 @@ export default function MessageSystem({ reservationId, initialMessages }: Messag
         const response = await fetch(`/api/reservations/${reservationId}/messages`);
         if (!response.ok) throw new Error('Failed to fetch messages');
         const data = await response.json();
-        setMessages(data);
+        if (JSON.stringify(data) !== JSON.stringify(messages)) {
+          setMessages(data);
+        }
       } catch (error) {
         console.error('Failed to fetch messages:', error);
       }
@@ -92,7 +85,7 @@ export default function MessageSystem({ reservationId, initialMessages }: Messag
 
     const interval = setInterval(fetchMessages, 5000);
     return () => clearInterval(interval);
-  }, [reservationId]);
+  }, [reservationId, messages]);
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -123,141 +116,87 @@ export default function MessageSystem({ reservationId, initialMessages }: Messag
     }
   };
 
-  const getMessagePreview = () => {
-    if (messages.length === 0) return 'No messages yet';
-    const lastMessage = messages[messages.length - 1];
-    const sender = lastMessage.user.name || lastMessage.user.email;
-    const preview = lastMessage.content.length > 30 
-      ? `${lastMessage.content.substring(0, 30)}...` 
-      : lastMessage.content;
-    return `${sender}: ${preview}`;
-  };
-
-  const toggleExpanded = () => {
-    setIsExpanded(!isExpanded);
-    if (!isExpanded) {
-      setUnreadCount(0);
-    }
-  };
-
   return (
-    <div 
-      className={`fixed bottom-0 right-4 w-full max-w-md z-50 transition-all duration-300 ${
-        isExpanded ? 'h-[600px]' : 'h-auto'
-      }`}
-    >
-      {/* Header */}
-      <div 
-        className={`bg-white rounded-t-lg border shadow-sm cursor-pointer ${
-          isExpanded ? 'border-b-0' : ''
-        }`}
-        onClick={toggleExpanded}
-      >
-        <div className="p-4 flex items-center justify-between hover:bg-gray-50 transition-colors">
-          <div className="flex items-center gap-3">
-            <FiMessageSquare className="text-blue-500 text-xl" />
-            <div>
-              <h3 className="font-medium text-gray-900">Messages</h3>
-              {!isExpanded && (
-                <p className="text-sm text-gray-500 mt-1">{getMessagePreview()}</p>
-              )}
-            </div>
+    <div className="bg-white rounded-lg shadow-lg border h-[500px] flex flex-col">
+      {/* Messages Area - Always visible */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {messages.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-full text-gray-500">
+            <FiMessageSquare className="text-4xl mb-2" />
+            <p>No messages yet</p>
+            <p className="text-sm">Click below to start the conversation!</p>
           </div>
-          <div className="flex items-center gap-2">
-            {unreadCount > 0 && !isExpanded && (
-              <span className="bg-blue-500 text-white text-xs font-medium px-2.5 py-0.5 rounded-full">
-                {unreadCount}
-              </span>
-            )}
-            <svg 
-              className={`w-5 h-5 text-gray-500 transition-transform ${isExpanded ? 'rotate-180' : ''}`} 
-              fill="none" 
-              viewBox="0 0 24 24" 
-              stroke="currentColor"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
-          </div>
-        </div>
+        ) : (
+          messages.map((message) => {
+            const isCurrentUser = message.user.email === session?.user?.email;
+            const messageColor = isCurrentUser ? 'bg-blue-500' : generateUserColor(message.user.email);
+            
+            return (
+              <div
+                key={message.id}
+                className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'}`}
+              >
+                <div className="max-w-[75%] flex flex-col">
+                  <div className={`rounded-lg px-4 py-2 ${messageColor} text-white break-words`}>
+                    {!isCurrentUser && (
+                      <p className="text-xs font-medium mb-1">
+                        {message.user.name || message.user.email}
+                      </p>
+                    )}
+                    <p>{message.content}</p>
+                  </div>
+                  <span className="text-xs text-gray-500 mt-1">
+                    {format(new Date(message.createdAt), 'MMM d, h:mm a')}
+                  </span>
+                </div>
+              </div>
+            );
+          })
+        )}
+        <div ref={messagesEndRef} />
       </div>
 
-      {/* Messages Area */}
-      {isExpanded && (
-        <div className="bg-white border-x border-b shadow-sm rounded-b-lg flex flex-col h-[calc(100%-4rem)]">
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {messages.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full text-gray-500">
-                <FiMessageSquare className="text-4xl mb-2" />
-                <p>No messages yet</p>
-                <p className="text-sm">Start the conversation!</p>
-              </div>
-            ) : (
-              messages.map((message) => {
-                const isCurrentUser = message.user.email === session?.user?.email;
-                const messageColor = isCurrentUser ? 'bg-blue-500' : generateUserColor(message.user.email);
-                
-                return (
-                  <div
-                    key={message.id}
-                    className={`flex flex-col ${
-                      isCurrentUser ? 'items-end' : 'items-start'
-                    }`}
-                  >
-                    <div
-                      className={`max-w-[80%] rounded-lg p-3 ${messageColor} ${
-                        isCurrentUser ? 'text-white' : 'text-white'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-sm font-medium">
-                          {message.user.name || message.user.email}
-                        </span>
-                        <span className="text-xs opacity-75">
-                          {format(new Date(message.createdAt), 'h:mm a')}
-                        </span>
-                      </div>
-                      <p className="break-words whitespace-pre-wrap">{message.content}</p>
-                    </div>
-                  </div>
-                );
-              })
-            )}
-            <div ref={messagesEndRef} />
-          </div>
-
-          {/* Input Area */}
-          <form 
-            onSubmit={handleSendMessage}
-            className="border-t p-4 bg-white"
-          >
-            <div className="relative">
-              <textarea
-                ref={textareaRef}
-                value={newMessage}
-                onChange={(e) => {
-                  setNewMessage(e.target.value);
-                  setIsTyping(e.target.value.length > 0);
-                }}
-                onKeyDown={handleKeyPress}
-                placeholder="Type a message.."
-                className="w-full p-3 pr-12 border rounded-lg resize-none max-h-32 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                rows={1}
-              />
+      {/* Input Area - Click to expand */}
+      <div className="border-t p-4">
+        {isTyping ? (
+          <form onSubmit={handleSendMessage} className="flex flex-col gap-2">
+            <textarea
+              ref={textareaRef}
+              value={newMessage}
+              onChange={(e) => setNewMessage(e.target.value)}
+              onKeyDown={handleKeyPress}
+              placeholder="Type your message..."
+              className="w-full p-2 border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+              rows={1}
+            />
+            <div className="flex justify-between items-center">
+              <button
+                type="button"
+                onClick={() => setIsTyping(false)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                Cancel
+              </button>
               <button
                 type="submit"
+                className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 flex items-center gap-2"
                 disabled={!newMessage.trim()}
-                className={`absolute right-2 bottom-2 p-2 rounded-full transition-all ${
-                  isTyping
-                    ? 'bg-blue-500 text-white'
-                    : 'bg-gray-100 text-gray-400'
-                }`}
               >
-                <IoSend className={`text-lg ${isTyping ? 'scale-100' : 'scale-90'}`} />
+                <span>Send</span>
+                <IoSend />
               </button>
             </div>
           </form>
-        </div>
-      )}
+        ) : (
+          <button
+            onClick={() => setIsTyping(true)}
+            className="w-full py-2 text-gray-500 hover:text-gray-700 flex items-center justify-center gap-2 border rounded-lg hover:bg-gray-50"
+          >
+            <FiMessageSquare />
+            <span>Click to type a message</span>
+          </button>
+        )}
+      </div>
     </div>
   );
 } 

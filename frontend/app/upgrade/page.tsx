@@ -86,6 +86,27 @@ export default function UpgradePage() {
           </p>
         </div>
 
+        {/* Membership Tiers Description */}
+        <div className="mb-12">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {/* Free Tier Description */}
+            <div className="bg-white rounded-lg p-6 shadow-md">
+              <h3 className="text-lg font-semibold mb-2">Free</h3>
+              <p className="text-gray-600">Perfect for active pickleballers who want to stay connected with their community and participate in events.</p>
+            </div>
+            {/* Basic Tier Description */}
+            <div className="bg-white rounded-lg p-6 shadow-md">
+              <h3 className="text-lg font-semibold mb-2">Basic</h3>
+              <p className="text-gray-600">Ideal for regular players who organize games and want better tools to coordinate with their pickleball groups.</p>
+            </div>
+            {/* Supr Tier Description */}
+            <div className="bg-white rounded-lg p-6 shadow-md">
+              <h3 className="text-lg font-semibold mb-2">Supr</h3>
+              <p className="text-gray-600">Built for tournament organizers and community leaders who run larger events and need advanced management tools.</p>
+            </div>
+          </div>
+        </div>
+
         {/* Feature Comparison */}
         <div className="bg-white rounded-xl shadow-lg p-8 mb-12">
           <h2 className="text-2xl font-semibold text-gray-900 mb-6 text-center">
@@ -131,27 +152,8 @@ export default function UpgradePage() {
           </div>
         </div>
 
-        {/* Membership Tiers */}
+        {/* Membership Tiers Pricing */}
         <div id="plans">
-          <div className="text-center mb-12">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {/* Free Tier Description */}
-              <div className="bg-white rounded-lg p-6 shadow-md">
-                <h3 className="text-lg font-semibold mb-2">Free</h3>
-                <p className="text-gray-600">Perfect for active pickleballers who want to stay connected with their community and participate in events.</p>
-              </div>
-              {/* Basic Tier Description */}
-              <div className="bg-white rounded-lg p-6 shadow-md">
-                <h3 className="text-lg font-semibold mb-2">Basic</h3>
-                <p className="text-gray-600">Ideal for regular players who organize games and want better tools to coordinate with their pickleball groups.</p>
-              </div>
-              {/* Supr Tier Description */}
-              <div className="bg-white rounded-lg p-6 shadow-md">
-                <h3 className="text-lg font-semibold mb-2">Supr</h3>
-                <p className="text-gray-600">Built for tournament organizers and community leaders who run larger events and need advanced management tools.</p>
-              </div>
-            </div>
-          </div>
           <MembershipTiers 
             currentTier={(session?.user as any)?.role || 'FREE'} 
             showComparison={false}
