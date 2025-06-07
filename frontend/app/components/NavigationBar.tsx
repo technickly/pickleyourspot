@@ -113,6 +113,14 @@ export default function NavigationBar() {
         <div className="hidden md:flex items-center gap-4">
           {status === 'authenticated' ? (
             <>
+              {!isCurrentPath('/') && (
+                <Link
+                  href="/"
+                  className="button-primary"
+                >
+                  Home
+                </Link>
+              )}
               {!isCurrentPath('/my-account') && (
                 <Link
                   href="/my-account"
@@ -155,6 +163,14 @@ export default function NavigationBar() {
             onClick={closeMenu}
           >
             <div className="flex flex-col gap-2">
+              {!isCurrentPath('/') && (
+                <Link
+                  href="/"
+                  className="button-primary"
+                >
+                  Home
+                </Link>
+              )}
               {!isCurrentPath('/my-account') && (
                 <Link
                   href="/my-account"
