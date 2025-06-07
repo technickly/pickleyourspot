@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { format, differenceInDays } from 'date-fns';
 import { toast } from 'react-hot-toast';
 import ReservationActions from '@/app/components/ReservationActions';
+import StatusConfirmationDialog from '@/app/components/StatusConfirmationDialog';
 import Link from 'next/link';
 
 interface Participant {
@@ -42,6 +43,13 @@ export default function MyReservationsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [reservationToDelete, setReservationToDelete] = useState<string | null>(null);
+  const [showStatusConfirm, setShowStatusConfirm] = useState(false);
+  const [pendingStatusUpdate, setPendingStatusUpdate] = useState<{
+    reservationId: string;
+    userId: string;
+    type: 'payment' | 'attendance';
+    newValue: boolean;
+  } | null>(null);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -98,8 +106,54 @@ export default function MyReservationsPage() {
     type: 'payment' | 'attendance' | 'delete',
     newValue: boolean
   ) => {
+    if (type === 'delete') {
+      handleDeleteClick(reservationId);
+      return;
+    }
+
+    // Only show confirmation for the current user changing their own status
+    const reservation = reservations.find(r => r.id === reservationId);
+    const participant = reservation?.participants.find(p => p.userId === userId);
+    
+    if (participant?.email === session?.user?.email) {
+      setPendingStatusUpdate({ reservationId, userId, type, newValue });
+      setShowStatusConfirm(true);
+      return;
+    }
+
+    // For other cases (owner updating others' status), proceed without confirmation
+    await updateParticipantStatus(reservationId, userId, type, newValue);
+  };
+
+  const updateParticipantStatus = async (
+    reservationId: string,
+    userId: string,
+    type: 'payment' | 'attendance',
+    newValue: boolean
+  ) => {
     try {
-      // Make API call first
+      // Update local state immediately for real-time feedback
+      setReservations(prevReservations => 
+        prevReservations.map(reservation => {
+          if (reservation.id === reservationId) {
+            return {
+              ...reservation,
+              participants: reservation.participants.map(participant => {
+                if (participant.userId === userId) {
+                  return {
+                    ...participant,
+                    [type === 'payment' ? 'hasPaid' : 'isGoing']: newValue
+                  };
+                }
+                return participant;
+              })
+            };
+          }
+          return reservation;
+        })
+      );
+
+      // Make API call
       const response = await fetch(`/api/reservations/${reservationId}/participant-status`, {
         method: 'PUT',
         headers: {
@@ -118,14 +172,11 @@ export default function MyReservationsPage() {
 
       // Show success message
       toast.success(`${type === 'payment' ? 'Payment' : 'Attendance'} status updated`);
-      
-      // Refresh the page data
-      await fetchData();
 
     } catch (error) {
-      toast.error(`Failed to update ${type} status`);
-      // Refresh data to ensure we're showing the correct state
+      // Revert the local state change if the API call failed
       await fetchData();
+      toast.error(`Failed to update ${type} status`);
     }
   };
 
@@ -179,7 +230,18 @@ export default function MyReservationsPage() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-6">My Reservations</h1>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">My Reservations</h1>
+        <Link
+          href="/courts"
+          className="button-primary flex items-center gap-2"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
+          </svg>
+          Make New Reservation
+        </Link>
+      </div>
 
       <div className="grid gap-4">
         {reservations.map((reservation) => (
@@ -396,6 +458,31 @@ export default function MyReservationsPage() {
           </div>
         )}
       </div>
+
+      {/* Status Confirmation Dialog */}
+      {pendingStatusUpdate && (
+        <StatusConfirmationDialog
+          isOpen={showStatusConfirm}
+          onClose={() => {
+            setShowStatusConfirm(false);
+            setPendingStatusUpdate(null);
+          }}
+          onConfirm={async () => {
+            if (pendingStatusUpdate) {
+              await updateParticipantStatus(
+                pendingStatusUpdate.reservationId,
+                pendingStatusUpdate.userId,
+                pendingStatusUpdate.type,
+                pendingStatusUpdate.newValue
+              );
+            }
+            setShowStatusConfirm(false);
+            setPendingStatusUpdate(null);
+          }}
+          type={pendingStatusUpdate.type}
+          newStatus={pendingStatusUpdate.newValue}
+        />
+      )}
 
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
