@@ -39,13 +39,19 @@ export default function LoadingProvider({ children }: { children: React.ReactNod
       (pathname?.startsWith(path) && path !== '/') // Subpath match, but not for root
     );
 
-    if (!shouldShowLoading) {
+    if (!shouldShowLoading || pathname?.includes('/reservations/')) {
+      setIsLoading(false);
       return;
     }
 
-    setIsLoading(true);
-    const timer = setTimeout(() => setIsLoading(false), 500);
-    return () => clearTimeout(timer);
+    // Add debounce to prevent flickering
+    const timer = setTimeout(() => setIsLoading(true), 100);
+    const hideTimer = setTimeout(() => setIsLoading(false), 600);
+    
+    return () => {
+      clearTimeout(timer);
+      clearTimeout(hideTimer);
+    };
   }, [pathname]);
 
   return (

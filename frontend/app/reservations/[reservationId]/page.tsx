@@ -305,77 +305,99 @@ export default function ReservationPage({ params }: PageProps) {
             </div>
           </header>
 
-          <div className="grid md:grid-cols-2 gap-8">
-            <div>
-              <h2 className="text-xl font-semibold mb-4">Reservation Details</h2>
-              <div className="bg-white rounded-lg border p-6 space-y-4">
+          <div>
+            <h2 className="text-xl font-semibold mb-4">Reservation Details</h2>
+            <div className="bg-white rounded-lg border p-6 space-y-4">
+              <div>
+                <h3 className="font-medium text-gray-700">Date & Time (PT)</h3>
+                <p>
+                  {formatInTimeZone(new Date(reservation.startTime), timeZone, 'EEEE, MMMM d, yyyy')}
+                  <br />
+                  {formatInTimeZone(new Date(reservation.startTime), timeZone, 'h:mm a')} -{' '}
+                  {formatInTimeZone(new Date(reservation.endTime), timeZone, 'h:mm a')}
+                </p>
+              </div>
+
+              <div>
+                <h3 className="font-medium text-gray-700">Owner</h3>
+                <p>{reservation.owner.name || reservation.owner.email}</p>
+              </div>
+
+              {reservation.description && (
                 <div>
-                  <h3 className="font-medium text-gray-700">Date & Time (PT)</h3>
-                  <p>
-                    {formatInTimeZone(new Date(reservation.startTime), timeZone, 'EEEE, MMMM d, yyyy')}
-                    <br />
-                    {formatInTimeZone(new Date(reservation.startTime), timeZone, 'h:mm a')} -{' '}
-                    {formatInTimeZone(new Date(reservation.endTime), timeZone, 'h:mm a')}
-                  </p>
+                  <h3 className="font-medium text-gray-700">Court Description:</h3>
+                  <p className="text-gray-600 whitespace-pre-wrap mt-2 bg-gray-50 p-3 rounded-lg">{reservation.description}</p>
                 </div>
+              )}
 
+              {reservation.paymentRequired && (
                 <div>
-                  <h3 className="font-medium text-gray-700">Owner</h3>
-                  <p>{reservation.owner.name || reservation.owner.email}</p>
-                </div>
-
-                {reservation.description && (
-                  <div>
-                    <h3 className="font-medium text-gray-700">Court Description:</h3>
-                    <p className="text-gray-600 whitespace-pre-wrap mt-2 bg-gray-50 p-3 rounded-lg">{reservation.description}</p>
-                  </div>
-                )}
-
-                {reservation.paymentRequired && (
-                  <div>
-                    <h3 className="font-medium text-gray-700">Payment Information</h3>
-                    <div className="mt-2 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
-                      <p className="text-gray-800 whitespace-pre-wrap">{reservation.paymentInfo}</p>
-                    </div>
-                  </div>
-                )}
-
-                <div>
-                  <h3 className="font-medium text-gray-700">Share Reservation</h3>
-                  <div className="mt-2">
-                    <CopyButton 
-                      text={`${window.location.origin}/r/${reservation.shortUrl}`}
-                      label="Copy Link"
-                    />
+                  <h3 className="font-medium text-gray-700">Payment Information</h3>
+                  <div className="mt-2 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+                    <p className="text-gray-800 whitespace-pre-wrap">{reservation.paymentInfo}</p>
                   </div>
                 </div>
+              )}
 
-                <div className="mt-6">
-                  <ParticipantList
-                    participants={reservation.participants}
-                    reservationId={reservation.id}
-                    reservationName={reservation.name}
-                    isOwner={isOwner}
-                    ownerEmail={reservation.owner.email}
-                    ownerName={reservation.owner.name}
-                    paymentRequired={reservation.paymentRequired}
-                    userEmail={session?.user?.email || undefined}
-                    onAddParticipant={handleAddParticipant}
-                    onRemoveParticipant={handleRemoveParticipant}
+              <div>
+                <h3 className="font-medium text-gray-700">Share Reservation</h3>
+                <div className="mt-2">
+                  <CopyButton 
+                    text={`${window.location.origin}/r/${reservation.shortUrl}`}
+                    label="Copy Link"
                   />
                 </div>
               </div>
-            </div>
 
-            <div>
-              <h2 className="text-xl font-semibold mb-4">Messages</h2>
-              <div className="fixed bottom-0 right-0 w-[calc(50%-2rem)] h-[calc(100vh-12rem)] bg-white border-l border-t shadow-lg rounded-tl-lg overflow-hidden">
+              <div className="mt-6">
+                <ParticipantList
+                  participants={reservation.participants}
+                  reservationId={reservation.id}
+                  reservationName={reservation.name}
+                  isOwner={isOwner}
+                  ownerEmail={reservation.owner.email}
+                  ownerName={reservation.owner.name}
+                  paymentRequired={reservation.paymentRequired}
+                  userEmail={session?.user?.email || undefined}
+                  onAddParticipant={handleAddParticipant}
+                  onRemoveParticipant={handleRemoveParticipant}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold">Messages</h2>
+              <button
+                onClick={() => setIsMessagesActive(!isMessagesActive)}
+                className="text-blue-500 hover:text-blue-600 text-sm font-medium flex items-center gap-1"
+              >
+                {isMessagesActive ? (
+                  <>
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M5 10a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1z" clipRule="evenodd" />
+                    </svg>
+                    Hide Messages
+                  </>
+                ) : (
+                  <>
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" />
+                    </svg>
+                    Show Messages
+                  </>
+                )}
+              </button>
+            </div>
+            {isMessagesActive && (
+              <div className="bg-white rounded-lg border shadow-sm">
                 <MessageSystem 
                   reservationId={reservationId} 
                   initialMessages={messages}
                 />
               </div>
-            </div>
+            )}
           </div>
         </div>
       </div>
