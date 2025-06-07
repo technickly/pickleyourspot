@@ -8,7 +8,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "add-courts": "ts-node scripts/add-sf-courts.ts",
+    "add-courts": "node --loader ts-node/esm scripts/add-sf-courts.ts",
     "generate-certs": "openssl req -x509 -out localhost.pem -keyout localhost-key.pem -newkey rsa:2048 -nodes -sha256 -subj '/CN=localhost' -days 365",
     "dev:https": "node server.js",
     "prisma:generate": "prisma generate",
