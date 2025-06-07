@@ -1,150 +1,97 @@
-import { PrismaClient, MembershipTier, FeatureType } from '@prisma/client';
+/* eslint-disable @typescript-eslint/no-var-requires */
+const { PrismaClient, MembershipTier, FeatureType } = require('@prisma/client');
 
 const prisma = new PrismaClient();
 
 async function main() {
-  // Clear existing features
+  // Delete existing data
   await prisma.tierFeature.deleteMany();
+  await prisma.membership.deleteMany();
 
-  // Define tier features
-  const tierFeatures = [
-    // FREE Tier Features
+  // Create tier features
+  const features = [
+    // FREE tier features
     {
       tier: MembershipTier.FREE,
-      type: FeatureType.ACTIVE_RESERVATIONS,
-      value: JSON.stringify({ max: 3 }),
+      feature: FeatureType.ACTIVE_RESERVATIONS,
+      value: '3',
+      description: 'Maximum number of active reservations',
     },
     {
       tier: MembershipTier.FREE,
-      type: FeatureType.EMAIL_NOTIFICATIONS,
-      value: JSON.stringify({ enabled: false }),
+      feature: FeatureType.PARTICIPANT_MANAGEMENT,
+      value: 'basic',
+      description: 'Basic participant management',
     },
     {
       tier: MembershipTier.FREE,
-      type: FeatureType.PAYMENT_TRACKING,
-      value: JSON.stringify({ enabled: true, notifications: false }),
+      feature: FeatureType.PAYMENT_TRACKING,
+      value: 'basic',
+      description: 'Basic payment tracking without notifications',
     },
     {
       tier: MembershipTier.FREE,
-      type: FeatureType.CUSTOM_EVENTS,
-      value: JSON.stringify({ enabled: false }),
-    },
-    {
-      tier: MembershipTier.FREE,
-      type: FeatureType.ENHANCED_COURTS,
-      value: JSON.stringify({ enabled: false }),
-    },
-    {
-      tier: MembershipTier.FREE,
-      type: FeatureType.PRIORITY_SUPPORT,
-      value: JSON.stringify({ enabled: false }),
+      feature: FeatureType.COURT_ACCESS,
+      value: 'public',
+      description: 'Access to public courts only',
     },
 
-    // BASIC Tier Features
+    // BASIC tier features
     {
       tier: MembershipTier.BASIC,
-      type: FeatureType.ACTIVE_RESERVATIONS,
-      value: JSON.stringify({ max: 10 }),
+      feature: FeatureType.ACTIVE_RESERVATIONS,
+      value: '10',
+      description: 'Maximum number of active reservations',
     },
     {
       tier: MembershipTier.BASIC,
-      type: FeatureType.EMAIL_NOTIFICATIONS,
-      value: JSON.stringify({ enabled: true }),
+      feature: FeatureType.CUSTOM_EVENTS,
+      value: 'enabled',
+      description: 'Create and manage custom events and tournaments',
     },
     {
       tier: MembershipTier.BASIC,
-      type: FeatureType.PAYMENT_TRACKING,
-      value: JSON.stringify({ enabled: true, notifications: true }),
+      feature: FeatureType.COURT_MANAGEMENT,
+      value: 'enhanced',
+      description: 'Enhanced court management capabilities',
     },
     {
       tier: MembershipTier.BASIC,
-      type: FeatureType.CUSTOM_EVENTS,
-      value: JSON.stringify({ enabled: true }),
+      feature: FeatureType.PAYMENT_NOTIFICATIONS,
+      value: 'email',
+      description: 'Email payment reminders',
     },
     {
       tier: MembershipTier.BASIC,
-      type: FeatureType.ENHANCED_COURTS,
-      value: JSON.stringify({ enabled: true }),
-    },
-    {
-      tier: MembershipTier.BASIC,
-      type: FeatureType.PRIORITY_SUPPORT,
-      value: JSON.stringify({ enabled: true, responseTime: 24 }),
+      feature: FeatureType.SUPPORT,
+      value: '24h',
+      description: '24-hour priority support',
     },
 
-    // PREMIUM Tier Features (TBD)
+    // PREMIUM tier features (Coming Soon)
     {
       tier: MembershipTier.PREMIUM,
-      type: FeatureType.ACTIVE_RESERVATIONS,
-      value: JSON.stringify({ max: null }), // Unlimited
-    },
-    {
-      tier: MembershipTier.PREMIUM,
-      type: FeatureType.EMAIL_NOTIFICATIONS,
-      value: JSON.stringify({ enabled: true }),
-    },
-    {
-      tier: MembershipTier.PREMIUM,
-      type: FeatureType.PAYMENT_TRACKING,
-      value: JSON.stringify({ enabled: true, notifications: true }),
-    },
-    {
-      tier: MembershipTier.PREMIUM,
-      type: FeatureType.CUSTOM_EVENTS,
-      value: JSON.stringify({ enabled: true }),
-    },
-    {
-      tier: MembershipTier.PREMIUM,
-      type: FeatureType.ENHANCED_COURTS,
-      value: JSON.stringify({ enabled: true }),
-    },
-    {
-      tier: MembershipTier.PREMIUM,
-      type: FeatureType.PRIORITY_SUPPORT,
-      value: JSON.stringify({ enabled: true, responseTime: 12 }),
+      feature: FeatureType.COMING_SOON,
+      value: 'true',
+      description: 'Premium features coming soon',
     },
 
-    // ADMIN Tier Features
+    // ADMIN tier features
     {
       tier: MembershipTier.ADMIN,
-      type: FeatureType.ACTIVE_RESERVATIONS,
-      value: JSON.stringify({ max: null }), // Unlimited
-    },
-    {
-      tier: MembershipTier.ADMIN,
-      type: FeatureType.EMAIL_NOTIFICATIONS,
-      value: JSON.stringify({ enabled: true }),
-    },
-    {
-      tier: MembershipTier.ADMIN,
-      type: FeatureType.PAYMENT_TRACKING,
-      value: JSON.stringify({ enabled: true, notifications: true }),
-    },
-    {
-      tier: MembershipTier.ADMIN,
-      type: FeatureType.CUSTOM_EVENTS,
-      value: JSON.stringify({ enabled: true }),
-    },
-    {
-      tier: MembershipTier.ADMIN,
-      type: FeatureType.ENHANCED_COURTS,
-      value: JSON.stringify({ enabled: true }),
-    },
-    {
-      tier: MembershipTier.ADMIN,
-      type: FeatureType.PRIORITY_SUPPORT,
-      value: JSON.stringify({ enabled: true, responseTime: 1 }),
+      feature: FeatureType.SYSTEM_ACCESS,
+      value: 'full',
+      description: 'Full system access for administrators',
     },
   ];
 
-  // Create all tier features
-  for (const feature of tierFeatures) {
+  for (const feature of features) {
     await prisma.tierFeature.create({
       data: feature,
     });
   }
 
-  console.log('Seed completed successfully');
+  console.log('Seed data created successfully');
 }
 
 main()
@@ -155,3 +102,4 @@ main()
   .finally(async () => {
     await prisma.$disconnect();
   }); 
+

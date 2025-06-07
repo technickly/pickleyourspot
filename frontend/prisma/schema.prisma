@@ -34,6 +34,15 @@ model TierFeature {
   @@unique([type, tier])
 }
 
+model MembershipFeature {
+  id          String           @id @default(cuid())
+  name        String           @unique
+  description String
+  tiers       MembershipTier[]
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+}
+
 model User {
   id               String              @id @default(cuid())
   name             String?
@@ -180,13 +189,4 @@ model Membership {
   updatedAt           DateTime      @updatedAt
 
   @@index([userId])
-}
-
-model MembershipFeature {
-  id          String        @id @default(cuid())
-  name        String        @unique
-  description String
-  tiers       MembershipTier[]
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
 }

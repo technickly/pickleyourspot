@@ -2,6 +2,7 @@
   "name": "court-reservation-frontend",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -12,7 +13,7 @@
     "dev:https": "node server.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
-    "prisma:seed": "ts-node prisma/seed.ts"
+    "prisma:seed": "node --loader ts-node/esm prisma/seed-script.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.9.0",
@@ -46,6 +47,6 @@
     "typescript": "^5.8.3"
   },
   "prisma": {
-    "seed": "ts-node prisma/seed.ts"
+    "seed": "node --loader ts-node/esm prisma/seed-script.ts"
   }
 }
