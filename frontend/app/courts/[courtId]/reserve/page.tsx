@@ -133,8 +133,8 @@ export default function ReservePage({ params }: PageProps) {
 
       // Check if the slot is consecutive
       if (slotIndex === lastSelectedIndex + 1) {
-        // Check if we're within the 3-hour limit (6 slots)
-        if (current.length < 6) {
+        // Check if we're within the 3-hour limit (3 slots of 1 hour each)
+        if (current.length < 3) {
           return [...current, slot];
         }
       }

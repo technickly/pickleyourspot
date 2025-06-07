@@ -1,13 +1,17 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import prisma from '@/lib/prisma';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+
+interface Participant {
+  name: string | null;
+  email: string;
+}
 
 export async function GET(
   request: Request
 ) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getServerSession();
     const url = new URL(request.url);
     const userEmail = url.searchParams.get('email');
 
@@ -33,18 +37,32 @@ export async function GET(
       );
     }
 
+    // Find the user
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email },
+    });
+
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
     // Get owned reservations
     const ownedReservations = await prisma.reservation.findMany({
       where: {
-        owner: {
-          email: userEmail,
-        },
+        ownerId: user.id,
       },
       include: {
-        court: true,
-      },
-      orderBy: {
-        startTime: 'asc',
+        court: {
+          select: {
+            name: true,
+          },
+        },
+        participants: {
+          select: {
+            name: true,
+            email: true,
+          },
+        },
       },
     });
 
@@ -53,15 +71,22 @@ export async function GET(
       where: {
         participants: {
           some: {
-            email: userEmail,
+            id: user.id,
           },
         },
       },
       include: {
-        court: true,
-      },
-      orderBy: {
-        startTime: 'asc',
+        court: {
+          select: {
+            name: true,
+          },
+        },
+        participants: {
+          select: {
+            name: true,
+            email: true,
+          },
+        },
       },
     });
 
@@ -70,19 +95,33 @@ export async function GET(
       ...ownedReservations.map((r: any) => ({
         id: r.id,
         shortUrl: r.shortUrl,
+        name: r.name,
         courtName: r.court.name,
         startTime: r.startTime,
         endTime: r.endTime,
         description: r.description,
+        paymentRequired: r.paymentRequired,
+        paymentInfo: r.paymentInfo,
+        participants: r.participants.map((p: Participant) => ({
+          ...p,
+          hasPaid: false // Default to false since we don't track this yet
+        })),
         isOwner: true,
       })),
       ...participatedReservations.map((r: any) => ({
         id: r.id,
         shortUrl: r.shortUrl,
+        name: r.name,
         courtName: r.court.name,
         startTime: r.startTime,
         endTime: r.endTime,
         description: r.description,
+        paymentRequired: r.paymentRequired,
+        paymentInfo: r.paymentInfo,
+        participants: r.participants.map((p: Participant) => ({
+          ...p,
+          hasPaid: false // Default to false since we don't track this yet
+        })),
         isOwner: false,
       })),
     ].sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());

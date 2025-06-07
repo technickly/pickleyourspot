@@ -16,8 +16,7 @@ model User {
   updatedAt         DateTime        @updatedAt
   messages          Message[]
   reservations      Reservation[]   @relation("UserReservations")
-  participants      Reservation[]   @relation("ReservationParticipants")
-  paymentStatuses   paymentStatus[]
+  participantIn     ParticipantStatus[]
 }
 
 model Court {
@@ -31,28 +30,28 @@ model Court {
 }
 
 model Reservation {
-  id              String          @id @default(uuid())
+  id              String              @id @default(uuid())
   name            String
   startTime       DateTime
   endTime         DateTime
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
   courtId         String
   ownerId         String
   description     String?
-  shortUrl        String          @unique @default(uuid())
-  paymentRequired Boolean         @default(false)
+  shortUrl        String              @unique @default(uuid())
+  paymentRequired Boolean             @default(false)
   paymentInfo     String?
   messages        Message[]
-  court           Court           @relation(fields: [courtId], references: [id])
-  owner           User            @relation("UserReservations", fields: [ownerId], references: [id])
-  participants    User[]          @relation("ReservationParticipants")
-  paymentStatuses paymentStatus[]
+  court           Court               @relation(fields: [courtId], references: [id])
+  owner           User                @relation("UserReservations", fields: [ownerId], references: [id])
+  participants    ParticipantStatus[]
 }
 
-model paymentStatus {
+model ParticipantStatus {
   id            String      @id @default(uuid())
   hasPaid       Boolean     @default(false)
+  isGoing       Boolean     @default(true)
   updatedAt     DateTime    @updatedAt
   userId        String
   reservationId String

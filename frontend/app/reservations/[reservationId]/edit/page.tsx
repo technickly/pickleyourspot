@@ -138,7 +138,8 @@ export default function EditReservationPage({ params }: PageProps) {
         });
       }
 
-      if (slotIndex === lastSelectedIndex + 1 && current.length < 6) {
+      // Check if the slot is consecutive and within 3-hour limit (3 slots of 1 hour each)
+      if (slotIndex === lastSelectedIndex + 1 && current.length < 3) {
         return [...current, slot];
       }
 
@@ -204,15 +205,17 @@ export default function EditReservationPage({ params }: PageProps) {
       <div className="max-w-4xl mx-auto">
         <header className="mb-8">
           <div className="flex justify-between items-center">
-            <h1 className="text-3xl font-bold">Edit Reservation</h1>
+            <div>
+              <h1 className="text-3xl font-bold">Edit Reservation</h1>
+              <p className="text-gray-600 mt-2">{reservation.court.name}</p>
+            </div>
             <button
-              onClick={() => router.back()}
-              className="text-gray-600 hover:text-gray-800"
+              onClick={() => router.push('/my-reservations')}
+              className="text-gray-600 hover:text-gray-800 flex items-center gap-2"
             >
-              ← Back
+              <span>←</span> Back to My Reservations
             </button>
           </div>
-          <p className="text-gray-600 mt-2">{reservation.court.name}</p>
         </header>
 
         <div className="space-y-8">
@@ -223,7 +226,7 @@ export default function EditReservationPage({ params }: PageProps) {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Enter a name for your reservation"
-              className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
 
@@ -232,7 +235,7 @@ export default function EditReservationPage({ params }: PageProps) {
             <select
               value={format(selectedDate, 'yyyy-MM-dd')}
               onChange={(e) => handleDateChange(e.target.value)}
-              className="w-full p-2 border rounded"
+              className="w-full p-3 border rounded-lg"
             >
               {availableDates.map((date) => (
                 <option key={date.toISOString()} value={format(date, 'yyyy-MM-dd')}>
@@ -261,12 +264,12 @@ export default function EditReservationPage({ params }: PageProps) {
                     onClick={() => handleTimeSlotSelect(slot)}
                     disabled={!slot.isAvailable && !isSelected}
                     className={`
-                      p-2 rounded text-sm
+                      p-3 rounded-lg text-sm transition-all
                       ${
                         isSelected
-                          ? 'bg-blue-500 text-white'
+                          ? 'bg-blue-500 text-white shadow-md'
                           : slot.isAvailable
-                          ? 'bg-white border border-gray-200 hover:border-blue-500'
+                          ? 'bg-white border-2 border-gray-200 hover:border-blue-500 hover:shadow'
                           : 'bg-gray-100 text-gray-400 cursor-not-allowed'
                       }
                     `}
@@ -287,13 +290,39 @@ export default function EditReservationPage({ params }: PageProps) {
             </div>
           </div>
 
+          {selectedTimeSlots.length > 0 && (
+            <div className="bg-blue-50 p-4 rounded-lg">
+              <h3 className="font-medium text-blue-900">Selected Time</h3>
+              <p className="text-blue-800">
+                {formatInTimeZone(
+                  new Date(selectedTimeSlots[0].startTime),
+                  timeZone,
+                  'EEEE, MMMM d, yyyy'
+                )}
+                <br />
+                {formatInTimeZone(
+                  new Date(selectedTimeSlots[0].startTime),
+                  timeZone,
+                  'h:mm a'
+                )}{' '}
+                -{' '}
+                {formatInTimeZone(
+                  new Date(selectedTimeSlots[selectedTimeSlots.length - 1].endTime),
+                  timeZone,
+                  'h:mm a'
+                )}{' '}
+                PT
+              </p>
+            </div>
+          )}
+
           <div>
             <h2 className="text-xl font-semibold mb-4">Notes (Optional)</h2>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Add any additional notes or instructions for participants..."
-              className="w-full p-4 border rounded min-h-[120px] text-gray-700 placeholder-gray-400"
+              className="w-full p-4 border rounded-lg min-h-[120px] text-gray-700 placeholder-gray-400"
               rows={4}
             />
           </div>
@@ -306,7 +335,7 @@ export default function EditReservationPage({ params }: PageProps) {
                   type="checkbox"
                   checked={paymentRequired}
                   onChange={(e) => setPaymentRequired(e.target.checked)}
-                  className="rounded text-blue-500"
+                  className="rounded text-blue-500 w-5 h-5"
                 />
                 <span>Require payment from participants</span>
               </label>
@@ -316,24 +345,24 @@ export default function EditReservationPage({ params }: PageProps) {
                   value={paymentInfo}
                   onChange={(e) => setPaymentInfo(e.target.value)}
                   placeholder="Enter payment details (e.g., Venmo username, payment amount, etc.)"
-                  className="w-full p-4 border rounded text-gray-700 placeholder-gray-400"
+                  className="w-full p-4 border rounded-lg text-gray-700 placeholder-gray-400"
                   rows={3}
                 />
               )}
             </div>
           </div>
 
-          <div className="flex gap-4">
+          <div className="flex gap-4 pt-4">
             <button
               onClick={handleSave}
               disabled={isSaving}
-              className="flex-1 bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors disabled:bg-blue-300"
+              className="flex-1 bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors disabled:bg-blue-300 font-medium"
             >
-              {isSaving ? 'Saving...' : 'Save Changes'}
+              {isSaving ? 'Saving Changes...' : 'Save Changes'}
             </button>
             <button
-              onClick={() => router.back()}
-              className="flex-1 border border-gray-300 text-gray-700 py-3 rounded-lg hover:bg-gray-50 transition-colors"
+              onClick={() => router.push('/my-reservations')}
+              className="flex-1 border-2 border-gray-300 text-gray-700 py-3 px-6 rounded-lg hover:bg-gray-50 transition-colors font-medium"
             >
               Cancel
             </button>

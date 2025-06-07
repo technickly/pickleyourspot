@@ -6,15 +6,28 @@ import Link from 'next/link';
 import { toast } from 'react-hot-toast';
 import { formatInTimeZone } from 'date-fns-tz';
 import CopyButton from '@/app/components/CopyButton';
+import { useRouter } from 'next/navigation';
+
+interface Participant {
+  name: string | null;
+  email: string;
+  hasPaid: boolean;
+  isGoing: boolean;
+  userId: string;
+}
 
 interface Reservation {
   id: string;
   shortUrl: string;
   courtName: string;
+  name: string;
   startTime: string;
   endTime: string;
   isOwner: boolean;
   description?: string | null;
+  paymentRequired: boolean;
+  paymentInfo?: string | null;
+  participants: Participant[];
 }
 
 const timeZone = 'America/Los_Angeles';
@@ -25,6 +38,7 @@ export default function MyReservationsPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     if (session?.user?.email) {
@@ -72,6 +86,36 @@ export default function MyReservationsPage() {
     }
   };
 
+  const handleStatusUpdate = async (
+    reservationId: string,
+    userId: string,
+    type: 'payment' | 'attendance',
+    newValue: boolean
+  ) => {
+    try {
+      const response = await fetch(`/api/reservations/${reservationId}/participant-status`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId,
+          type,
+          value: newValue,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update status');
+      }
+
+      await fetchReservations(); // Refresh the list
+      toast.success(`${type === 'payment' ? 'Payment' : 'Attendance'} status updated`);
+    } catch (error) {
+      toast.error(`Failed to update ${type} status`);
+    }
+  };
+
   if (status === 'loading' || isLoading) {
     return <div className="flex justify-center items-center min-h-screen">Loading...</div>;
   }
@@ -111,18 +155,85 @@ export default function MyReservationsPage() {
               className="block border rounded-lg p-4 hover:shadow-lg transition-all hover:border-blue-200 cursor-pointer"
             >
               <div className="flex justify-between items-start">
-                <div>
-                  <h3 className="text-xl font-semibold text-gray-900">{reservation.courtName}</h3>
-                  <p className="text-gray-600">
-                    {formatInTimeZone(new Date(reservation.startTime), timeZone, 'EEEE, MMMM d, yyyy')} at{' '}
-                    {formatInTimeZone(new Date(reservation.startTime), timeZone, 'h:mm a')} -{' '}
-                    {formatInTimeZone(new Date(reservation.endTime), timeZone, 'h:mm a')} PT
-                  </p>
+                <div className="space-y-3 w-full">
+                  <div>
+                    <h3 className="text-xl font-semibold text-gray-900">{reservation.name}</h3>
+                    <p className="text-gray-600">
+                      {reservation.courtName} • {formatInTimeZone(new Date(reservation.startTime), timeZone, 'EEEE, MMMM d, yyyy')} at{' '}
+                      {formatInTimeZone(new Date(reservation.startTime), timeZone, 'h:mm a')} -{' '}
+                      {formatInTimeZone(new Date(reservation.endTime), timeZone, 'h:mm a')} PT
+                    </p>
+                  </div>
+
                   {reservation.description && (
-                    <div className="mt-2 text-sm text-gray-600">
+                    <div className="text-sm text-gray-600">
                       <div className="p-2 bg-gray-50 rounded">
                         <span className="font-medium">Notes: </span>
                         {reservation.description}
+                      </div>
+                    </div>
+                  )}
+
+                  {reservation.paymentRequired && (
+                    <div className="text-sm">
+                      <div className="p-2 bg-yellow-50 rounded">
+                        <span className="font-medium text-yellow-800">💰 Payment Required • </span>
+                        <span className="text-yellow-700">{reservation.paymentInfo}</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {reservation.participants.length > 0 && (
+                    <div className="text-sm">
+                      <div className="font-medium text-gray-700 mb-1">Participants:</div>
+                      <div className="grid grid-cols-1 gap-2">
+                        {reservation.participants.map((participant) => (
+                          <div
+                            key={participant.email}
+                            className="flex items-center justify-between p-2 rounded bg-gray-50"
+                            onClick={(e) => e.preventDefault()}
+                          >
+                            <span>{participant.name || participant.email}</span>
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() =>
+                                  handleStatusUpdate(
+                                    reservation.id,
+                                    participant.userId,
+                                    'attendance',
+                                    !participant.isGoing
+                                  )
+                                }
+                                className={`px-2 py-1 rounded text-xs font-medium ${
+                                  participant.isGoing
+                                    ? 'bg-green-100 text-green-800 hover:bg-green-200'
+                                    : 'bg-red-100 text-red-800 hover:bg-red-200'
+                                }`}
+                              >
+                                {participant.isGoing ? '✓ Going' : '✗ Not Going'}
+                              </button>
+                              {reservation.paymentRequired && (
+                                <button
+                                  onClick={() =>
+                                    handleStatusUpdate(
+                                      reservation.id,
+                                      participant.userId,
+                                      'payment',
+                                      !participant.hasPaid
+                                    )
+                                  }
+                                  className={`px-2 py-1 rounded text-xs font-medium ${
+                                    participant.hasPaid
+                                      ? 'bg-green-100 text-green-800 hover:bg-green-200'
+                                      : 'bg-red-100 text-red-800 hover:bg-red-200'
+                                  }`}
+                                >
+                                  {participant.hasPaid ? '✓ Paid' : '✗ Not Paid'}
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   )}
@@ -139,20 +250,23 @@ export default function MyReservationsPage() {
                   </span>
                   {reservation.isOwner && (
                     <div className="flex gap-2" onClick={(e) => e.preventDefault()}>
-                      <Link
-                        href={`/reservations/${reservation.id}/edit`}
-                        className="text-blue-600 hover:text-blue-800 text-sm"
-                        onClick={(e) => e.stopPropagation()}
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          router.push(`/reservations/${reservation.id}/edit`);
+                        }}
+                        className="px-3 py-1 bg-blue-100 text-blue-800 rounded hover:bg-blue-200 text-sm font-medium transition-colors"
                       >
                         Edit
-                      </Link>
+                      </button>
                       <button
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
                           setShowDeleteConfirm(reservation.id);
                         }}
-                        className="text-red-600 hover:text-red-800 text-sm"
+                        className="px-3 py-1 bg-red-100 text-red-800 rounded hover:bg-red-200 text-sm font-medium transition-colors"
                       >
                         Delete
                       </button>

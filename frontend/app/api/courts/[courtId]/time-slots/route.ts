@@ -49,12 +49,12 @@ export async function GET(
       },
     });
 
-    // Generate 30-minute time slots
+    // Generate 1-hour time slots (changed from 30-minute slots)
     const timeSlots = [];
     let currentSlot = startTimeUTC;
 
     while (currentSlot < endTimeUTC) {
-      const slotEndTime = addMinutes(currentSlot, 30);
+      const slotEndTime = addMinutes(currentSlot, 60); // Changed from 30 to 60 minutes
       
       // Convert times to PT for checking availability
       const slotStartPT = toZonedTime(currentSlot, TIME_ZONE);
