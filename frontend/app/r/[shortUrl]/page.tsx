@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useSession, signIn } from 'next-auth/react';
 import { toast } from 'react-hot-toast';
 import { formatInTimeZone } from 'date-fns-tz';
+import React from 'react';
 
 interface Reservation {
   id: string;
@@ -27,19 +28,17 @@ interface Reservation {
 
 const timeZone = 'America/Los_Angeles';
 
-export default function SharedReservationPage({ params }: { params: { shortUrl: string } }) {
+export default function SharedReservationPage({ params }: { params: Promise<{ shortUrl: string }> }) {
   const router = useRouter();
   const { data: session, status } = useSession();
   const [reservation, setReservation] = useState<Reservation | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isJoining, setIsJoining] = useState(false);
-  const [shortUrl, setShortUrl] = useState<string>(params.shortUrl);
+  const resolvedParams = React.use(params);
 
   useEffect(() => {
-    if (shortUrl) {
-      fetchReservation();
-    }
-  }, [shortUrl]);
+    fetchReservation();
+  }, [resolvedParams.shortUrl]);
 
   useEffect(() => {
     // When user signs in, automatically try to join the reservation
@@ -57,7 +56,7 @@ export default function SharedReservationPage({ params }: { params: { shortUrl: 
 
   const fetchReservation = async () => {
     try {
-      const response = await fetch(`/api/reservations/shared/${shortUrl}`);
+      const response = await fetch(`/api/reservations/shared/${resolvedParams.shortUrl}`);
       if (!response.ok) {
         throw new Error('Failed to fetch reservation');
       }
@@ -122,7 +121,7 @@ export default function SharedReservationPage({ params }: { params: { shortUrl: 
         <h1 className="text-2xl font-bold mb-4">Join {reservation.name}</h1>
         <p className="text-gray-600 mb-6">Sign in to join this pickleball reservation.</p>
         <button
-          onClick={() => signIn('google', { callbackUrl: `/r/${shortUrl}` })}
+          onClick={() => signIn('google', { callbackUrl: `/r/${resolvedParams.shortUrl}` })}
           className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 flex items-center gap-2"
         >
           <svg className="w-5 h-5" viewBox="0 0 24 24">

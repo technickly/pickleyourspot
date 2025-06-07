@@ -22,6 +22,7 @@ model Court {
 
 model Reservation {
   id           String    @id @default(uuid())
+  name         String
   startTime    DateTime
   endTime      DateTime
   createdAt    DateTime  @default(now())
@@ -44,6 +45,7 @@ model User {
   reservations Reservation[] @relation("UserReservations")
   participants Reservation[] @relation("ReservationParticipants")
   messages     Message[]
+  hasPaid      Boolean       @default(false)
 }
 
 model Message {

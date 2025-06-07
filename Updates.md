@@ -304,3 +304,293 @@ Added a new textarea field to the reservation form with helpful placeholder exam
 - Preserves formatting for better readability
 
 This update improves coordination between players by providing a dedicated space for important game-related notes and instructions. 
+
+## Reservation Management Enhancements (June 2024)
+
+### Overview
+The reservation system has been enhanced with improved management capabilities, including deletion, editing, and better naming features. These changes provide more control and flexibility for reservation owners.
+
+### Key Changes
+
+1. **Delete Functionality**
+   - Added ability for owners to delete reservations
+   - Implemented deletion confirmation modal
+   - Added cascade deletion for related records (messages, payment statuses)
+   - Added delete button in both My Reservations and individual reservation views
+
+2. **Edit Capabilities**
+   - Created new edit page for modifying reservations
+   - Added ability to change dates and time slots
+   - Added support for editing notes and payment information
+   - Implemented validation to prevent double-booking
+   - Added real-time availability checking when changing time slots
+
+3. **Reservation Naming**
+   - Added "Name of Reservation" field
+   - Implemented smart auto-fill that includes:
+     - User's name
+     - Day of the week
+     - Court name
+   - Example format: "John's Thursday Main Court Reservation"
+
+4. **UI Improvements**
+   - Changed "Select time slot" to "Choose time slots" for clarity
+   - Made entire reservation blocks clickable in My Reservations view
+   - Added visual feedback for interactive elements
+   - Improved confirmation dialogs for important actions
+
+### Technical Implementation
+
+#### Database Changes
+```prisma
+model Reservation {
+  id              String          @id @default(uuid())
+  name            String          // Added name field
+  startTime       DateTime
+  endTime         DateTime
+  // ... existing fields ...
+}
+```
+
+#### New API Endpoints
+1. **Delete Endpoint** (`/api/reservations/[reservationId]/delete`)
+   - DELETE method with owner verification
+   - Cascading deletion of related records
+   - Success/error status responses
+
+2. **Edit Endpoint** (`/api/reservations/[reservationId]`)
+   - PUT method for updating reservation details
+   - Validation for time slot conflicts
+   - Support for partial updates
+
+#### UI Components
+1. **Edit Page** (`/reservations/[reservationId]/edit`)
+   - Full form for editing all reservation details
+   - Time slot selection with availability checking
+   - Real-time validation and error handling
+
+2. **My Reservations Page**
+   - Added delete and edit buttons for owners
+   - Implemented confirmation modal for deletions
+   - Made reservation blocks fully clickable
+
+### User Experience Improvements
+- Clearer labeling for time slot selection
+- Intuitive reservation naming with auto-suggestions
+- Streamlined editing process
+- Improved feedback for user actions
+- Enhanced error handling and validation
+
+### Security Enhancements
+- Owner-only access for edits and deletions
+- Validation of user permissions
+- Protection against unauthorized modifications
+- Secure handling of reservation updates
+
+# SSL Certificate and HTTPS Configuration Guide
+
+## Current Setup (HTTP-only with HTTPS Redirect)
+Current nginx configuration (`/etc/nginx/sites-available/pickleyourspot.com`):
+```nginx
+server {
+    listen 80;
+    listen [::]:80;
+    server_name pickleyourspot.com www.pickleyourspot.com;
+
+    location / {
+        proxy_pass http://localhost:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_cache_bypass $http_upgrade;
+    }
+}
+
+# Separate server block for HTTPS redirect
+server {
+    listen 443;
+    listen [::]:443;
+    server_name pickleyourspot.com www.pickleyourspot.com;
+    
+    # Simple redirect without any SSL configuration
+    return 301 http://$server_name$request_uri;
+}
+```
+
+## SSL Re-enablement Plan (June 8th, 2025)
+
+### Important Dates
+- SSL Rate Limit Reset: June 8th, 2025, 08:09:48 UTC
+- Domains: pickleyourspot.com and www.pickleyourspot.com
+
+### Pre-SSL Checklist
+1. [ ] Verify rate limit reset (after June 8th, 2025, 08:09:48 UTC)
+2. [ ] Backup current nginx configuration
+3. [ ] Ensure ports 80 and 443 are open in AWS security group
+4. [ ] Verify Next.js app is running properly
+
+### Step 1: Backup Current Configuration
+```bash
+# Create backup directory
+sudo mkdir -p /etc/nginx/backups/$(date +%Y%m%d)
+
+# Backup current configuration
+sudo cp /etc/nginx/sites-available/pickleyourspot.com /etc/nginx/backups/$(date +%Y%m%d)/pickleyourspot.com.backup
+sudo cp -r /etc/nginx/sites-enabled /etc/nginx/backups/$(date +%Y%m%d)/
+```
+
+### Step 2: Install New SSL Certificate
+```bash
+# Stop nginx temporarily
+sudo systemctl stop nginx
+
+# Request new certificate
+sudo certbot --nginx \
+  -d pickleyourspot.com \
+  -d www.pickleyourspot.com \
+  --email nick@pickleyourspot.com \
+  --agree-tos \
+  --non-interactive \
+  --redirect
+
+# Verify certificate installation
+sudo certbot certificates
+```
+
+### Step 3: Update Nginx Configuration
+Replace the content of `/etc/nginx/sites-available/pickleyourspot.com` with:
+```nginx
+server {
+    listen 80;
+    listen [::]:80;
+    server_name pickleyourspot.com www.pickleyourspot.com;
+    return 301 https://$server_name$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
+    server_name pickleyourspot.com www.pickleyourspot.com;
+
+    # SSL configuration (will be added by certbot)
+    ssl_certificate /etc/letsencrypt/live/pickleyourspot.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/pickleyourspot.com/privkey.pem;
+    
+    # Recommended SSL settings
+    ssl_session_timeout 1d;
+    ssl_session_cache shared:SSL:50m;
+    ssl_session_tickets off;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384;
+    ssl_prefer_server_ciphers off;
+
+    # HSTS (uncomment if you're sure)
+    # add_header Strict-Transport-Security "max-age=63072000" always;
+
+    location / {
+        proxy_pass http://localhost:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_cache_bypass $http_upgrade;
+    }
+}
+```
+
+### Step 4: Test and Enable
+```bash
+# Test nginx configuration
+sudo nginx -t
+
+# If test passes, start nginx
+sudo systemctl start nginx
+
+# Enable nginx to start on boot
+sudo systemctl enable nginx
+```
+
+### Step 5: Verify Setup
+```bash
+# Test HTTP to HTTPS redirect
+curl -I http://pickleyourspot.com
+# Should show 301 redirect to https://
+
+# Test HTTPS directly
+curl -I https://pickleyourspot.com
+# Should show 200 OK
+```
+
+### Troubleshooting Guide
+
+#### Certificate Issues
+```bash
+# Check certificate status
+sudo certbot certificates
+
+# Test certificate renewal
+sudo certbot renew --dry-run
+
+# Force certificate renewal
+sudo certbot renew --force-renewal
+```
+
+#### Nginx Issues
+```bash
+# Check nginx status
+sudo systemctl status nginx
+
+# Check error logs
+sudo tail -f /var/log/nginx/error.log
+
+# Check access logs
+sudo tail -f /var/log/nginx/access.log
+```
+
+#### SSL Test Commands
+```bash
+# Test SSL configuration
+curl -vI https://pickleyourspot.com
+
+# Check SSL certificate details
+openssl s_client -connect pickleyourspot.com:443 -servername pickleyourspot.com
+```
+
+### Recovery Steps
+If something goes wrong, you can restore the HTTP-only configuration:
+```bash
+# Stop nginx
+sudo systemctl stop nginx
+
+# Restore backup
+sudo cp /etc/nginx/backups/$(date +%Y%m%d)/pickleyourspot.com.backup /etc/nginx/sites-available/pickleyourspot.com
+
+# Test and restart
+sudo nginx -t && sudo systemctl start nginx
+```
+
+### Important Paths
+- Nginx configuration: `/etc/nginx/sites-available/pickleyourspot.com`
+- SSL certificates: `/etc/letsencrypt/live/pickleyourspot.com/`
+- Nginx logs: `/var/log/nginx/`
+- Backups: `/etc/nginx/backups/`
+
+### Monitoring
+After enabling SSL, monitor these aspects:
+1. Certificate expiration (auto-renewal should be configured)
+2. SSL Labs grade (https://www.ssllabs.com/ssltest/)
+3. HTTPS redirect functionality
+4. Next.js application performance
+5. Error logs for any SSL-related issues
+
+# Testing Remote Server Setup
+
+## Initial Server Access
+```
