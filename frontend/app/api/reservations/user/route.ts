@@ -1,10 +1,35 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import prisma from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 
-interface Participant {
+type ReservationWithRelations = Prisma.ReservationGetPayload<{
+  include: {
+    court: true;
+    owner: true;
+    participants: true;
+  };
+}>;
+
+interface FormattedParticipant {
   name: string | null;
   email: string;
+  hasPaid: boolean;
+  isGoing: boolean;
+}
+
+interface FormattedReservation {
+  id: string;
+  shortUrl: string;
+  name: string;
+  courtName: string;
+  startTime: Date;
+  endTime: Date;
+  description: string | null;
+  paymentRequired: boolean;
+  paymentInfo: string | null;
+  participants: FormattedParticipant[];
+  isOwner: boolean;
 }
 
 export async function GET(
@@ -52,17 +77,9 @@ export async function GET(
         ownerId: user.id,
       },
       include: {
-        court: {
-          select: {
-            name: true,
-          },
-        },
-        participants: {
-          select: {
-            name: true,
-            email: true,
-          },
-        },
+        court: true,
+        owner: true,
+        participants: true,
       },
     });
 
@@ -71,56 +88,52 @@ export async function GET(
       where: {
         participants: {
           some: {
-            id: user.id,
+            userId: user.id,
           },
         },
       },
       include: {
-        court: {
-          select: {
-            name: true,
-          },
-        },
-        participants: {
-          select: {
-            name: true,
-            email: true,
-          },
-        },
+        court: true,
+        owner: true,
+        participants: true,
       },
     });
 
     // Format the response to include whether the user is the owner
-    const allReservations = [
-      ...ownedReservations.map((r: any) => ({
-        id: r.id,
-        shortUrl: r.shortUrl,
-        name: r.name,
-        courtName: r.court.name,
-        startTime: r.startTime,
-        endTime: r.endTime,
-        description: r.description,
-        paymentRequired: r.paymentRequired,
-        paymentInfo: r.paymentInfo,
-        participants: r.participants.map((p: Participant) => ({
-          ...p,
-          hasPaid: false // Default to false since we don't track this yet
+    const allReservations: FormattedReservation[] = [
+      ...ownedReservations.map((reservation) => ({
+        id: reservation.id,
+        shortUrl: reservation.shortUrl,
+        name: reservation.name,
+        courtName: reservation.court.name,
+        startTime: reservation.startTime,
+        endTime: reservation.endTime,
+        description: reservation.description,
+        paymentRequired: reservation.paymentRequired,
+        paymentInfo: reservation.paymentInfo,
+        participants: reservation.participants.map((participant) => ({
+          name: participant.userName,
+          email: participant.userEmail,
+          hasPaid: participant.hasPaid,
+          isGoing: participant.isGoing,
         })),
         isOwner: true,
       })),
-      ...participatedReservations.map((r: any) => ({
-        id: r.id,
-        shortUrl: r.shortUrl,
-        name: r.name,
-        courtName: r.court.name,
-        startTime: r.startTime,
-        endTime: r.endTime,
-        description: r.description,
-        paymentRequired: r.paymentRequired,
-        paymentInfo: r.paymentInfo,
-        participants: r.participants.map((p: Participant) => ({
-          ...p,
-          hasPaid: false // Default to false since we don't track this yet
+      ...participatedReservations.map((reservation) => ({
+        id: reservation.id,
+        shortUrl: reservation.shortUrl,
+        name: reservation.name,
+        courtName: reservation.court.name,
+        startTime: reservation.startTime,
+        endTime: reservation.endTime,
+        description: reservation.description,
+        paymentRequired: reservation.paymentRequired,
+        paymentInfo: reservation.paymentInfo,
+        participants: reservation.participants.map((participant) => ({
+          name: participant.userName,
+          email: participant.userEmail,
+          hasPaid: participant.hasPaid,
+          isGoing: participant.isGoing,
         })),
         isOwner: false,
       })),
