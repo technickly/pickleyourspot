@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { format, differenceInDays } from 'date-fns';
 import { toast } from 'react-hot-toast';
 import ReservationActions from '@/app/components/ReservationActions';
+import Link from 'next/link';
 
 interface Participant {
   name: string | null;
@@ -39,6 +40,8 @@ export default function MyReservationsPage() {
   const router = useRouter();
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [reservationToDelete, setReservationToDelete] = useState<string | null>(null);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -92,7 +95,7 @@ export default function MyReservationsPage() {
   const handleStatusUpdate = async (
     reservationId: string,
     userId: string,
-    type: 'payment' | 'attendance',
+    type: 'payment' | 'attendance' | 'delete',
     newValue: boolean
   ) => {
     try {
@@ -148,6 +151,42 @@ export default function MyReservationsPage() {
     const reservationDate = new Date(startTime);
     reservationDate.setHours(0, 0, 0, 0);
     return differenceInDays(reservationDate, today);
+  };
+
+  const handleDeleteClick = (reservationId: string) => {
+    setReservationToDelete(reservationId);
+    setShowDeleteConfirm(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!reservationToDelete) return;
+
+    try {
+      const response = await fetch(`/api/reservations/${reservationToDelete}/delete`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete reservation');
+      }
+
+      // Remove the deleted reservation from state
+      setReservations(prevReservations => 
+        prevReservations.filter(res => res.id !== reservationToDelete)
+      );
+      
+      toast.success('Reservation deleted successfully');
+    } catch (error) {
+      toast.error('Failed to delete reservation');
+    } finally {
+      setShowDeleteConfirm(false);
+      setReservationToDelete(null);
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    setShowDeleteConfirm(false);
+    setReservationToDelete(null);
   };
 
   if (isLoading) {
@@ -302,12 +341,44 @@ export default function MyReservationsPage() {
                     ? `Upcoming in ${getDaysUntilReservation(reservation.startTime)} Days`
                     : 'Completed'}
                 </div>
-                {reservation.isOwner && (
-                  <ReservationActions
-                    reservationId={reservation.id}
-                    isOwner={true}
-                  />
-                )}
+
+                {/* Action Buttons */}
+                <div className="flex flex-col gap-2 mt-2">
+                  <Link
+                    href={`/reservations/${reservation.id}`}
+                    className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center justify-center gap-2"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                      <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                      <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
+                    </svg>
+                    View
+                  </Link>
+                  
+                  {reservation.isOwner && (
+                    <>
+                      <Link
+                        href={`/reservations/${reservation.id}/edit`}
+                        className="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors flex items-center justify-center gap-2"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                          <path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" />
+                          <path fillRule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clipRule="evenodd" />
+                        </svg>
+                        Edit
+                      </Link>
+                      <button
+                        onClick={() => handleDeleteClick(reservation.id)}
+                        className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors flex items-center justify-center gap-2"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                        </svg>
+                        Delete
+                      </button>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -319,6 +390,58 @@ export default function MyReservationsPage() {
           </div>
         )}
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg p-6 max-w-sm w-full">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold">Delete Reservation</h3>
+              <button
+                onClick={handleDeleteCancel}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="mb-6">
+              <div className="bg-red-50 text-red-800 p-4 rounded-lg mb-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  <span className="font-medium">Warning</span>
+                </div>
+                <p className="text-sm">
+                  This action cannot be undone. All reservation data, including messages and participant information, will be permanently deleted.
+                </p>
+              </div>
+              <p className="text-gray-600 text-sm">
+                Are you sure you want to delete this reservation?
+              </p>
+            </div>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={handleDeleteCancel}
+                className="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteConfirm}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium flex items-center gap-2"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+                Delete Reservation
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 } 
