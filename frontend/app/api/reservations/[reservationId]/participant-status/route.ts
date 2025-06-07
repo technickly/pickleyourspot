@@ -1,27 +1,48 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
+import { authOptions } from '@/app/api/auth/[...nextauth]/auth';
 import prisma from '@/lib/prisma';
+import { z } from 'zod';
+
+interface Participant {
+  id: string;
+  user: {
+    id: string;
+    email: string;
+  };
+}
+
+const updateStatusSchema = z.object({
+  userId: z.string().min(1, 'User ID is required'),
+  type: z.enum(['payment', 'attendance']),
+  value: z.boolean(),
+});
 
 export async function PUT(
   request: Request,
-  context: { params: Promise<{ reservationId: string }> }
+  { params }: { params: { reservationId: string } }
 ) {
   try {
-    const session = await getServerSession();
+    const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
     }
 
-    const { reservationId } = await context.params;
-    const { userId, type, value } = await request.json();
+    const body = await request.json();
+    const validatedData = updateStatusSchema.parse(body);
+    const { userId, type, value } = validatedData;
 
-    // Verify the reservation exists and the user has permission to update it
+    // Fetch the reservation and check permissions
     const reservation = await prisma.reservation.findUnique({
-      where: { id: reservationId },
+      where: { id: params.reservationId },
       include: {
-        owner: {
-          select: {
-            email: true,
+        owner: true,
+        participants: {
+          include: {
+            user: true,
           },
         },
       },
@@ -36,36 +57,53 @@ export async function PUT(
 
     // Only allow the owner or the participant themselves to update their status
     const isOwner = reservation.owner.email === session.user.email;
-    const targetUser = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { email: true },
-    });
+    const participant = reservation.participants.find((p: Participant) => p.user.id === userId);
 
-    const isParticipant = session.user.email === targetUser?.email;
-
-    if (!isOwner && !isParticipant) {
+    if (!participant) {
       return NextResponse.json(
-        { error: 'Not authorized to update this status' },
+        { error: 'Participant not found' },
+        { status: 404 }
+      );
+    }
+
+    if (!isOwner && participant.user.email !== session.user.email) {
+      return NextResponse.json(
+        { error: 'Unauthorized to update this participant\'s status' },
         { status: 403 }
       );
     }
 
     // Update the participant status
-    const updatedStatus = await prisma.participantStatus.update({
+    const updatedParticipant = await prisma.participant.update({
       where: {
-        userId_reservationId: {
-          userId,
-          reservationId,
-        },
+        id: participant.id,
       },
       data: {
         ...(type === 'payment' ? { hasPaid: value } : { isGoing: value }),
       },
+      include: {
+        user: true,
+      },
     });
 
-    return NextResponse.json(updatedStatus);
-  } catch (error) {
+    return NextResponse.json(updatedParticipant);
+  } catch (error: unknown) {
     console.error('Error updating participant status:', error);
+    
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: 'Invalid request data', details: error.errors },
+        { status: 400 }
+      );
+    }
+
+    if (error instanceof Error) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: 500 }
+      );
+    }
+
     return NextResponse.json(
       { error: 'Failed to update participant status' },
       { status: 500 }

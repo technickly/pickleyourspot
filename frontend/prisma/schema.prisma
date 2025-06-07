@@ -7,69 +7,186 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum MembershipTier {
+  FREE
+  BASIC
+  PREMIUM
+  ADMIN
+}
+
+enum FeatureType {
+  ACTIVE_RESERVATIONS
+  EMAIL_NOTIFICATIONS
+  CUSTOM_EVENTS
+  ENHANCED_COURTS
+  PRIORITY_SUPPORT
+  PAYMENT_TRACKING
+}
+
+model TierFeature {
+  id          String        @id @default(cuid())
+  type        FeatureType
+  tier        MembershipTier
+  value       String        // JSON string for complex values
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@unique([type, tier])
+}
+
 model User {
-  id                String          @id @default(uuid())
-  email             String          @unique
-  name              String?
-  image             String?
-  createdAt         DateTime        @default(now())
-  updatedAt         DateTime        @updatedAt
-  messages          Message[]
-  reservations      Reservation[]   @relation("UserReservations")
-  participantIn     ParticipantStatus[]
+  id               String              @id @default(cuid())
+  name             String?
+  email            String              @unique
+  emailVerified    DateTime?
+  image            String?
+  accounts         Account[]
+  sessions         Session[]
+  messages         Message[]
+  reservations     Reservation[]       @relation("UserReservations")
+  participantIn    ParticipantStatus[]
+  membership       Membership?
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+  role             MembershipTier      @default(FREE)
 }
 
 model Court {
-  id           String        @id @default(uuid())
+  id           String        @id @default(cuid())
   name         String
-  description  String
-  imageUrl     String
+  description  String?
+  imageUrl     String?
+  reservations Reservation[]
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
-  reservations Reservation[]
 }
 
 model Reservation {
-  id              String              @id @default(uuid())
+  id              String              @id @default(cuid())
   name            String
+  description     String?
   startTime       DateTime
   endTime         DateTime
-  createdAt       DateTime            @default(now())
-  updatedAt       DateTime            @updatedAt
   courtId         String
-  ownerId         String
-  description     String?
-  shortUrl        String              @unique @default(uuid())
-  paymentRequired Boolean             @default(false)
-  paymentInfo     String?
-  messages        Message[]
   court           Court               @relation(fields: [courtId], references: [id])
+  ownerId         String
   owner           User                @relation("UserReservations", fields: [ownerId], references: [id])
   participants    ParticipantStatus[]
+  invites         Invite[]
+  messages        Message[]
+  shortUrl        String              @unique @default(cuid())
+  paymentRequired Boolean             @default(false)
+  paymentInfo     String?
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  @@index([courtId])
+  @@index([ownerId])
 }
 
 model ParticipantStatus {
-  id            String      @id @default(uuid())
-  hasPaid       Boolean     @default(false)
-  isGoing       Boolean     @default(true)
-  updatedAt     DateTime    @updatedAt
+  id            String      @id @default(cuid())
   userId        String
   reservationId String
-  userEmail     String
-  userName      String?
-  userImage     String?
+  isGoing       Boolean     @default(true)
+  hasPaid       Boolean     @default(false)
   user          User        @relation(fields: [userId], references: [id])
   reservation   Reservation @relation(fields: [reservationId], references: [id])
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
 
   @@unique([userId, reservationId])
+  @@index([userId])
+  @@index([reservationId])
 }
 
 model Message {
-  id            String      @id @default(uuid())
+  id            String      @id @default(cuid())
   content       String
-  createdAt     DateTime    @default(now())
   userId        String
   reservationId String
   reservation   Reservation @relation(fields: [reservationId], references: [id])
   user          User        @relation(fields: [userId], references: [id])
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@index([userId])
+  @@index([reservationId])
+}
+
+model Invite {
+  id            String      @id @default(cuid())
+  token         String      @unique
+  email         String
+  reservationId String
+  reservation   Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+  createdAt     DateTime    @default(now())
+  expiresAt     DateTime
+  usedAt        DateTime?
+
+  @@index([token])
+  @@index([reservationId])
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Membership {
+  id                  String        @id @default(cuid())
+  userId              String        @unique
+  user                User          @relation(fields: [userId], references: [id])
+  tier                MembershipTier
+  stripeCustomerId    String?       @unique
+  stripeSubscriptionId String?
+  currentPeriodStart  DateTime
+  currentPeriodEnd    DateTime
+  cancelAtPeriodEnd   Boolean       @default(false)
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+
+  @@index([userId])
+}
+
+model MembershipFeature {
+  id          String        @id @default(cuid())
+  name        String        @unique
+  description String
+  tiers       MembershipTier[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
 }

@@ -1,72 +1,150 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, MembershipTier, FeatureType } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
 async function main() {
-  // Delete existing courts
-  await prisma.court.deleteMany();
+  // Clear existing features
+  await prisma.tierFeature.deleteMany();
 
-  // Create courts with local images
-  const courts = [
+  // Define tier features
+  const tierFeatures = [
+    // FREE Tier Features
     {
-      name: "Buena Vista",
-      description: "4 reservable pickleball courts on Buena Vista Tennis Court #1. Players must bring their own net.",
-      imageUrl: "/images/courts/buena-vista.jpg"
+      tier: MembershipTier.FREE,
+      type: FeatureType.ACTIVE_RESERVATIONS,
+      value: JSON.stringify({ max: 3 }),
     },
     {
-      name: "Goldman Tennis Center",
-      description: "5 permanent pickleball courts at Golden Gate Park. State-of-the-art lighting on all courts. Modern facility includes players' lounge, locker rooms, and pro shop. Reservations required.",
-      imageUrl: "/images/courts/goldman.jpg"
+      tier: MembershipTier.FREE,
+      type: FeatureType.EMAIL_NOTIFICATIONS,
+      value: JSON.stringify({ enabled: false }),
     },
     {
-      name: "Jackson",
-      description: "2 reservable pickleball courts on Jackson Tennis Court. Players must bring their own net. Can be reserved 2 days prior.",
-      imageUrl: "/images/courts/jackson.jpg"
+      tier: MembershipTier.FREE,
+      type: FeatureType.PAYMENT_TRACKING,
+      value: JSON.stringify({ enabled: true, notifications: false }),
     },
     {
-      name: "Moscone",
-      description: "4 reservable pickleball courts. Courts E&F can be reserved 2 days prior. Permanent nets available.",
-      imageUrl: "/images/courts/moscone.jpg"
+      tier: MembershipTier.FREE,
+      type: FeatureType.CUSTOM_EVENTS,
+      value: JSON.stringify({ enabled: false }),
     },
     {
-      name: "Parkside Square",
-      description: "8 reservable courts. Players must bring their own net. Courts G&H can be reserved 2 days prior.",
-      imageUrl: "/images/courts/parkside.jpg"
+      tier: MembershipTier.FREE,
+      type: FeatureType.ENHANCED_COURTS,
+      value: JSON.stringify({ enabled: false }),
     },
     {
-      name: "Presidio Wall",
-      description: "6 reservable pickleball courts available in one-hour slots.",
-      imageUrl: "/images/courts/presidio.jpg"
+      tier: MembershipTier.FREE,
+      type: FeatureType.PRIORITY_SUPPORT,
+      value: JSON.stringify({ enabled: false }),
+    },
+
+    // BASIC Tier Features
+    {
+      tier: MembershipTier.BASIC,
+      type: FeatureType.ACTIVE_RESERVATIONS,
+      value: JSON.stringify({ max: 10 }),
     },
     {
-      name: "Richmond",
-      description: "2 pickleball courts on Richmond Tennis Court. Individual reservable courts available Monday through Friday 3-7 p.m. & weekends 10:30 a.m.-1:30 p.m. Court A can be reserved 2 days prior.",
-      imageUrl: "/images/courts/richmond.jpg"
+      tier: MembershipTier.BASIC,
+      type: FeatureType.EMAIL_NOTIFICATIONS,
+      value: JSON.stringify({ enabled: true }),
     },
     {
-      name: "Rossi",
-      description: "5 reservable pickleball courts with rolling nets available.",
-      imageUrl: "/images/courts/rossi.jpg"
+      tier: MembershipTier.BASIC,
+      type: FeatureType.PAYMENT_TRACKING,
+      value: JSON.stringify({ enabled: true, notifications: true }),
     },
     {
-      name: "Stern Grove",
-      description: "4 reservable pickleball courts at the Frances M. McAteer Tennis Courts. Beautiful park setting with convenient access to parking.",
-      imageUrl: "/images/courts/stern.jpg"
+      tier: MembershipTier.BASIC,
+      type: FeatureType.CUSTOM_EVENTS,
+      value: JSON.stringify({ enabled: true }),
     },
     {
-      name: "Upper Noe",
-      description: "2 pickleball courts on Upper Noe Tennis Court. Can be reserved 2 days prior.",
-      imageUrl: "/images/courts/upper-noe.jpg"
-    }
+      tier: MembershipTier.BASIC,
+      type: FeatureType.ENHANCED_COURTS,
+      value: JSON.stringify({ enabled: true }),
+    },
+    {
+      tier: MembershipTier.BASIC,
+      type: FeatureType.PRIORITY_SUPPORT,
+      value: JSON.stringify({ enabled: true, responseTime: 24 }),
+    },
+
+    // PREMIUM Tier Features (TBD)
+    {
+      tier: MembershipTier.PREMIUM,
+      type: FeatureType.ACTIVE_RESERVATIONS,
+      value: JSON.stringify({ max: null }), // Unlimited
+    },
+    {
+      tier: MembershipTier.PREMIUM,
+      type: FeatureType.EMAIL_NOTIFICATIONS,
+      value: JSON.stringify({ enabled: true }),
+    },
+    {
+      tier: MembershipTier.PREMIUM,
+      type: FeatureType.PAYMENT_TRACKING,
+      value: JSON.stringify({ enabled: true, notifications: true }),
+    },
+    {
+      tier: MembershipTier.PREMIUM,
+      type: FeatureType.CUSTOM_EVENTS,
+      value: JSON.stringify({ enabled: true }),
+    },
+    {
+      tier: MembershipTier.PREMIUM,
+      type: FeatureType.ENHANCED_COURTS,
+      value: JSON.stringify({ enabled: true }),
+    },
+    {
+      tier: MembershipTier.PREMIUM,
+      type: FeatureType.PRIORITY_SUPPORT,
+      value: JSON.stringify({ enabled: true, responseTime: 12 }),
+    },
+
+    // ADMIN Tier Features
+    {
+      tier: MembershipTier.ADMIN,
+      type: FeatureType.ACTIVE_RESERVATIONS,
+      value: JSON.stringify({ max: null }), // Unlimited
+    },
+    {
+      tier: MembershipTier.ADMIN,
+      type: FeatureType.EMAIL_NOTIFICATIONS,
+      value: JSON.stringify({ enabled: true }),
+    },
+    {
+      tier: MembershipTier.ADMIN,
+      type: FeatureType.PAYMENT_TRACKING,
+      value: JSON.stringify({ enabled: true, notifications: true }),
+    },
+    {
+      tier: MembershipTier.ADMIN,
+      type: FeatureType.CUSTOM_EVENTS,
+      value: JSON.stringify({ enabled: true }),
+    },
+    {
+      tier: MembershipTier.ADMIN,
+      type: FeatureType.ENHANCED_COURTS,
+      value: JSON.stringify({ enabled: true }),
+    },
+    {
+      tier: MembershipTier.ADMIN,
+      type: FeatureType.PRIORITY_SUPPORT,
+      value: JSON.stringify({ enabled: true, responseTime: 1 }),
+    },
   ];
 
-  for (const court of courts) {
-    await prisma.court.create({
-      data: court,
+  // Create all tier features
+  for (const feature of tierFeatures) {
+    await prisma.tierFeature.create({
+      data: feature,
     });
   }
 
-  console.log('Seed data created successfully');
+  console.log('Seed completed successfully');
 }
 
 main()

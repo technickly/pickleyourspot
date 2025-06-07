@@ -2,6 +2,9 @@ import { useState } from 'react';
 import Image from 'next/image';
 import { toast } from 'react-hot-toast';
 import UserSearch from './UserSearch';
+import PaymentNotificationDialog from './PaymentNotificationDialog';
+import UnpaidConfirmationDialog from './UnpaidConfirmationDialog';
+import InviteParticipantDialog from './InviteParticipantDialog';
 
 interface Participant {
   name: string | null;
@@ -15,8 +18,10 @@ interface Participant {
 interface Props {
   participants: Participant[];
   reservationId: string;
+  reservationName: string;
   isOwner: boolean;
   ownerEmail: string;
+  ownerName: string | null;
   paymentRequired: boolean;
   userEmail?: string;
   onAddParticipant: (email: string) => Promise<void>;
@@ -26,14 +31,23 @@ interface Props {
 export default function ParticipantList({
   participants,
   reservationId,
+  reservationName,
   isOwner,
   ownerEmail,
+  ownerName,
   paymentRequired,
   userEmail,
   onAddParticipant,
   onRemoveParticipant,
 }: Props) {
   const [showUserSearch, setShowUserSearch] = useState(false);
+  const [showPaymentNotification, setShowPaymentNotification] = useState(false);
+  const [showUnpaidConfirmation, setShowUnpaidConfirmation] = useState(false);
+  const [showInviteDialog, setShowInviteDialog] = useState(false);
+  const [pendingPaymentUpdate, setPendingPaymentUpdate] = useState<{
+    userId: string;
+    newValue: boolean;
+  } | null>(null);
 
   const handleStatusUpdate = async (
     userId: string,
@@ -41,25 +55,97 @@ export default function ParticipantList({
     newValue: boolean
   ) => {
     try {
-      const response = await fetch(`/api/reservations/${reservationId}/participant-status`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          userId,
-          type,
-          value: newValue,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to update status');
+      if (!userId) {
+        throw new Error('Invalid user ID');
       }
 
-      toast.success(`${type === 'payment' ? 'Payment' : 'Attendance'} status updated`);
+      // If this is a payment status update
+      if (type === 'payment') {
+        if (newValue && !isOwner && userEmail !== ownerEmail) {
+          // If marking as paid, show payment notification dialog
+          setPendingPaymentUpdate({ userId, newValue });
+          setShowPaymentNotification(true);
+          return;
+        } else if (!newValue && !isOwner) {
+          // If marking as unpaid, show confirmation dialog
+          setPendingPaymentUpdate({ userId, newValue });
+          setShowUnpaidConfirmation(true);
+          return;
+        }
+      }
+
+      await updateParticipantStatus(userId, type, newValue);
     } catch (error) {
-      toast.error(`Failed to update ${type} status`);
+      console.error('Error updating status:', error);
+      toast.error(error instanceof Error ? error.message : `Failed to update ${type} status`);
+    }
+  };
+
+  const updateParticipantStatus = async (
+    userId: string,
+    type: 'payment' | 'attendance',
+    newValue: boolean
+  ) => {
+    const response = await fetch(`/api/reservations/${reservationId}/participant-status`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        userId,
+        type,
+        value: newValue,
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to update status');
+    }
+
+    // Update local state optimistically
+    const updatedParticipants = participants.map(p => {
+      if (p.userId === userId) {
+        return {
+          ...p,
+          [type === 'payment' ? 'hasPaid' : 'isGoing']: newValue
+        };
+      }
+      return p;
+    });
+
+    // Emit success message
+    toast.success(`${type === 'payment' ? 'Payment' : 'Attendance'} status updated`);
+  };
+
+  const handlePaymentNotificationClose = () => {
+    setShowPaymentNotification(false);
+    setPendingPaymentUpdate(null);
+  };
+
+  const handlePaymentNotificationConfirm = async () => {
+    if (pendingPaymentUpdate) {
+      await updateParticipantStatus(
+        pendingPaymentUpdate.userId,
+        'payment',
+        pendingPaymentUpdate.newValue
+      );
+    }
+    handlePaymentNotificationClose();
+  };
+
+  const handleUnpaidConfirmationClose = () => {
+    setShowUnpaidConfirmation(false);
+    setPendingPaymentUpdate(null);
+  };
+
+  const handleUnpaidConfirmationConfirm = async () => {
+    if (pendingPaymentUpdate) {
+      await updateParticipantStatus(
+        pendingPaymentUpdate.userId,
+        'payment',
+        pendingPaymentUpdate.newValue
+      );
     }
   };
 
@@ -68,12 +154,24 @@ export default function ParticipantList({
       <div className="flex justify-between items-center">
         <h3 className="font-medium text-gray-700">Participants</h3>
         {isOwner && (
-          <button
-            onClick={() => setShowUserSearch(!showUserSearch)}
-            className="text-blue-500 hover:text-blue-600 text-sm font-medium"
-          >
-            {showUserSearch ? 'Cancel' : '+ Add Participant'}
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowUserSearch(!showUserSearch)}
+              className="text-blue-500 hover:text-blue-600 text-sm font-medium"
+            >
+              {showUserSearch ? 'Cancel' : '+ Add Participant'}
+            </button>
+            <button
+              onClick={() => setShowInviteDialog(true)}
+              className="text-blue-500 hover:text-blue-600 text-sm font-medium flex items-center gap-1"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
+                <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+              </svg>
+              Send Invite
+            </button>
+          </div>
         )}
       </div>
 
@@ -196,6 +294,32 @@ export default function ParticipantList({
       ) : (
         <p className="text-gray-500 text-sm">No participants yet</p>
       )}
+
+      <PaymentNotificationDialog
+        isOpen={showPaymentNotification}
+        onClose={handlePaymentNotificationClose}
+        onConfirm={handlePaymentNotificationConfirm}
+        ownerName={ownerName || ownerEmail.split('@')[0]}
+        reservationId={reservationId}
+      />
+
+      <UnpaidConfirmationDialog
+        isOpen={showUnpaidConfirmation}
+        onClose={handleUnpaidConfirmationClose}
+        onConfirm={handleUnpaidConfirmationConfirm}
+        ownerName={ownerName || ownerEmail.split('@')[0]}
+      />
+
+      <InviteParticipantDialog
+        isOpen={showInviteDialog}
+        onClose={() => setShowInviteDialog(false)}
+        reservationId={reservationId}
+        reservationName={reservationName}
+        onInviteSent={() => {
+          setShowInviteDialog(false);
+          toast.success('Invitation sent successfully');
+        }}
+      />
     </div>
   );
 } 

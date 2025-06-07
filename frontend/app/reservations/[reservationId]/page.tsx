@@ -339,6 +339,7 @@ export default function ReservationPage({ params }: PageProps) {
                     reservationId={reservation.id}
                     isOwner={isOwner}
                     ownerEmail={reservation.owner.email}
+                    ownerName={reservation.owner.name}
                     paymentRequired={reservation.paymentRequired}
                     userEmail={session?.user?.email || undefined}
                     onAddParticipant={handleAddParticipant}
