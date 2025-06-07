@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '../auth/[...nextauth]/route';
 import prisma from '@/lib/prisma';
-import { Prisma } from '@prisma/client';
+import { Prisma, User, Reservation, Court } from '@prisma/client';
 
 interface CreateReservationBody {
   courtId: string;
@@ -15,9 +14,25 @@ interface CreateReservationBody {
   paymentInfo?: string | null;
 }
 
+interface ParticipantWithUser {
+  id: string;
+  hasPaid: boolean;
+  isGoing: boolean;
+  user: User;
+  userId: string;
+  reservationId: string;
+  updatedAt: Date;
+}
+
+interface CompleteReservation extends Reservation {
+  court: Pick<Court, 'name' | 'description' | 'imageUrl'>;
+  owner: Pick<User, 'name' | 'email' | 'image'>;
+  participants: ParticipantWithUser[];
+}
+
 export async function POST(request: Request) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getServerSession();
     if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -49,39 +64,30 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    const reservationData: Prisma.ReservationCreateInput = {
-      name: name.trim(),
-      court: { connect: { id: courtId } },
-      startTime: new Date(startTime),
-      endTime: new Date(endTime),
-      owner: { connect: { id: user.id } },
-      description: description?.trim(),
-      paymentRequired: paymentRequired || false,
-      paymentInfo: paymentInfo?.trim(),
-    };
-
     // Create the reservation
     const reservation = await prisma.reservation.create({
-      data: reservationData,
+      data: {
+        name: name.trim(),
+        court: { connect: { id: courtId } },
+        startTime: new Date(startTime),
+        endTime: new Date(endTime),
+        owner: { connect: { id: user.id } },
+        description: description?.trim(),
+        paymentRequired: paymentRequired || false,
+        paymentInfo: paymentInfo?.trim(),
+      } as Prisma.ReservationCreateInput,
     });
 
     // Add participants if any
     if (participantIds.length > 0) {
-      const participants = await prisma.user.findMany({
-        where: {
-          email: {
-            in: participantIds,
-          },
-        },
-      });
-
-      if (participants.length > 0) {
-        await prisma.reservation.update({
-          where: { id: reservation.id },
+      // Create participant status entries for each participant
+      for (const email of participantIds) {
+        await (prisma as any).ParticipantStatus.create({
           data: {
-            participants: {
-              connect: participants.map(p => ({ id: p.id })),
-            },
+            user: { connect: { email } },
+            reservation: { connect: { id: reservation.id } },
+            hasPaid: false,
+            isGoing: true,
           },
         });
       }
@@ -106,16 +112,42 @@ export async function POST(request: Request) {
           },
         },
         participants: {
-          select: {
-            name: true,
-            email: true,
-            image: true,
+          include: {
+            user: {
+              select: {
+                name: true,
+                email: true,
+                image: true,
+              },
+            },
           },
         },
       },
-    });
+    }) as CompleteReservation | null;
 
-    return NextResponse.json(completeReservation);
+    if (!completeReservation) {
+      return NextResponse.json(
+        { error: 'Failed to fetch created reservation' },
+        { status: 500 }
+      );
+    }
+
+    // Transform the response to include user details
+    const transformedReservation = {
+      ...completeReservation,
+      participants: completeReservation.participants.map((participant: ParticipantWithUser) => ({
+        id: participant.id,
+        hasPaid: participant.hasPaid,
+        isGoing: participant.isGoing,
+        user: {
+          name: participant.user.name,
+          email: participant.user.email,
+          image: participant.user.image,
+        },
+      })),
+    };
+
+    return NextResponse.json(transformedReservation);
   } catch (error) {
     console.error('Error creating reservation:', error);
     return NextResponse.json(
