@@ -312,81 +312,31 @@ export default function ParticipantList({
                 {/* Status Buttons Section */}
                 <div className="flex items-center gap-3 pt-1">
                   {/* Going/Not Going Status */}
-                  {canModifyStatus ? (
-                    <button
-                      onClick={() => handleStatusUpdate(participant.userId, 'attendance', !participant.isGoing)}
-                      className={`inline-flex items-center px-4 py-2 rounded-md text-sm font-medium transition-colors min-w-[120px] justify-center relative group ${
-                        participant.isGoing
-                          ? 'bg-green-100 text-green-800 hover:bg-green-200'
-                          : 'bg-red-100 text-red-800 hover:bg-red-200'
-                      }`}
-                    >
-                      {participant.isGoing ? (
-                        <>
-                          <span className="mr-1">✓</span> Going
-                          {isCurrentUser && (
-                            <span className="absolute -top-7 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                              Click to mark as not going
-                            </span>
-                          )}
-                        </>
-                      ) : (
-                        <>
-                          <span className="mr-1">✗</span> Not Going
-                          {isCurrentUser && (
-                            <span className="absolute -top-7 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                              Click to mark as going
-                            </span>
-                          )}
-                        </>
-                      )}
-                    </button>
-                  ) : (
-                    <div
-                      className={`inline-flex items-center px-4 py-2 rounded-md text-sm font-medium min-w-[120px] justify-center ${
-                        participant.isGoing
-                          ? 'bg-green-50 text-green-700'
-                          : 'bg-red-50 text-red-700'
-                      }`}
-                    >
-                      {participant.isGoing ? (
-                        <>
-                          <span className="mr-1">✓</span> Going
-                        </>
-                      ) : (
-                        <>
-                          <span className="mr-1">✗</span> Not Going
-                        </>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Payment Status */}
-                  {paymentRequired && (
-                    canModifyStatus ? (
+                  <div className="flex items-center gap-1">
+                    {canModifyStatus ? (
                       <button
-                        onClick={() => handleStatusUpdate(participant.userId, 'payment', !participant.hasPaid)}
+                        onClick={() => handleStatusUpdate(participant.userId, 'attendance', !participant.isGoing)}
                         className={`inline-flex items-center px-4 py-2 rounded-md text-sm font-medium transition-colors min-w-[120px] justify-center relative group ${
-                          participant.hasPaid
+                          participant.isGoing
                             ? 'bg-green-100 text-green-800 hover:bg-green-200'
-                            : 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
+                            : 'bg-red-100 text-red-800 hover:bg-red-200'
                         }`}
                       >
-                        {participant.hasPaid ? (
+                        {participant.isGoing ? (
                           <>
-                            <span className="mr-1">✓</span> Paid
+                            <span className="mr-1">✓</span> Going
                             {isCurrentUser && (
                               <span className="absolute -top-7 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                                Click to mark as unpaid
+                                Click to mark as not going
                               </span>
                             )}
                           </>
                         ) : (
                           <>
-                            <span className="mr-1">$</span> Unpaid
+                            <span className="mr-1">✗</span> Not Going
                             {isCurrentUser && (
                               <span className="absolute -top-7 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                                Click to mark as paid
+                                Click to mark as going
                               </span>
                             )}
                           </>
@@ -395,31 +345,94 @@ export default function ParticipantList({
                     ) : (
                       <div
                         className={`inline-flex items-center px-4 py-2 rounded-md text-sm font-medium min-w-[120px] justify-center ${
-                          participant.hasPaid
+                          participant.isGoing
                             ? 'bg-green-50 text-green-700'
-                            : 'bg-yellow-50 text-yellow-700'
+                            : 'bg-red-50 text-red-700'
                         }`}
                       >
-                        {participant.hasPaid ? (
+                        {participant.isGoing ? (
                           <>
-                            <span className="mr-1">✓</span> Paid
+                            <span className="mr-1">✓</span> Going
                           </>
                         ) : (
                           <>
-                            <span className="mr-1">$</span> Unpaid
+                            <span className="mr-1">✗</span> Not Going
                           </>
                         )}
                       </div>
-                    )
+                    )}
+                    {isCurrentUser && canModifyStatus && (
+                      <div className="md:hidden flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                        </svg>
+                        <span className="ml-1 text-xs text-gray-500">Tap to change</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Payment Status */}
+                  {paymentRequired && (
+                    <div className="flex items-center gap-1">
+                      {canModifyStatus ? (
+                        <button
+                          onClick={() => handleStatusUpdate(participant.userId, 'payment', !participant.hasPaid)}
+                          className={`inline-flex items-center px-4 py-2 rounded-md text-sm font-medium transition-colors min-w-[120px] justify-center relative group ${
+                            participant.hasPaid
+                              ? 'bg-green-100 text-green-800 hover:bg-green-200'
+                              : 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
+                          }`}
+                        >
+                          {participant.hasPaid ? (
+                            <>
+                              <span className="mr-1">✓</span> Paid
+                              {isCurrentUser && (
+                                <span className="absolute -top-7 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                                  Click to mark as unpaid
+                                </span>
+                              )}
+                            </>
+                          ) : (
+                            <>
+                              <span className="mr-1">$</span> Unpaid
+                              {isCurrentUser && (
+                                <span className="absolute -top-7 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                                  Click to mark as paid
+                                </span>
+                              )}
+                            </>
+                          )}
+                        </button>
+                      ) : (
+                        <div
+                          className={`inline-flex items-center px-4 py-2 rounded-md text-sm font-medium min-w-[120px] justify-center ${
+                            participant.hasPaid
+                              ? 'bg-green-50 text-green-700'
+                              : 'bg-yellow-50 text-yellow-700'
+                          }`}
+                        >
+                          {participant.hasPaid ? (
+                            <>
+                              <span className="mr-1">✓</span> Paid
+                            </>
+                          ) : (
+                            <>
+                              <span className="mr-1">$</span> Unpaid
+                            </>
+                          )}
+                        </div>
+                      )}
+                      {isCurrentUser && canModifyStatus && (
+                        <div className="md:hidden flex items-center">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                          </svg>
+                          <span className="ml-1 text-xs text-gray-500">Tap to change</span>
+                        </div>
+                      )}
+                    </div>
                   )}
                 </div>
-
-                {/* Add visual hint for current user */}
-                {isCurrentUser && (
-                  <div className="mt-2 text-sm text-gray-500 italic">
-                    You can click the buttons above to update your status
-                  </div>
-                )}
               </div>
             );
           })}

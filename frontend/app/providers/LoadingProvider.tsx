@@ -21,25 +21,32 @@ export default function LoadingProvider({ children }: { children: React.ReactNod
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  // Show loading screen on route changes, except for specific pages
   useEffect(() => {
-    // Skip loading for any pages that have real-time updates
-    const skipLoadingPaths = [
-      '/messages',
-      '/reservations',
-      '/my-reservations',
-      '/r/', // Short URLs for reservations
+    // Only show loading for major route changes
+    // Explicitly define routes that should show loading
+    const showLoadingPaths = [
+      '/',
+      '/login',
+      '/signup',
+      '/settings',
+      '/courts',
+      '/upgrade'
     ];
 
-    // Check if current path matches any of the skip paths
-    if (skipLoadingPaths.some(path => pathname?.includes(path))) {
+    // Check if current path exactly matches a route that should show loading
+    const shouldShowLoading = showLoadingPaths.some(path => 
+      pathname === path || // Exact match
+      (pathname?.startsWith(path) && path !== '/') // Subpath match, but not for root
+    );
+
+    if (!shouldShowLoading) {
       return;
     }
 
     setIsLoading(true);
     const timer = setTimeout(() => setIsLoading(false), 500);
     return () => clearTimeout(timer);
-  }, [pathname, searchParams]);
+  }, [pathname]);
 
   return (
     <LoadingContext.Provider value={{ isLoading, setIsLoading }}>
