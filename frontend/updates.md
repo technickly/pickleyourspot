@@ -78,6 +78,44 @@
 - Added proper validation for user actions
 - Implemented secure API endpoints
 
+### New Upgrade Plans Page
+- Created dedicated upgrade plans landing page
+- Added comprehensive feature comparison table
+- Improved tier descriptions and positioning:
+  - Free Tier: For active pickleballers to view and participate in events
+  - Basic Tier: For regular players organizing games and group coordination
+  - Supr Tier: For tournament organizers and community leaders
+- Enhanced feature clarity:
+  - Updated reservation statistics access (None for Free tier)
+  - Clarified invitation capabilities (Link Only/Email/Email & Text)
+  - Added tournament tools progression (View Only/Basic/Advanced)
+- Improved navigation with return path functionality
+- Added FAQ section for common membership questions
+
+### Membership Features Refinement
+- Free Tier Updates:
+  - Removed statistics access
+  - Limited to link-only invitations
+  - Added view-only access to tournaments
+  - Focused on community participation
+- Basic Tier Updates:
+  - Added email invitations
+  - Included basic tournament tools
+  - Enhanced group coordination features
+  - Optimized for regular players
+- Supr Tier Updates:
+  - Added text message capabilities
+  - Enhanced tournament management tools
+  - Expanded participant limits
+  - Designed for event organizers
+
+### User Interface Improvements
+- Updated upgrade buttons and CTAs
+- Enhanced feature comparison visuals
+- Added tier-specific descriptions
+- Improved mobile responsiveness
+- Streamlined upgrade flow
+
 ## Coming Soon
 - Stripe payment integration
 - Advanced analytics dashboard

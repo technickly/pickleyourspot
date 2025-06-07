@@ -34,7 +34,7 @@ export default function UpgradePage() {
             Upgrade Your Pickleball Experience
           </h1>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Choose the perfect plan to enhance your game organization and unlock premium features
+            Choose the perfect plan that matches your pickleball journey and community involvement
           </p>
         </div>
 
@@ -68,19 +68,19 @@ export default function UpgradePage() {
                 </tr>
                 <tr className="border-b border-gray-100">
                   <td className="py-4 px-4">Reservation Statistics</td>
-                  <td className="text-center py-4 px-4">Basic</td>
+                  <td className="text-center py-4 px-4">None</td>
                   <td className="text-center py-4 px-4">✓</td>
                   <td className="text-center py-4 px-4">Advanced</td>
                 </tr>
                 <tr className="border-b border-gray-100">
-                  <td className="py-4 px-4">Email & Text Invitations</td>
-                  <td className="text-center py-4 px-4">-</td>
-                  <td className="text-center py-4 px-4">✓</td>
-                  <td className="text-center py-4 px-4">✓</td>
+                  <td className="py-4 px-4">Invitations</td>
+                  <td className="text-center py-4 px-4">Link Only</td>
+                  <td className="text-center py-4 px-4">Email</td>
+                  <td className="text-center py-4 px-4">Email & Text</td>
                 </tr>
                 <tr className="border-b border-gray-100">
                   <td className="py-4 px-4">Tournament Tools</td>
-                  <td className="text-center py-4 px-4">-</td>
+                  <td className="text-center py-4 px-4">View Only</td>
                   <td className="text-center py-4 px-4">Basic</td>
                   <td className="text-center py-4 px-4">Advanced</td>
                 </tr>
@@ -97,8 +97,27 @@ export default function UpgradePage() {
 
         {/* Membership Tiers */}
         <div id="plans">
+          <div className="text-center mb-12">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {/* Free Tier Description */}
+              <div className="bg-white rounded-lg p-6 shadow-md">
+                <h3 className="text-lg font-semibold mb-2">Free</h3>
+                <p className="text-gray-600">Perfect for active pickleballers who want to stay connected with their community and participate in events.</p>
+              </div>
+              {/* Basic Tier Description */}
+              <div className="bg-white rounded-lg p-6 shadow-md">
+                <h3 className="text-lg font-semibold mb-2">Basic</h3>
+                <p className="text-gray-600">Ideal for regular players who organize games and want better tools to coordinate with their pickleball groups.</p>
+              </div>
+              {/* Supr Tier Description */}
+              <div className="bg-white rounded-lg p-6 shadow-md">
+                <h3 className="text-lg font-semibold mb-2">Supr</h3>
+                <p className="text-gray-600">Built for tournament organizers and community leaders who run larger events and need advanced management tools.</p>
+              </div>
+            </div>
+          </div>
           <MembershipTiers 
-            currentTier={session?.user?.membershipTier || 'FREE'} 
+            currentTier={session?.user?.role || 'FREE'} 
             showComparison={false}
           />
         </div>
