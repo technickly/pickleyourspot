@@ -20,7 +20,8 @@ interface Reservation {
   startTime: string;
   endTime: string;
   courtId: string;
-  court: {
+  courtName: string;
+  court?: {
     id: string;
     name: string;
   };
@@ -164,7 +165,9 @@ export default function MyReservationsPage() {
 
                 <div>
                   <h3 className="text-sm font-medium text-gray-700 mb-1">Court Description:</h3>
-                  <p className="text-gray-600">{reservation.court.name}</p>
+                  <p className="text-gray-600">
+                    {reservation.court?.name || reservation.courtName}
+                  </p>
                 </div>
 
                 <div>
