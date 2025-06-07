@@ -213,6 +213,13 @@ export default function ParticipantList({
     }
   };
 
+  // Sort participants: owner first, then alphabetically by name/email
+  const sortedParticipants = [...participants].sort((a, b) => {
+    if (a.email === ownerEmail) return -1;
+    if (b.email === ownerEmail) return 1;
+    return (a.name || a.email).localeCompare(b.name || b.email);
+  });
+
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
@@ -248,9 +255,9 @@ export default function ParticipantList({
         </div>
       )}
 
-      {participants.length > 0 ? (
+      {sortedParticipants.length > 0 ? (
         <div className="space-y-3">
-          {participants.map((participant) => (
+          {sortedParticipants.map((participant) => (
             <div
               key={participant.email}
               className={`bg-white rounded-lg shadow-sm border p-4 transition-all ${
@@ -259,7 +266,7 @@ export default function ParticipantList({
                   : 'border-gray-200 hover:border-gray-300'
               }`}
             >
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="flex items-center space-x-3">
                   {participant.image && (
                     <Image
@@ -285,100 +292,95 @@ export default function ParticipantList({
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-2">
-                    {/* Going/Not Going Status */}
-                    {participant.email === userEmail ? (
-                      // Clickable button for current user
+                <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                  {/* Going/Not Going Status */}
+                  {participant.email === userEmail ? (
+                    <button
+                      onClick={() => handleStatusUpdate(participant.userId, 'attendance', !participant.isGoing)}
+                      className={`inline-flex items-center px-3 py-1.5 rounded-md text-sm font-medium transition-colors min-w-[100px] justify-center ${
+                        participant.isGoing
+                          ? 'bg-green-100 text-green-800 hover:bg-green-200'
+                          : 'bg-red-100 text-red-800 hover:bg-red-200'
+                      }`}
+                    >
+                      {participant.isGoing ? (
+                        <>
+                          <span className="mr-1">✓</span> Going
+                        </>
+                      ) : (
+                        <>
+                          <span className="mr-1">✗</span> Not Going
+                        </>
+                      )}
+                    </button>
+                  ) : (
+                    <div
+                      className={`inline-flex items-center px-3 py-1.5 rounded-md text-sm font-medium min-w-[100px] justify-center ${
+                        participant.isGoing
+                          ? 'bg-green-50 text-green-700'
+                          : 'bg-red-50 text-red-700'
+                      }`}
+                    >
+                      {participant.isGoing ? (
+                        <>
+                          <span className="mr-1">✓</span> Going
+                        </>
+                      ) : (
+                        <>
+                          <span className="mr-1">✗</span> Not Going
+                        </>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Payment Status */}
+                  {paymentRequired && (
+                    participant.email === userEmail ? (
                       <button
-                        onClick={() => handleStatusUpdate(participant.userId, 'attendance', !participant.isGoing)}
-                        className={`inline-flex items-center px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                          participant.isGoing
+                        onClick={() => handleStatusUpdate(participant.userId, 'payment', !participant.hasPaid)}
+                        className={`inline-flex items-center px-3 py-1.5 rounded-md text-sm font-medium transition-colors min-w-[100px] justify-center ${
+                          participant.hasPaid
                             ? 'bg-green-100 text-green-800 hover:bg-green-200'
-                            : 'bg-red-100 text-red-800 hover:bg-red-200'
+                            : 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
                         }`}
                       >
-                        {participant.isGoing ? (
+                        {participant.hasPaid ? (
                           <>
-                            <span className="mr-1">✓</span> Going
+                            <span className="mr-1">✓</span> Paid
                           </>
                         ) : (
                           <>
-                            <span className="mr-1">✗</span> Not Going
+                            <span className="mr-1">$</span> Unpaid
                           </>
                         )}
                       </button>
                     ) : (
-                      // Static status indicator for other participants
                       <div
-                        className={`inline-flex items-center px-3 py-1.5 rounded-md text-sm font-medium ${
-                          participant.isGoing
+                        className={`inline-flex items-center px-3 py-1.5 rounded-md text-sm font-medium min-w-[100px] justify-center ${
+                          participant.hasPaid
                             ? 'bg-green-50 text-green-700'
-                            : 'bg-red-50 text-red-700'
+                            : 'bg-yellow-50 text-yellow-700'
                         }`}
                       >
-                        {participant.isGoing ? (
+                        {participant.hasPaid ? (
                           <>
-                            <span className="mr-1">✓</span> Going
+                            <span className="mr-1">✓</span> Paid
                           </>
                         ) : (
                           <>
-                            <span className="mr-1">✗</span> Not Going
+                            <span className="mr-1">$</span> Unpaid
                           </>
                         )}
                       </div>
-                    )}
-
-                    {/* Payment Status */}
-                    {paymentRequired && (
-                      participant.email === userEmail ? (
-                        // Clickable payment button for current user
-                        <button
-                          onClick={() => handleStatusUpdate(participant.userId, 'payment', !participant.hasPaid)}
-                          className={`inline-flex items-center px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                            participant.hasPaid
-                              ? 'bg-green-100 text-green-800 hover:bg-green-200'
-                              : 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
-                          }`}
-                        >
-                          {participant.hasPaid ? (
-                            <>
-                              <span className="mr-1">✓</span> Paid
-                            </>
-                          ) : (
-                            <>
-                              <span className="mr-1">$</span> Unpaid
-                            </>
-                          )}
-                        </button>
-                      ) : (
-                        // Static payment status for other participants
-                        <div
-                          className={`inline-flex items-center px-3 py-1.5 rounded-md text-sm font-medium ${
-                            participant.hasPaid
-                              ? 'bg-green-50 text-green-700'
-                              : 'bg-yellow-50 text-yellow-700'
-                          }`}
-                        >
-                          {participant.hasPaid ? (
-                            <>
-                              <span className="mr-1">✓</span> Paid
-                            </>
-                          ) : (
-                            <>
-                              <span className="mr-1">$</span> Unpaid
-                            </>
-                          )}
-                        </div>
-                      )
-                    )}
-                  </div>
+                    )
+                  )}
 
                   {/* Remove Button (only for owner) */}
                   {isOwner && participant.email !== ownerEmail && (
                     <button
                       onClick={() => onRemoveParticipant(participant.email)}
                       className="text-red-600 hover:text-red-700 transition-colors p-1.5 rounded-md hover:bg-red-50"
+                      title="Remove participant"
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                         <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />

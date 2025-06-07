@@ -131,7 +131,7 @@ export default function MyAccountPage() {
         return 'text-gray-600';
       case 'BASIC':
         return 'text-blue-600';
-      case 'PREMIUM':
+      case 'SUPR':
         return 'text-purple-600';
       case 'ADMIN':
         return 'text-red-600';

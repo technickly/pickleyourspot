@@ -35,7 +35,7 @@ export default function InviteParticipantDialog({
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-lg p-6 max-w-md w-full">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold">Premium Feature</h3>
+          <h3 className="text-lg font-semibold">Supr Feature</h3>
           <button
             onClick={onClose}
             className="text-gray-500 hover:text-gray-700"
@@ -51,10 +51,10 @@ export default function InviteParticipantDialog({
             <FaCrown className="text-yellow-400 text-5xl" />
           </div>
           <h4 className="text-xl font-semibold mb-2">
-            Upgrade to Premium
+            Upgrade to Supr
           </h4>
           <p className="text-gray-600 mb-6">
-            Email invitations are a premium feature. Upgrade your account to unlock:
+            Email invitations are a Supr feature. Upgrade your account to unlock:
           </p>
           <ul className="text-left space-y-3 mb-6">
             <li className="flex items-center gap-2">

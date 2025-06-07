@@ -30,19 +30,19 @@ Designed for regular players and small group organizers.
 - Priority support
 - Custom reservation descriptions
 
-### 🌟 Premium Tier - Coming Soon
+### 🌟 Supr Tier - Coming Soon
 For advanced users and event organizers.
 
 **Future Features:**
 - Everything in Basic tier
 - Unlimited active reservations
 - Advanced tournament tools
-- Premium analytics
+- Supr analytics
 - Priority court access
 - VIP support
 - Custom branding options
 
-**Note:** All accounts are currently on the Free tier. Basic and Premium features will be available in future updates.
+**Note:** All accounts are currently on the Free tier. Basic and Supr features will be available in future updates.
 
 ## Why Choose Pickle Your Spot?
 

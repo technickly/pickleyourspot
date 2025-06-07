@@ -130,11 +130,11 @@ export default function MembershipTiers({ currentTier }: MembershipTierProps) {
             </div>
           </div>
 
-          {/* Premium Tier */}
+          {/* Supr Tier */}
           <div className="bg-white rounded-2xl shadow-lg p-8 relative">
             <div className="text-center">
               <h3 className="text-2xl font-bold text-gray-900 mb-4">
-                Premium
+                Supr
                 <FaCrown className="inline-block ml-2 text-yellow-400" />
               </h3>
               <p className="text-gray-600 mb-6">For power users</p>
@@ -158,7 +158,7 @@ export default function MembershipTiers({ currentTier }: MembershipTierProps) {
               </li>
               <li className="flex items-center gap-3">
                 <FaCheck className="text-green-500 flex-shrink-0" />
-                <span>Premium analytics</span>
+                <span>Supr analytics</span>
               </li>
               <li className="flex items-center gap-3">
                 <FaCheck className="text-green-500 flex-shrink-0" />
@@ -170,16 +170,16 @@ export default function MembershipTiers({ currentTier }: MembershipTierProps) {
               </li>
             </ul>
             <div className="text-center">
-              {currentTier === 'PREMIUM' ? (
+              {currentTier === 'SUPR' ? (
                 <span className="inline-block w-full px-6 py-3 text-white bg-gradient-to-r from-purple-600 to-indigo-600 rounded-full font-semibold">
                   Current Plan
                 </span>
               ) : (
                 <button
-                  onClick={() => handleUpgrade('PREMIUM')}
+                  onClick={() => handleUpgrade('SUPR')}
                   className="w-full px-6 py-3 text-white bg-gradient-to-r from-purple-600 to-indigo-600 rounded-full font-semibold hover:opacity-90 transition-opacity"
                 >
-                  Upgrade to Premium
+                  Upgrade to Supr
                 </button>
               )}
             </div>
@@ -225,7 +225,7 @@ export default function MembershipTiers({ currentTier }: MembershipTierProps) {
               <ul className="mt-2 space-y-2 text-sm text-gray-600">
                 <li>• Securely process payments</li>
                 <li>• Manage your subscription</li>
-                <li>• Access premium features instantly</li>
+                <li>• Access Supr features instantly</li>
               </ul>
             </div>
             <div className="flex justify-end">

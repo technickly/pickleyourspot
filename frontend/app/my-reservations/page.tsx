@@ -99,28 +99,7 @@ export default function MyReservationsPage() {
     newValue: boolean
   ) => {
     try {
-      // Optimistically update the UI
-      const updatedReservations = reservations.map(reservation => {
-        if (reservation.id === reservationId) {
-          return {
-            ...reservation,
-            participants: reservation.participants.map(participant => {
-              if (participant.userId === userId) {
-                return {
-                  ...participant,
-                  [type === 'payment' ? 'hasPaid' : 'isGoing']: newValue
-                };
-              }
-              return participant;
-            })
-          };
-        }
-        return reservation;
-      });
-
-      setReservations(updatedReservations);
-
-      // Make API call
+      // Make API call first
       const response = await fetch(`/api/reservations/${reservationId}/participant-status`, {
         method: 'PUT',
         headers: {
@@ -137,11 +116,16 @@ export default function MyReservationsPage() {
         throw new Error('Failed to update status');
       }
 
+      // Show success message
       toast.success(`${type === 'payment' ? 'Payment' : 'Attendance'} status updated`);
-    } catch (error) {
-      // Revert the optimistic update on error
+      
+      // Refresh the page data
       await fetchData();
+
+    } catch (error) {
       toast.error(`Failed to update ${type} status`);
+      // Refresh data to ensure we're showing the correct state
+      await fetchData();
     }
   };
 

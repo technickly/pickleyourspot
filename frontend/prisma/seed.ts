@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
-const { PrismaClient, MembershipTier, FeatureType } = require('@prisma/client');
+import { PrismaClient, MembershipTier, FeatureType } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -13,25 +13,25 @@ async function main() {
     // FREE tier features
     {
       tier: MembershipTier.FREE,
-      feature: FeatureType.ACTIVE_RESERVATIONS,
+      type: FeatureType.ACTIVE_RESERVATIONS,
       value: '3',
       description: 'Maximum number of active reservations',
     },
     {
       tier: MembershipTier.FREE,
-      feature: FeatureType.PARTICIPANT_MANAGEMENT,
+      type: FeatureType.PARTICIPANT_MANAGEMENT,
       value: 'basic',
       description: 'Basic participant management',
     },
     {
       tier: MembershipTier.FREE,
-      feature: FeatureType.PAYMENT_TRACKING,
+      type: FeatureType.PAYMENT_TRACKING,
       value: 'basic',
       description: 'Basic payment tracking without notifications',
     },
     {
       tier: MembershipTier.FREE,
-      feature: FeatureType.COURT_ACCESS,
+      type: FeatureType.COURT_ACCESS,
       value: 'public',
       description: 'Access to public courts only',
     },
@@ -39,47 +39,47 @@ async function main() {
     // BASIC tier features
     {
       tier: MembershipTier.BASIC,
-      feature: FeatureType.ACTIVE_RESERVATIONS,
+      type: FeatureType.ACTIVE_RESERVATIONS,
       value: '10',
       description: 'Maximum number of active reservations',
     },
     {
       tier: MembershipTier.BASIC,
-      feature: FeatureType.CUSTOM_EVENTS,
+      type: FeatureType.CUSTOM_EVENTS,
       value: 'enabled',
       description: 'Create and manage custom events and tournaments',
     },
     {
       tier: MembershipTier.BASIC,
-      feature: FeatureType.COURT_MANAGEMENT,
+      type: FeatureType.COURT_MANAGEMENT,
       value: 'enhanced',
       description: 'Enhanced court management capabilities',
     },
     {
       tier: MembershipTier.BASIC,
-      feature: FeatureType.PAYMENT_NOTIFICATIONS,
+      type: FeatureType.PAYMENT_NOTIFICATIONS,
       value: 'email',
       description: 'Email payment reminders',
     },
     {
       tier: MembershipTier.BASIC,
-      feature: FeatureType.SUPPORT,
+      type: FeatureType.SUPPORT,
       value: '24h',
       description: '24-hour priority support',
     },
 
-    // PREMIUM tier features (Coming Soon)
+    // SUPR tier features (Coming Soon)
     {
-      tier: MembershipTier.PREMIUM,
-      feature: FeatureType.COMING_SOON,
+      tier: MembershipTier.SUPR,
+      type: FeatureType.COMING_SOON,
       value: 'true',
-      description: 'Premium features coming soon',
+      description: 'Supr features coming soon',
     },
 
     // ADMIN tier features
     {
       tier: MembershipTier.ADMIN,
-      feature: FeatureType.SYSTEM_ACCESS,
+      type: FeatureType.SYSTEM_ACCESS,
       value: 'full',
       description: 'Full system access for administrators',
     },
