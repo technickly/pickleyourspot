@@ -73,23 +73,28 @@ export default function MyReservationsPage() {
       const courtsData = await courtsResponse.json();
       setCourts(courtsData);
 
-      // Fetch reservations
-      const reservationsResponse = await fetch('/api/reservations/my');
+      // Fetch reservations with the correct endpoint
+      const reservationsResponse = await fetch(`/api/reservations/user?email=${encodeURIComponent(session?.user?.email || '')}`);
+      if (!reservationsResponse.ok) {
+        const errorData = await reservationsResponse.json();
+        throw new Error(errorData.error || 'Failed to fetch reservations');
+      }
       const reservationsData = await reservationsResponse.json();
       
       // Add status to each reservation
       const now = new Date();
-      const reservationsWithStatus = reservationsData.map((res: Omit<Reservation, 'status'>) => ({
+      const reservationsWithStatus = reservationsData.map((res: Reservation) => ({
         ...res,
         status: new Date(res.endTime) > now ? 'active' : 'past'
-      } as Reservation));
+      }));
 
       setReservations(reservationsWithStatus);
       // Apply default filter (active reservations)
-      const activeReservations = reservationsWithStatus.filter(res => res.status === 'active');
+      const activeReservations = reservationsWithStatus.filter((res: Reservation) => res.status === 'active');
       setFilteredReservations(activeReservations);
     } catch (error) {
       console.error('Error fetching data:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to fetch reservations');
     } finally {
       setIsLoading(false);
     }
