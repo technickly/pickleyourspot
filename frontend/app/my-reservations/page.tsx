@@ -44,6 +44,7 @@ export default function MyReservationsPage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [reservationToDelete, setReservationToDelete] = useState<string | null>(null);
   const [showStatusConfirm, setShowStatusConfirm] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'past'>('all');
   const [pendingStatusUpdate, setPendingStatusUpdate] = useState<{
     reservationId: string;
     userId: string;
@@ -66,23 +67,33 @@ export default function MyReservationsPage() {
       }
       const reservationsData = await reservationsResponse.json();
       
-      // Add status to each reservation
+      // Add status to each reservation based on current date and time
       const now = new Date();
-      const reservationsWithStatus = reservationsData.map((res: Reservation) => ({
-        ...res,
-        status: new Date(res.endTime) > now ? 'active' : 'past'
-      }));
+      const reservationsWithStatus = reservationsData.map((res: Reservation) => {
+        const startTime = new Date(res.startTime);
+        return {
+          ...res,
+          status: startTime > now ? 'active' : 'past'
+        };
+      });
 
-      // Sort reservations: active first, then by date (soonest first)
+      // Sort reservations: active first, then by date (soonest first for active, most recent first for past)
       const sortedReservations = reservationsWithStatus.sort((a: Reservation, b: Reservation) => {
         // First sort by active/past
         if (a.status === 'active' && b.status === 'past') return -1;
         if (a.status === 'past' && b.status === 'active') return 1;
         
-        // Then sort by date (soonest first)
+        // Then sort by date
         const dateA = new Date(a.startTime);
         const dateB = new Date(b.startTime);
-        return dateA.getTime() - dateB.getTime();
+        
+        // For active reservations, sort by soonest first
+        if (a.status === 'active') {
+          return dateA.getTime() - dateB.getTime();
+        }
+        
+        // For past reservations, sort by most recent first
+        return dateB.getTime() - dateA.getTime();
       });
 
       setReservations(sortedReservations);
@@ -224,237 +235,264 @@ export default function MyReservationsPage() {
     setReservationToDelete(null);
   };
 
+  // Filter reservations based on status
+  const filteredReservations = reservations.filter(reservation => {
+    if (statusFilter === 'all') return true;
+    return reservation.status === statusFilter;
+  });
+
   if (isLoading) {
     return <div className="flex justify-center items-center min-h-screen">Loading...</div>;
   }
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <h1 className="text-2xl font-bold">My Reservations</h1>
-        <Link
-          href="/courts"
-          className="button-primary flex items-center gap-2"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-            <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
-          </svg>
-          Make New Reservation
-        </Link>
+        <div className="flex items-center gap-4 w-full sm:w-auto">
+          <div className="flex items-center gap-2 bg-white rounded-lg shadow-sm p-2 flex-grow sm:flex-grow-0">
+            <label htmlFor="status-filter" className="text-sm font-medium text-gray-700">
+              Status:
+            </label>
+            <select
+              id="status-filter"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as 'all' | 'active' | 'past')}
+              className="form-select border-gray-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="all">All</option>
+              <option value="active">Active</option>
+              <option value="past">Past</option>
+            </select>
+          </div>
+          <Link
+            href="/courts"
+            className="button-primary flex items-center gap-2 whitespace-nowrap"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
+            </svg>
+            Make New Reservation
+          </Link>
+        </div>
       </div>
 
       <div className="grid gap-4">
-        {reservations.map((reservation) => (
-          <div
-            key={reservation.id}
-            className={`rounded-lg shadow-md p-6 transition-shadow ${
-              reservation.status === 'active' 
-                ? 'bg-white border-l-8 border-l-green-500' 
-                : 'bg-gray-50 border-l-8 border-l-red-500'
-            }`}
-          >
-            <div className="flex justify-between items-start">
-              <div className="space-y-3">
-                <div className="flex items-center gap-3">
-                  <h2 className="text-2xl font-semibold">
-                    {reservation.name.split(' ').map(word => 
-                      word.charAt(0).toUpperCase() + word.slice(1)
-                    ).join(' ')}
-                  </h2>
-                  <span
-                    className={`px-3 py-1 rounded-full text-sm ${
-                      reservation.isOwner
-                        ? 'bg-blue-100 text-blue-800'
-                        : 'bg-gray-100 text-gray-800'
-                    }`}
-                  >
-                    {reservation.isOwner ? 'Owner' : 'Participant'}
-                  </span>
-                </div>
+        {filteredReservations.length > 0 ? (
+          filteredReservations.map((reservation) => (
+            <div
+              key={reservation.id}
+              className={`rounded-lg shadow-md p-6 transition-shadow ${
+                reservation.status === 'active' 
+                  ? 'bg-white border-l-8 border-l-green-500' 
+                  : 'bg-gray-50 border-l-8 border-l-red-500'
+              }`}
+            >
+              <div className="flex justify-between items-start">
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3">
+                    <h2 className="text-2xl font-semibold">
+                      {reservation.name.split(' ').map(word => 
+                        word.charAt(0).toUpperCase() + word.slice(1)
+                      ).join(' ')}
+                    </h2>
+                    <span
+                      className={`px-3 py-1 rounded-full text-sm ${
+                        reservation.isOwner
+                          ? 'bg-blue-100 text-blue-800'
+                          : 'bg-gray-100 text-gray-800'
+                      }`}
+                    >
+                      {reservation.isOwner ? 'Owner' : 'Participant'}
+                    </span>
+                  </div>
 
-                <div>
-                  <h3 className="text-sm font-medium text-gray-700 mb-1">Court Description:</h3>
-                  <p className="text-gray-600">
-                    {reservation.court?.name || reservation.courtName}
-                  </p>
-                </div>
-
-                <div>
-                  <h3 className="text-sm font-medium text-gray-700 mb-1">Date & Time:</h3>
-                  <p className="text-gray-600">
-                    {format(new Date(reservation.startTime), 'EEEE, MMMM d, yyyy')}
-                    <br />
-                    {format(new Date(reservation.startTime), 'h:mm a')} -{' '}
-                    {format(new Date(reservation.endTime), 'h:mm a')}
-                  </p>
-                </div>
-
-                {reservation.description && (
                   <div>
-                    <h3 className="text-sm font-medium text-gray-700 mb-1">Description:</h3>
-                    <p className="text-gray-600 bg-gray-50 p-2 rounded">
-                      {reservation.description}
+                    <h3 className="text-sm font-medium text-gray-700 mb-1">Court Description:</h3>
+                    <p className="text-gray-600">
+                      {reservation.court?.name || reservation.courtName}
                     </p>
                   </div>
-                )}
 
-                {reservation.participants.length > 0 && (
-                  <div className="mt-4">
-                    <h3 className="text-lg font-medium mb-2">Participants</h3>
-                    <div className="space-y-2">
-                      {reservation.participants.map((participant) => (
-                        <div
-                          key={participant.email}
-                          className="bg-gray-50 p-3 rounded-lg flex justify-between items-center"
-                        >
-                          <div className="flex-grow">
-                            <span className="font-medium block">
-                              {participant.name || 'No name provided'}
-                            </span>
-                            <span className="text-sm text-gray-500 block">
-                              {participant.email}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-2 ml-4">
-                            <div className="flex flex-col sm:flex-row gap-2">
-                              <button
-                                onClick={() => handleStatusUpdate(
-                                  reservation.id,
-                                  participant.userId,
-                                  'attendance',
-                                  !participant.isGoing
-                                )}
-                                className={`px-3 py-1.5 text-xs rounded-full font-medium flex items-center justify-center min-w-[90px] ${
-                                  participant.isGoing
-                                    ? 'bg-green-100 text-green-800 hover:bg-green-200'
-                                    : 'bg-red-100 text-red-800 hover:bg-red-200'
-                                }`}
-                              >
-                                {participant.isGoing ? (
-                                  <>
-                                    <span className="mr-1">✓</span>
-                                    Going
-                                  </>
-                                ) : (
-                                  <>
-                                    <span className="mr-1">✗</span>
-                                    Not Going
-                                  </>
-                                )}
-                              </button>
-                              {reservation.paymentRequired && (
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-700 mb-1">Date & Time:</h3>
+                    <p className="text-gray-600">
+                      {format(new Date(reservation.startTime), 'EEEE, MMMM d, yyyy')}
+                      <br />
+                      {format(new Date(reservation.startTime), 'h:mm a')} -{' '}
+                      {format(new Date(reservation.endTime), 'h:mm a')}
+                    </p>
+                  </div>
+
+                  {reservation.description && (
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-700 mb-1">Description:</h3>
+                      <p className="text-gray-600 bg-gray-50 p-2 rounded">
+                        {reservation.description}
+                      </p>
+                    </div>
+                  )}
+
+                  {reservation.participants.length > 0 && (
+                    <div className="mt-4">
+                      <h3 className="text-lg font-medium mb-2">Participants</h3>
+                      <div className="space-y-2">
+                        {reservation.participants.map((participant) => (
+                          <div
+                            key={participant.email}
+                            className="bg-gray-50 p-3 rounded-lg flex justify-between items-center"
+                          >
+                            <div className="flex-grow">
+                              <span className="font-medium block">
+                                {participant.name || 'No name provided'}
+                              </span>
+                              <span className="text-sm text-gray-500 block">
+                                {participant.email}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2 ml-4">
+                              <div className="flex flex-col sm:flex-row gap-2">
                                 <button
                                   onClick={() => handleStatusUpdate(
                                     reservation.id,
                                     participant.userId,
-                                    'payment',
-                                    !participant.hasPaid
+                                    'attendance',
+                                    !participant.isGoing
                                   )}
                                   className={`px-3 py-1.5 text-xs rounded-full font-medium flex items-center justify-center min-w-[90px] ${
-                                    participant.hasPaid
+                                    participant.isGoing
                                       ? 'bg-green-100 text-green-800 hover:bg-green-200'
                                       : 'bg-red-100 text-red-800 hover:bg-red-200'
                                   }`}
                                 >
-                                  {participant.hasPaid ? (
+                                  {participant.isGoing ? (
                                     <>
                                       <span className="mr-1">✓</span>
-                                      Paid
+                                      Going
                                     </>
                                   ) : (
                                     <>
                                       <span className="mr-1">✗</span>
-                                      Not Paid
+                                      Not Going
                                     </>
                                   )}
                                 </button>
-                              )}
+                                {reservation.paymentRequired && (
+                                  <button
+                                    onClick={() => handleStatusUpdate(
+                                      reservation.id,
+                                      participant.userId,
+                                      'payment',
+                                      !participant.hasPaid
+                                    )}
+                                    className={`px-3 py-1.5 text-xs rounded-full font-medium flex items-center justify-center min-w-[90px] ${
+                                      participant.hasPaid
+                                        ? 'bg-green-100 text-green-800 hover:bg-green-200'
+                                        : 'bg-red-100 text-red-800 hover:bg-red-200'
+                                    }`}
+                                  >
+                                    {participant.hasPaid ? (
+                                      <>
+                                        <span className="mr-1">✓</span>
+                                        Paid
+                                      </>
+                                    ) : (
+                                      <>
+                                        <span className="mr-1">✗</span>
+                                        Not Paid
+                                      </>
+                                    )}
+                                  </button>
+                                )}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                )}
-
-                {reservation.paymentRequired && (
-                  <div className="mt-4">
-                    <div className="bg-yellow-50 p-3 rounded-lg">
-                      <span className="font-medium text-yellow-800">💰 Payment Required</span>
-                      {reservation.paymentInfo && (
-                        <p className="text-yellow-700 mt-1">{reservation.paymentInfo}</p>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
-              <div className="flex flex-col items-end gap-3">
-                <div
-                  className={`text-2xl font-bold mb-2 ${
-                    reservation.status === 'active'
-                      ? 'text-green-600'
-                      : 'text-red-600'
-                  }`}
-                >
-                  {reservation.status === 'active' ? 'ACTIVE' : 'PAST'}
-                </div>
-                <div
-                  className={`text-sm px-4 py-2 rounded-full ${
-                    reservation.status === 'active'
-                      ? 'bg-green-100 text-green-800'
-                      : 'bg-red-100 text-red-800'
-                  }`}
-                >
-                  {reservation.status === 'active' 
-                    ? `Upcoming in ${getDaysUntilReservation(reservation.startTime)} Days`
-                    : 'Completed'}
-                </div>
-
-                {/* Action Buttons */}
-                <div className="flex flex-col gap-2 mt-2">
-                  <Link
-                    href={`/reservations/${reservation.id}`}
-                    className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center justify-center gap-2"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                      <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
-                      <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
-                    </svg>
-                    View
-                  </Link>
-                  
-                  {reservation.isOwner && (
-                    <>
-                      <Link
-                        href={`/reservations/${reservation.id}/edit`}
-                        className="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors flex items-center justify-center gap-2"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                          <path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" />
-                          <path fillRule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clipRule="evenodd" />
-                        </svg>
-                        Edit
-                      </Link>
-                      <button
-                        onClick={() => handleDeleteClick(reservation.id)}
-                        className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors flex items-center justify-center gap-2"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
-                        </svg>
-                        Delete
-                      </button>
-                    </>
                   )}
+
+                  {reservation.paymentRequired && (
+                    <div className="mt-4">
+                      <div className="bg-yellow-50 p-3 rounded-lg">
+                        <span className="font-medium text-yellow-800">Payment Required</span>
+                        {reservation.paymentInfo && (
+                          <p className="text-yellow-700 mt-1">{reservation.paymentInfo}</p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <div className="flex flex-col items-end gap-3">
+                  <div
+                    className={`text-2xl font-bold mb-2 ${
+                      reservation.status === 'active'
+                        ? 'text-green-600'
+                        : 'text-red-600'
+                    }`}
+                  >
+                    {reservation.status === 'active' ? 'ACTIVE' : 'PAST'}
+                  </div>
+                  <div
+                    className={`text-sm px-4 py-2 rounded-full ${
+                      reservation.status === 'active'
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-red-100 text-red-800'
+                    }`}
+                  >
+                    {reservation.status === 'active' 
+                      ? `Upcoming in ${getDaysUntilReservation(reservation.startTime)} Days`
+                      : 'Completed'}
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex flex-col gap-2 mt-2">
+                    <Link
+                      href={`/reservations/${reservation.id}`}
+                      className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center justify-center gap-2"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                        <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
+                      </svg>
+                      View
+                    </Link>
+                    
+                    {reservation.isOwner && (
+                      <>
+                        <Link
+                          href={`/reservations/${reservation.id}/edit`}
+                          className="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors flex items-center justify-center gap-2"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" />
+                            <path fillRule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clipRule="evenodd" />
+                          </svg>
+                          Edit
+                        </Link>
+                        <button
+                          onClick={() => handleDeleteClick(reservation.id)}
+                          className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors flex items-center justify-center gap-2"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                          </svg>
+                          Delete
+                        </button>
+                      </>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        ))}
-
-        {reservations.length === 0 && (
-          <div className="text-center py-8">
-            <p className="text-gray-600">No reservations found.</p>
+          ))
+        ) : (
+          <div className="text-center py-8 bg-white rounded-lg shadow-sm">
+            <p className="text-gray-600">
+              {statusFilter === 'all' 
+                ? 'No reservations found.'
+                : `No ${statusFilter} reservations found.`}
+            </p>
           </div>
         )}
       </div>

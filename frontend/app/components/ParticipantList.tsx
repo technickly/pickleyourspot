@@ -311,14 +311,15 @@ export default function ParticipantList({
                 {/* Status Buttons Section */}
                 <div className="flex items-center gap-3 pt-1">
                   {/* Going/Not Going Status */}
-                  {participant.email === userEmail ? (
+                  {(isOwner || participant.email === userEmail) ? (
                     <button
                       onClick={() => handleStatusUpdate(participant.userId, 'attendance', !participant.isGoing)}
+                      disabled={!isOwner && participant.email !== userEmail}
                       className={`inline-flex items-center px-4 py-2 rounded-md text-sm font-medium transition-colors min-w-[120px] justify-center ${
                         participant.isGoing
                           ? 'bg-green-100 text-green-800 hover:bg-green-200'
                           : 'bg-red-100 text-red-800 hover:bg-red-200'
-                      }`}
+                      } ${!isOwner && participant.email !== userEmail ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
                       {participant.isGoing ? (
                         <>
@@ -352,14 +353,15 @@ export default function ParticipantList({
 
                   {/* Payment Status */}
                   {paymentRequired && (
-                    isOwner || participant.email === userEmail ? (
+                    (isOwner || participant.email === userEmail) ? (
                       <button
                         onClick={() => handleStatusUpdate(participant.userId, 'payment', !participant.hasPaid)}
+                        disabled={!isOwner && participant.email !== userEmail}
                         className={`inline-flex items-center px-4 py-2 rounded-md text-sm font-medium transition-colors min-w-[120px] justify-center ${
                           participant.hasPaid
                             ? 'bg-green-100 text-green-800 hover:bg-green-200'
                             : 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
-                        }`}
+                        } ${!isOwner && participant.email !== userEmail ? 'opacity-50 cursor-not-allowed' : ''}`}
                       >
                         {participant.hasPaid ? (
                           <>
