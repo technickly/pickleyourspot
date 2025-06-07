@@ -36,13 +36,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body className={`${inter.className} modern-theme`}>
+    <html lang="en" suppressHydrationWarning>
+      <body className={`${inter.className} modern-theme`} suppressHydrationWarning>
         <AuthProvider>
           <NavigationBar />
-          <main className="min-h-screen">
-            {children}
-          </main>
+          {children}
           <Toaster />
         </AuthProvider>
       </body>
