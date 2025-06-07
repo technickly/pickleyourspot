@@ -19,12 +19,28 @@ export async function POST(
 
     const { email } = await request.json();
 
+    // Find the user by email first
+    const userToAdd = await prisma.user.findUnique({
+      where: { email }
+    });
+
+    if (!userToAdd) {
+      return NextResponse.json(
+        { error: 'User not found' },
+        { status: 404 }
+      );
+    }
+
     // Verify the user is the owner of the reservation
     const reservation = await prisma.reservation.findUnique({
       where: { id: params.reservationId },
       include: {
         owner: true,
-        participants: true,
+        participants: {
+          include: {
+            user: true
+          }
+        },
       },
     });
 
@@ -44,7 +60,7 @@ export async function POST(
 
     // Check if user is already a participant
     const isAlreadyParticipant = reservation.participants.some(
-      (p) => p.email === email
+      (p: { user: { email: string } }) => p.user.email === email
     );
 
     if (isAlreadyParticipant) {
@@ -54,26 +70,33 @@ export async function POST(
       );
     }
 
-    // Add the participant
-    const updatedReservation = await prisma.reservation.update({
-      where: { id: params.reservationId },
+    // Create the participant status
+    const participantStatus = await prisma.participantStatus.create({
       data: {
-        participants: {
-          connect: { email },
-        },
+        userId: userToAdd.id,
+        reservationId: params.reservationId,
+        isGoing: true,
+        hasPaid: false,
       },
       include: {
-        participants: {
+        user: {
           select: {
             name: true,
             email: true,
             image: true,
-          },
-        },
-      },
+          }
+        }
+      }
     });
 
-    return NextResponse.json(updatedReservation.participants);
+    return NextResponse.json({
+      id: participantStatus.id,
+      hasPaid: participantStatus.hasPaid,
+      isGoing: participantStatus.isGoing,
+      name: participantStatus.user.name,
+      email: participantStatus.user.email,
+      image: participantStatus.user.image,
+    });
   } catch (error) {
     console.error('Failed to add participant:', error);
     return NextResponse.json(

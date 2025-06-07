@@ -28,6 +28,53 @@ interface Props {
   onRemoveParticipant: (email: string) => Promise<void>;
 }
 
+// Add AttendanceConfirmationDialog component
+function AttendanceConfirmationDialog({
+  isOpen,
+  onClose,
+  onConfirm,
+  isGoing,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+  isGoing: boolean;
+}) {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+        <h3 className="text-lg font-semibold mb-4">
+          {isGoing ? 'Mark as Not Going?' : 'Mark as Going?'}
+        </h3>
+        <p className="text-gray-600 mb-6">
+          {isGoing
+            ? 'Are you sure you want to mark yourself as not going to this reservation?'
+            : 'Are you sure you want to mark yourself as going to this reservation?'}
+        </p>
+        <div className="flex justify-end space-x-3">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 text-gray-600 hover:text-gray-800"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={() => {
+              onConfirm();
+              onClose();
+            }}
+            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+          >
+            Confirm
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function ParticipantList({
   participants,
   reservationId,
@@ -44,7 +91,12 @@ export default function ParticipantList({
   const [showPaymentNotification, setShowPaymentNotification] = useState(false);
   const [showUnpaidConfirmation, setShowUnpaidConfirmation] = useState(false);
   const [showInviteDialog, setShowInviteDialog] = useState(false);
+  const [showAttendanceConfirmation, setShowAttendanceConfirmation] = useState(false);
   const [pendingPaymentUpdate, setPendingPaymentUpdate] = useState<{
+    userId: string;
+    newValue: boolean;
+  } | null>(null);
+  const [pendingAttendanceUpdate, setPendingAttendanceUpdate] = useState<{
     userId: string;
     newValue: boolean;
   } | null>(null);
@@ -59,17 +111,22 @@ export default function ParticipantList({
         throw new Error('Invalid user ID');
       }
 
-      // If this is a payment status update
       if (type === 'payment') {
         if (newValue && !isOwner && userEmail !== ownerEmail) {
-          // If marking as paid, show payment notification dialog
           setPendingPaymentUpdate({ userId, newValue });
           setShowPaymentNotification(true);
           return;
         } else if (!newValue && !isOwner) {
-          // If marking as unpaid, show confirmation dialog
           setPendingPaymentUpdate({ userId, newValue });
           setShowUnpaidConfirmation(true);
+          return;
+        }
+      } else if (type === 'attendance' && userEmail) {
+        // Only show confirmation for the current user changing their own status
+        const participant = participants.find(p => p.email === userEmail);
+        if (participant && participant.userId === userId) {
+          setPendingAttendanceUpdate({ userId, newValue });
+          setShowAttendanceConfirmation(true);
           return;
         }
       }
@@ -178,8 +235,7 @@ export default function ParticipantList({
       {showUserSearch && isOwner && (
         <div className="mb-4">
           <UserSearch
-            onSelect={onAddParticipant}
-            selectedUsers={participants}
+            onSelect={(user) => onAddParticipant(user.email)}
             placeholder="Search users by name or email..."
           />
         </div>
@@ -308,6 +364,26 @@ export default function ParticipantList({
         onClose={handleUnpaidConfirmationClose}
         onConfirm={handleUnpaidConfirmationConfirm}
         ownerName={ownerName || ownerEmail.split('@')[0]}
+      />
+
+      <AttendanceConfirmationDialog
+        isOpen={showAttendanceConfirmation}
+        onClose={() => {
+          setShowAttendanceConfirmation(false);
+          setPendingAttendanceUpdate(null);
+        }}
+        onConfirm={async () => {
+          if (pendingAttendanceUpdate) {
+            await updateParticipantStatus(
+              pendingAttendanceUpdate.userId,
+              'attendance',
+              pendingAttendanceUpdate.newValue
+            );
+          }
+          setShowAttendanceConfirmation(false);
+          setPendingAttendanceUpdate(null);
+        }}
+        isGoing={!pendingAttendanceUpdate?.newValue}
       />
 
       <InviteParticipantDialog
