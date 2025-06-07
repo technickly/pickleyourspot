@@ -266,38 +266,55 @@ export default function ParticipantList({
                   : 'border-gray-200 hover:border-gray-300'
               }`}
             >
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="flex items-center space-x-3">
-                  {participant.image && (
-                    <Image
-                      src={participant.image}
-                      alt={participant.name || participant.email}
-                      width={40}
-                      height={40}
-                      className="rounded-full"
-                    />
-                  )}
-                  <div>
-                    <div className="flex items-center space-x-2">
-                      <span className="font-medium text-gray-900">
-                        {participant.name || participant.email}
-                      </span>
-                      {participant.email === ownerEmail && (
-                        <span className="bg-indigo-100 text-indigo-800 text-xs px-2 py-0.5 rounded-full font-medium">
-                          Owner
+              <div className="flex flex-col gap-3">
+                {/* Participant Info Section */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    {participant.image && (
+                      <Image
+                        src={participant.image}
+                        alt={participant.name || participant.email}
+                        width={40}
+                        height={40}
+                        className="rounded-full"
+                      />
+                    )}
+                    <div>
+                      <div className="flex items-center space-x-2">
+                        <span className="font-medium text-gray-900">
+                          {participant.name || participant.email}
                         </span>
-                      )}
+                        {participant.email === ownerEmail && (
+                          <span className="bg-indigo-100 text-indigo-800 text-xs px-2 py-0.5 rounded-full font-medium">
+                            Owner
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-sm text-gray-500">{participant.email}</span>
                     </div>
-                    <span className="text-sm text-gray-500">{participant.email}</span>
                   </div>
+
+                  {/* Remove Button (only for owner) */}
+                  {isOwner && participant.email !== ownerEmail && (
+                    <button
+                      onClick={() => onRemoveParticipant(participant.email)}
+                      className="text-red-600 hover:text-red-700 transition-colors p-1.5 rounded-md hover:bg-red-50"
+                      title="Remove participant"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                      </svg>
+                    </button>
+                  )}
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                {/* Status Buttons Section */}
+                <div className="flex items-center gap-3 pt-1">
                   {/* Going/Not Going Status */}
                   {participant.email === userEmail ? (
                     <button
                       onClick={() => handleStatusUpdate(participant.userId, 'attendance', !participant.isGoing)}
-                      className={`inline-flex items-center px-3 py-1.5 rounded-md text-sm font-medium transition-colors min-w-[100px] justify-center ${
+                      className={`inline-flex items-center px-4 py-2 rounded-md text-sm font-medium transition-colors min-w-[120px] justify-center ${
                         participant.isGoing
                           ? 'bg-green-100 text-green-800 hover:bg-green-200'
                           : 'bg-red-100 text-red-800 hover:bg-red-200'
@@ -315,7 +332,7 @@ export default function ParticipantList({
                     </button>
                   ) : (
                     <div
-                      className={`inline-flex items-center px-3 py-1.5 rounded-md text-sm font-medium min-w-[100px] justify-center ${
+                      className={`inline-flex items-center px-4 py-2 rounded-md text-sm font-medium min-w-[120px] justify-center ${
                         participant.isGoing
                           ? 'bg-green-50 text-green-700'
                           : 'bg-red-50 text-red-700'
@@ -335,10 +352,10 @@ export default function ParticipantList({
 
                   {/* Payment Status */}
                   {paymentRequired && (
-                    participant.email === userEmail ? (
+                    isOwner || participant.email === userEmail ? (
                       <button
                         onClick={() => handleStatusUpdate(participant.userId, 'payment', !participant.hasPaid)}
-                        className={`inline-flex items-center px-3 py-1.5 rounded-md text-sm font-medium transition-colors min-w-[100px] justify-center ${
+                        className={`inline-flex items-center px-4 py-2 rounded-md text-sm font-medium transition-colors min-w-[120px] justify-center ${
                           participant.hasPaid
                             ? 'bg-green-100 text-green-800 hover:bg-green-200'
                             : 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
@@ -356,7 +373,7 @@ export default function ParticipantList({
                       </button>
                     ) : (
                       <div
-                        className={`inline-flex items-center px-3 py-1.5 rounded-md text-sm font-medium min-w-[100px] justify-center ${
+                        className={`inline-flex items-center px-4 py-2 rounded-md text-sm font-medium min-w-[120px] justify-center ${
                           participant.hasPaid
                             ? 'bg-green-50 text-green-700'
                             : 'bg-yellow-50 text-yellow-700'
@@ -373,19 +390,6 @@ export default function ParticipantList({
                         )}
                       </div>
                     )
-                  )}
-
-                  {/* Remove Button (only for owner) */}
-                  {isOwner && participant.email !== ownerEmail && (
-                    <button
-                      onClick={() => onRemoveParticipant(participant.email)}
-                      className="text-red-600 hover:text-red-700 transition-colors p-1.5 rounded-md hover:bg-red-50"
-                      title="Remove participant"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                      </svg>
-                    </button>
                   )}
                 </div>
               </div>
