@@ -259,49 +259,71 @@ export default function MyReservationsPage() {
                       {reservation.participants.map((participant) => (
                         <div
                           key={participant.email}
-                          className="bg-gray-50 p-3 rounded-lg"
+                          className="bg-gray-50 p-3 rounded-lg flex justify-between items-center"
                         >
-                          <div className="flex flex-col">
-                            <span className="font-medium">
+                          <div className="flex-grow">
+                            <span className="font-medium block">
                               {participant.name || 'No name provided'}
                             </span>
-                            <span className="text-sm text-gray-500">
+                            <span className="text-sm text-gray-500 block">
                               {participant.email}
                             </span>
                           </div>
-                          <div className="flex gap-2 mt-2">
-                            <button
-                              onClick={() => handleStatusUpdate(
-                                reservation.id,
-                                participant.userId,
-                                'attendance',
-                                !participant.isGoing
-                              )}
-                              className={`px-2 py-1 text-xs rounded cursor-pointer transition-colors ${
-                                participant.isGoing
-                                  ? 'bg-green-100 text-green-800 hover:bg-green-200'
-                                  : 'bg-red-100 text-red-800 hover:bg-red-200'
-                              }`}
-                            >
-                              {participant.isGoing ? '✓ Going' : '✗ Not Going'}
-                            </button>
-                            {reservation.paymentRequired && (
+                          <div className="flex items-center gap-2 ml-4">
+                            <div className="flex flex-col sm:flex-row gap-2">
                               <button
                                 onClick={() => handleStatusUpdate(
                                   reservation.id,
                                   participant.userId,
-                                  'payment',
-                                  !participant.hasPaid
+                                  'attendance',
+                                  !participant.isGoing
                                 )}
-                                className={`px-2 py-1 text-xs rounded cursor-pointer transition-colors ${
-                                  participant.hasPaid
+                                className={`px-3 py-1.5 text-xs rounded-full font-medium flex items-center justify-center min-w-[90px] ${
+                                  participant.isGoing
                                     ? 'bg-green-100 text-green-800 hover:bg-green-200'
                                     : 'bg-red-100 text-red-800 hover:bg-red-200'
                                 }`}
                               >
-                                {participant.hasPaid ? '✓ Paid' : '✗ Not Paid'}
+                                {participant.isGoing ? (
+                                  <>
+                                    <span className="mr-1">✓</span>
+                                    Going
+                                  </>
+                                ) : (
+                                  <>
+                                    <span className="mr-1">✗</span>
+                                    Not Going
+                                  </>
+                                )}
                               </button>
-                            )}
+                              {reservation.paymentRequired && (
+                                <button
+                                  onClick={() => handleStatusUpdate(
+                                    reservation.id,
+                                    participant.userId,
+                                    'payment',
+                                    !participant.hasPaid
+                                  )}
+                                  className={`px-3 py-1.5 text-xs rounded-full font-medium flex items-center justify-center min-w-[90px] ${
+                                    participant.hasPaid
+                                      ? 'bg-green-100 text-green-800 hover:bg-green-200'
+                                      : 'bg-red-100 text-red-800 hover:bg-red-200'
+                                  }`}
+                                >
+                                  {participant.hasPaid ? (
+                                    <>
+                                      <span className="mr-1">✓</span>
+                                      Paid
+                                    </>
+                                  ) : (
+                                    <>
+                                      <span className="mr-1">✗</span>
+                                      Not Paid
+                                    </>
+                                  )}
+                                </button>
+                              )}
+                            </div>
                           </div>
                         </div>
                       ))}
