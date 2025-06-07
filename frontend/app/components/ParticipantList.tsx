@@ -143,36 +143,43 @@ export default function ParticipantList({
     type: 'payment' | 'attendance',
     newValue: boolean
   ) => {
-    const response = await fetch(`/api/reservations/${reservationId}/participant-status`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        userId,
-        type,
-        value: newValue,
-      }),
-    });
+    try {
+      const response = await fetch(`/api/reservations/${reservationId}/participant-status`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId,
+          type,
+          value: newValue,
+        }),
+      });
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Failed to update status');
-    }
-
-    // Update local state optimistically
-    const updatedParticipants = participants.map(p => {
-      if (p.userId === userId) {
-        return {
-          ...p,
-          [type === 'payment' ? 'hasPaid' : 'isGoing']: newValue
-        };
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to update status');
       }
-      return p;
-    });
 
-    // Emit success message
-    toast.success(`${type === 'payment' ? 'Payment' : 'Attendance'} status updated`);
+      const updatedParticipant = await response.json();
+
+      // Update local state optimistically
+      const updatedParticipants = participants.map(p => {
+        if (p.userId === userId) {
+          return {
+            ...p,
+            [type === 'payment' ? 'hasPaid' : 'isGoing']: newValue,
+          };
+        }
+        return p;
+      });
+
+      // Emit success message
+      toast.success(`${type === 'payment' ? 'Payment' : 'Attendance'} status updated`);
+    } catch (error) {
+      console.error('Error updating status:', error);
+      throw error;
+    }
   };
 
   const handlePaymentNotificationClose = () => {
@@ -325,20 +332,10 @@ export default function ParticipantList({
                   {isOwner && participant.email !== ownerEmail && (
                     <button
                       onClick={() => onRemoveParticipant(participant.email)}
-                      className="text-red-600 hover:text-red-800 transition-colors ml-2"
-                      title="Remove participant"
+                      className="text-red-600 hover:text-red-700 transition-colors"
                     >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-5 w-5"
-                        viewBox="0 0 20 20"
-                        fill="currentColor"
-                      >
-                        <path
-                          fillRule="evenodd"
-                          d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
-                          clipRule="evenodd"
-                        />
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
                       </svg>
                     </button>
                   )}
@@ -348,7 +345,7 @@ export default function ParticipantList({
           ))}
         </div>
       ) : (
-        <p className="text-gray-500 text-sm">No participants yet</p>
+        <p className="text-gray-500 text-center py-4">No participants yet</p>
       )}
 
       <PaymentNotificationDialog

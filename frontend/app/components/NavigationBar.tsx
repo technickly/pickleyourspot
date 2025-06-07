@@ -76,24 +76,6 @@ export default function NavigationBar() {
                     Home
                   </Link>
                 )}
-                
-                {!isCurrentPath('/courts') && (
-                  <Link
-                    href="/courts"
-                    className="button-primary"
-                  >
-                    New Reservation
-                  </Link>
-                )}
-
-                {!isCurrentPath('/my-reservations') && (
-                  <Link
-                    href="/my-reservations"
-                    className="button-primary"
-                  >
-                    My Reservations
-                  </Link>
-                )}
 
                 {!isCurrentPath('/my-account') && (
                   <Link
@@ -163,24 +145,6 @@ export default function NavigationBar() {
                   className="button-primary"
                 >
                   Home
-                </Link>
-              )}
-              
-              {!isCurrentPath('/courts') && (
-                <Link
-                  href="/courts"
-                  className="button-primary"
-                >
-                  New Reservation
-                </Link>
-              )}
-
-              {!isCurrentPath('/my-reservations') && (
-                <Link
-                  href="/my-reservations"
-                  className="button-primary"
-                >
-                  My Reservations
                 </Link>
               )}
 

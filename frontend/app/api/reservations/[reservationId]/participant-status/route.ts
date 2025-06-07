@@ -57,7 +57,9 @@ export async function PUT(
 
     // Only allow the owner or the participant themselves to update their status
     const isOwner = reservation.owner.email === session.user.email;
-    const participant = reservation.participants.find((p: Participant) => p.user.id === userId);
+    const participant = reservation.participants.find(
+      (p: Participant) => p.user.id === userId
+    );
 
     if (!participant) {
       return NextResponse.json(
@@ -74,19 +76,37 @@ export async function PUT(
     }
 
     // Update the participant status
-    const updatedParticipant = await prisma.participant.update({
+    const updatedParticipant = await prisma.participantStatus.update({
       where: {
-        id: participant.id,
+        userId_reservationId: {
+          userId: userId,
+          reservationId: params.reservationId,
+        },
       },
       data: {
         ...(type === 'payment' ? { hasPaid: value } : { isGoing: value }),
       },
       include: {
-        user: true,
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            image: true,
+          },
+        },
       },
     });
 
-    return NextResponse.json(updatedParticipant);
+    return NextResponse.json({
+      id: updatedParticipant.id,
+      userId: updatedParticipant.userId,
+      hasPaid: updatedParticipant.hasPaid,
+      isGoing: updatedParticipant.isGoing,
+      name: updatedParticipant.user.name,
+      email: updatedParticipant.user.email,
+      image: updatedParticipant.user.image,
+    });
   } catch (error: unknown) {
     console.error('Error updating participant status:', error);
     

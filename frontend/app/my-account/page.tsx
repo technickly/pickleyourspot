@@ -5,6 +5,8 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { format } from 'date-fns';
+import { FaCamera, FaEnvelope, FaDiscord } from 'react-icons/fa';
+import { toast } from 'react-hot-toast';
 
 interface UserStats {
   joinDate: string;
@@ -28,12 +30,13 @@ interface ReservationStats {
 }
 
 export default function MyAccountPage() {
-  const { data: session, status } = useSession();
+  const { data: session, status, update: updateSession } = useSession();
   const router = useRouter();
   const [userStats, setUserStats] = useState<UserStats | null>(null);
   const [reservationStats, setReservationStats] = useState<ReservationStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     if (status === 'loading') return;
@@ -61,6 +64,41 @@ export default function MyAccountPage() {
     fetchStats();
   }, [session, status, router]);
 
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    const formData = new FormData();
+    formData.append('image', file);
+
+    try {
+      const response = await fetch('/api/users/profile-image', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to upload image');
+      }
+
+      const data = await response.json();
+      await updateSession({
+        ...session,
+        user: {
+          ...session?.user,
+          image: data.imageUrl,
+        },
+      });
+
+      toast.success('Profile image updated successfully');
+    } catch (error) {
+      toast.error('Failed to upload image');
+    } finally {
+      setUploading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 py-12">
@@ -86,21 +124,52 @@ export default function MyAccountPage() {
     );
   }
 
+  const getTierColor = (tier: string) => {
+    switch (tier) {
+      case 'FREE':
+        return 'text-gray-600';
+      case 'BASIC':
+        return 'text-blue-600';
+      case 'PREMIUM':
+        return 'text-purple-600';
+      case 'ADMIN':
+        return 'text-red-600';
+      default:
+        return 'text-gray-600';
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* User Profile Section */}
         <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
           <div className="flex items-center space-x-4">
-            {session?.user?.image && (
-              <Image
-                src={session.user.image}
-                alt="Profile"
-                width={80}
-                height={80}
-                className="rounded-full"
+            <div className="relative">
+              {session?.user?.image && (
+                <Image
+                  src={session.user.image}
+                  alt="Profile"
+                  width={80}
+                  height={80}
+                  className="rounded-full"
+                />
+              )}
+              <label 
+                htmlFor="image-upload" 
+                className="absolute bottom-0 right-0 bg-white rounded-full p-2 shadow-lg cursor-pointer hover:bg-gray-100 transition-colors"
+              >
+                <FaCamera className="text-gray-600" />
+              </label>
+              <input
+                type="file"
+                id="image-upload"
+                accept="image/*"
+                className="hidden"
+                onChange={handleImageUpload}
+                disabled={uploading}
               />
-            )}
+            </div>
             <div>
               <h1 className="text-2xl font-bold text-gray-900">{session?.user?.name}</h1>
               <p className="text-gray-600">{session?.user?.email}</p>
@@ -120,7 +189,9 @@ export default function MyAccountPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="bg-blue-50 rounded-lg p-4">
                 <p className="text-sm text-gray-600">Current Tier</p>
-                <p className="text-2xl font-bold text-blue-600">{userStats.membershipTier}</p>
+                <p className={`text-2xl font-bold ${getTierColor(userStats.membershipTier)}`}>
+                  {userStats.membershipTier}
+                </p>
               </div>
               <div className="bg-green-50 rounded-lg p-4">
                 <p className="text-sm text-gray-600">Total Reservations</p>
@@ -189,6 +260,30 @@ export default function MyAccountPage() {
             </div>
           </div>
         )}
+
+        {/* Contact Section */}
+        <div className="bg-white rounded-lg shadow-lg p-6 mt-8">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">Get in Touch</h2>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+            <a
+              href="mailto:technickly@gmail.com"
+              className="inline-flex items-center gap-2 text-primary hover:text-primary-dark transition-colors"
+            >
+              <FaEnvelope className="text-xl" />
+              technickly@gmail.com
+            </a>
+            <span className="hidden sm:inline text-gray-400">|</span>
+            <a
+              href="https://discord.com/channels/1380819915467919420/1380819915467919423"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 text-primary hover:text-primary-dark transition-colors"
+            >
+              <FaDiscord className="text-xl" />
+              Join our Discord
+            </a>
+          </div>
+        </div>
       </div>
     </div>
   );
