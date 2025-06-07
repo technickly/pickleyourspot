@@ -53,6 +53,7 @@ export default function MessageSystem({ reservationId, initialMessages }: Messag
   const [newMessage, setNewMessage] = useState('');
   const [isExpanded, setIsExpanded] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -64,17 +65,20 @@ export default function MessageSystem({ reservationId, initialMessages }: Messag
     }
   }, [newMessage]);
 
-  // Scroll to bottom when messages change or component expands
+  // Scroll to bottom only when new messages arrive and the chat is expanded
   useEffect(() => {
-    if (isExpanded) {
+    if (isExpanded && messages.length > 0) {
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [messages, isExpanded]);
+    // Update unread count when messages change and chat is collapsed
+    if (!isExpanded) {
+      const newMessages = messages.length - initialMessages.length;
+      setUnreadCount(newMessages > 0 ? newMessages : 0);
+    }
+  }, [messages, isExpanded, initialMessages.length]);
 
-  // Poll for new messages when expanded
+  // Poll for new messages
   useEffect(() => {
-    if (!isExpanded) return;
-
     const fetchMessages = async () => {
       try {
         const response = await fetch(`/api/reservations/${reservationId}/messages`);
@@ -86,10 +90,9 @@ export default function MessageSystem({ reservationId, initialMessages }: Messag
       }
     };
 
-    fetchMessages();
     const interval = setInterval(fetchMessages, 5000);
     return () => clearInterval(interval);
-  }, [isExpanded, reservationId]);
+  }, [reservationId]);
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -124,40 +127,63 @@ export default function MessageSystem({ reservationId, initialMessages }: Messag
     if (messages.length === 0) return 'No messages yet';
     const lastMessage = messages[messages.length - 1];
     const sender = lastMessage.user.name || lastMessage.user.email;
-    const preview = lastMessage.content.length > 50 
-      ? `${lastMessage.content.substring(0, 50)}...` 
+    const preview = lastMessage.content.length > 30 
+      ? `${lastMessage.content.substring(0, 30)}...` 
       : lastMessage.content;
     return `${sender}: ${preview}`;
   };
 
+  const toggleExpanded = () => {
+    setIsExpanded(!isExpanded);
+    if (!isExpanded) {
+      setUnreadCount(0);
+    }
+  };
+
   return (
-    <div className="bg-white rounded-lg border shadow-sm">
+    <div 
+      className={`fixed bottom-0 right-4 w-full max-w-md z-50 transition-all duration-300 ${
+        isExpanded ? 'h-[600px]' : 'h-auto'
+      }`}
+    >
       {/* Header */}
       <div 
-        className={`p-4 border-b flex items-center justify-between cursor-pointer hover:bg-gray-50 transition-colors ${isExpanded ? 'bg-gray-50' : ''}`}
-        onClick={() => !isExpanded && setIsExpanded(true)}
+        className={`bg-white rounded-t-lg border shadow-sm cursor-pointer ${
+          isExpanded ? 'border-b-0' : ''
+        }`}
+        onClick={toggleExpanded}
       >
-        <div className="flex items-center gap-3">
-          <FiMessageSquare className="text-blue-500 text-xl" />
-          <div>
-            <h3 className="font-medium text-gray-900">Messages</h3>
-            {!isExpanded && (
-              <p className="text-sm text-gray-500 mt-1">{getMessagePreview()}</p>
-            )}
+        <div className="p-4 flex items-center justify-between hover:bg-gray-50 transition-colors">
+          <div className="flex items-center gap-3">
+            <FiMessageSquare className="text-blue-500 text-xl" />
+            <div>
+              <h3 className="font-medium text-gray-900">Messages</h3>
+              {!isExpanded && (
+                <p className="text-sm text-gray-500 mt-1">{getMessagePreview()}</p>
+              )}
+            </div>
           </div>
-        </div>
-        <div className="flex items-center gap-2">
-          {messages.length > 0 && (
-            <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">
-              {messages.length}
-            </span>
-          )}
+          <div className="flex items-center gap-2">
+            {unreadCount > 0 && !isExpanded && (
+              <span className="bg-blue-500 text-white text-xs font-medium px-2.5 py-0.5 rounded-full">
+                {unreadCount}
+              </span>
+            )}
+            <svg 
+              className={`w-5 h-5 text-gray-500 transition-transform ${isExpanded ? 'rotate-180' : ''}`} 
+              fill="none" 
+              viewBox="0 0 24 24" 
+              stroke="currentColor"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
         </div>
       </div>
 
       {/* Messages Area */}
       {isExpanded && (
-        <div className="flex flex-col h-[500px]">
+        <div className="bg-white border-x border-b shadow-sm rounded-b-lg flex flex-col h-[calc(100%-4rem)]">
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
             {messages.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-gray-500">
@@ -202,7 +228,7 @@ export default function MessageSystem({ reservationId, initialMessages }: Messag
           {/* Input Area */}
           <form 
             onSubmit={handleSendMessage}
-            className="border-t p-4 bg-white sticky bottom-0"
+            className="border-t p-4 bg-white"
           >
             <div className="relative">
               <textarea
