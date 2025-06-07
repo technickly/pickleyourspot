@@ -461,4 +461,75 @@ export const metadata = {
   - Next.js 15.3.3
   - SVG editor for icon creation
 
-// ... existing content ... 
+# Updates
+
+## Automatic Participant Addition for Shared Reservations
+
+When users access a reservation through a shared URL, they are now automatically added as participants with the following behavior:
+
+### Features
+- Users accessing a shared reservation URL are automatically added as participants when they sign in
+- New participants are marked as "going" by default
+- Users can toggle their attendance status from both:
+  - The reservation page
+  - The "My Reservations" page
+
+### Implementation Details
+
+1. **Shared Reservation Page (`/r/[shortUrl]`)**
+   - Automatically detects when a user signs in
+   - Checks if the user is already a participant or owner
+   - If not, automatically adds them as a participant
+   - Shows a success message when joined
+   - Refreshes the participant list automatically
+
+2. **Participant Status**
+   - Default status when joining:
+     - `isGoing: true`
+     - `hasPaid: false` (if payment is required)
+   - Status can be updated through the UI with confirmation dialogs
+
+3. **Security Checks**
+   - Verifies user authentication
+   - Prevents duplicate participant entries
+   - Validates reservation existence
+   - Maintains proper access controls
+
+### User Flow
+1. User receives and clicks a shared reservation URL
+2. If not signed in, they are prompted to sign in
+3. Upon successful sign-in, they are automatically added as a participant
+4. They can immediately view the reservation details and participant list
+5. They can update their attendance status as needed
+
+### Technical Implementation
+The feature is implemented across several components:
+
+```typescript
+// Automatic join on sign-in
+useEffect(() => {
+  if (session?.user?.email && reservation && !isJoining) {
+    const isAlreadyParticipant = reservation.participants.some(
+      p => p.email === session.user?.email
+    );
+    const isOwner = reservation.owner.email === session.user?.email;
+
+    if (!isAlreadyParticipant && !isOwner) {
+      handleJoinReservation();
+    }
+  }
+}, [session, reservation]);
+```
+
+The join process is handled by a dedicated API endpoint that:
+- Validates the request
+- Creates the participant record
+- Returns the updated reservation data
+
+### Error Handling
+- Shows appropriate error messages if joining fails
+- Handles cases where:
+  - The reservation doesn't exist
+  - The user is already a participant
+  - The user is the owner
+  - There are network issues 

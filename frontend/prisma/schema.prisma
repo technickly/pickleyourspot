@@ -65,6 +65,9 @@ model Court {
   name         String
   description  String?
   imageUrl     String?
+  city         String       @default("San Francisco")
+  state        String       @default("California")
+  location     String       @default("San Francisco, CA")
   reservations Reservation[]
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt

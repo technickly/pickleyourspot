@@ -357,7 +357,7 @@ export default function ReservePage({ params }: PageProps) {
           </div>
 
           <div>
-            <h2 className="text-xl font-semibold mb-4">Add Notes (Optional)</h2>
+            <h2 className="text-xl font-semibold mb-4">Reservation Notes:</h2>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}

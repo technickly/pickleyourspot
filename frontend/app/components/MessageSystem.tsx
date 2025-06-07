@@ -23,6 +23,30 @@ interface MessageSystemProps {
   initialMessages: Message[];
 }
 
+// Function to generate a consistent color based on email
+function generateUserColor(email: string) {
+  const colors = [
+    'bg-blue-500',   // Blue
+    'bg-green-500',  // Green
+    'bg-purple-500', // Purple
+    'bg-pink-500',   // Pink
+    'bg-yellow-500', // Yellow
+    'bg-red-500',    // Red
+    'bg-indigo-500', // Indigo
+    'bg-teal-500',   // Teal
+  ];
+  
+  let hash = 0;
+  for (let i = 0; i < email.length; i++) {
+    hash = ((hash << 5) - hash) + email.charCodeAt(i);
+    hash = hash & hash;
+  }
+  
+  // Make sure hash is positive and map it to the colors array
+  const index = Math.abs(hash) % colors.length;
+  return colors[index];
+}
+
 export default function MessageSystem({ reservationId, initialMessages }: MessageSystemProps) {
   const { data: session } = useSession();
   const [messages, setMessages] = useState<Message[]>(initialMessages);
@@ -142,34 +166,35 @@ export default function MessageSystem({ reservationId, initialMessages }: Messag
                 <p className="text-sm">Start the conversation!</p>
               </div>
             ) : (
-              messages.map((message) => (
-                <div
-                  key={message.id}
-                  className={`flex flex-col ${
-                    message.user.email === session?.user?.email
-                      ? 'items-end'
-                      : 'items-start'
-                  }`}
-                >
+              messages.map((message) => {
+                const isCurrentUser = message.user.email === session?.user?.email;
+                const messageColor = isCurrentUser ? 'bg-blue-500' : generateUserColor(message.user.email);
+                
+                return (
                   <div
-                    className={`max-w-[80%] rounded-lg p-3 ${
-                      message.user.email === session?.user?.email
-                        ? 'bg-blue-500 text-white'
-                        : 'bg-gray-100'
+                    key={message.id}
+                    className={`flex flex-col ${
+                      isCurrentUser ? 'items-end' : 'items-start'
                     }`}
                   >
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-sm font-medium">
-                        {message.user.name || message.user.email}
-                      </span>
-                      <span className="text-xs opacity-75">
-                        {format(new Date(message.createdAt), 'h:mm a')}
-                      </span>
+                    <div
+                      className={`max-w-[80%] rounded-lg p-3 ${messageColor} ${
+                        isCurrentUser ? 'text-white' : 'text-white'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-sm font-medium">
+                          {message.user.name || message.user.email}
+                        </span>
+                        <span className="text-xs opacity-75">
+                          {format(new Date(message.createdAt), 'h:mm a')}
+                        </span>
+                      </div>
+                      <p className="break-words whitespace-pre-wrap">{message.content}</p>
                     </div>
-                    <p className="break-words whitespace-pre-wrap">{message.content}</p>
                   </div>
-                </div>
-              ))
+                );
+              })
             )}
             <div ref={messagesEndRef} />
           </div>
@@ -188,7 +213,7 @@ export default function MessageSystem({ reservationId, initialMessages }: Messag
                   setIsTyping(e.target.value.length > 0);
                 }}
                 onKeyDown={handleKeyPress}
-                placeholder="Type a message... (Press Enter to send, Shift + Enter for new line)"
+                placeholder="Type a message.."
                 className="w-full p-3 pr-12 border rounded-lg resize-none max-h-32 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 rows={1}
               />

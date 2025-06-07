@@ -309,14 +309,14 @@ export default function ReservationPage({ params }: PageProps) {
 
                 {reservation.description && (
                   <div>
-                    <h3 className="font-medium text-gray-700">Notes</h3>
-                    <p className="text-gray-600 whitespace-pre-wrap">{reservation.description}</p>
+                    <h3 className="font-medium text-gray-700">Court Description:</h3>
+                    <p className="text-gray-600 whitespace-pre-wrap mt-2 bg-gray-50 p-3 rounded-lg">{reservation.description}</p>
                   </div>
                 )}
 
                 {reservation.paymentRequired && (
                   <div>
-                    <h3 className="font-medium text-gray-700">Payment Required</h3>
+                    <h3 className="font-medium text-gray-700">Payment Information</h3>
                     <div className="mt-2 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
                       <p className="text-gray-800 whitespace-pre-wrap">{reservation.paymentInfo}</p>
                     </div>

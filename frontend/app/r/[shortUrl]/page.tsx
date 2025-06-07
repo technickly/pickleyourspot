@@ -169,15 +169,15 @@ export default function SharedReservationPage({ params }: { params: Promise<{ sh
 
               {reservation.description && (
                 <div>
-                  <h2 className="text-lg font-semibold mb-2">Notes</h2>
-                  <p className="text-gray-700 bg-gray-50 p-3 rounded">{reservation.description}</p>
+                  <h2 className="text-lg font-semibold mb-2">Court Description:</h2>
+                  <p className="text-gray-700 bg-gray-50 p-3 rounded-lg">{reservation.description}</p>
                 </div>
               )}
 
               {reservation.paymentRequired && (
                 <div>
-                  <h2 className="text-lg font-semibold mb-2">Payment Required</h2>
-                  <div className="bg-yellow-50 p-3 rounded">
+                  <h2 className="text-lg font-semibold mb-2">Payment Information</h2>
+                  <div className="bg-yellow-50 p-3 rounded-lg">
                     <p className="text-yellow-800">{reservation.paymentInfo}</p>
                   </div>
                 </div>

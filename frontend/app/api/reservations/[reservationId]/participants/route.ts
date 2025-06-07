@@ -3,6 +3,17 @@ import { getServerSession } from 'next-auth';
 import prisma from '@/lib/prisma';
 import { authOptions } from '../../../auth/[...nextauth]/auth';
 
+interface ParticipantStatus {
+  id: string;
+  hasPaid: boolean;
+  isGoing: boolean;
+  user: {
+    name: string | null;
+    email: string;
+    image: string | null;
+  };
+}
+
 export async function POST(
   request: NextRequest,
   { params }: { params: { reservationId: string } }
@@ -33,7 +44,7 @@ export async function POST(
 
     // Verify the user is the owner of the reservation
     const reservation = await prisma.reservation.findUnique({
-      where: { id: params.reservationId },
+      where: { id: await params.reservationId },
       include: {
         owner: true,
         participants: {
@@ -74,7 +85,7 @@ export async function POST(
     const participantStatus = await prisma.participantStatus.create({
       data: {
         userId: userToAdd.id,
-        reservationId: params.reservationId,
+        reservationId: await params.reservationId,
         isGoing: true,
         hasPaid: false,
       },
@@ -132,7 +143,7 @@ export async function DELETE(
 
     // Verify the user is the owner of the reservation
     const reservation = await prisma.reservation.findUnique({
-      where: { id: params.reservationId },
+      where: { id: await params.reservationId },
       include: {
         owner: true,
       },
@@ -152,26 +163,51 @@ export async function DELETE(
       );
     }
 
-    // Remove the participant
-    const updatedReservation = await prisma.reservation.update({
-      where: { id: params.reservationId },
-      data: {
-        participants: {
-          disconnect: { email },
-        },
+    // Find the user to remove
+    const userToRemove = await prisma.user.findUnique({
+      where: { email }
+    });
+
+    if (!userToRemove) {
+      return NextResponse.json(
+        { error: 'User not found' },
+        { status: 404 }
+      );
+    }
+
+    // Remove the participant status
+    await prisma.participantStatus.deleteMany({
+      where: {
+        userId: userToRemove.id,
+        reservationId: await params.reservationId,
+      },
+    });
+
+    // Get updated participants list
+    const updatedParticipants = await prisma.participantStatus.findMany({
+      where: {
+        reservationId: await params.reservationId,
       },
       include: {
-        participants: {
+        user: {
           select: {
             name: true,
             email: true,
             image: true,
-          },
-        },
-      },
+          }
+        }
+      }
     });
 
-    return NextResponse.json(updatedReservation.participants);
+    return NextResponse.json(
+      updatedParticipants.map((p: ParticipantStatus) => ({
+        name: p.user.name,
+        email: p.user.email,
+        image: p.user.image,
+        hasPaid: p.hasPaid,
+        isGoing: p.isGoing,
+      }))
+    );
   } catch (error) {
     console.error('Failed to remove participant:', error);
     return NextResponse.json(
