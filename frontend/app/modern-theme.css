@@ -7,7 +7,7 @@
   --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
   --card-hover-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
   --transition: all 0.3s ease;
-  --nav-height: 4rem;
+  --nav-height: 3.5rem;
 }
 
 /* Light theme by default */
@@ -18,10 +18,10 @@
 }
 
 .modern-theme .nav-bar {
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid rgba(229, 231, 235, 0.5);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid rgba(229, 231, 235, 0.3);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
   position: fixed;
   top: 0;
   left: 0;
@@ -30,43 +30,78 @@
   z-index: 50;
   display: flex;
   align-items: center;
+  padding: 0 1rem;
+}
+
+@media (min-width: 768px) {
+  .modern-theme .nav-bar {
+    padding: 0 2rem;
+  }
 }
 
 .modern-theme .nav-bar .button-primary {
   background: var(--primary-color);
   color: white;
-  padding: 0.5rem 1rem;
-  border-radius: 0.5rem;
+  padding: 0.375rem 0.75rem;
+  border-radius: 0.375rem;
   font-weight: 500;
+  font-size: 0.875rem;
   transition: var(--transition);
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  gap: 0.375rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
   white-space: nowrap;
 }
 
 .modern-theme .nav-bar .button-primary:hover {
   background: var(--primary-hover);
   transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 /* User info section in nav */
 .modern-theme .nav-bar .user-info {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  padding: 0.5rem 1rem;
-  background: rgba(249, 250, 251, 0.8);
-  border-radius: 0.5rem;
-  border: 1px solid rgba(229, 231, 235, 0.5);
+  gap: 0.75rem;
+  padding: 0.375rem 0.75rem;
+  background: rgba(249, 250, 251, 0.7);
+  border-radius: 0.375rem;
+  border: 1px solid rgba(229, 231, 235, 0.3);
+  font-size: 0.875rem;
 }
 
 .modern-theme .nav-bar .user-info .user-name {
   color: #1f2937;
   font-weight: 500;
   white-space: nowrap;
+}
+
+/* Mobile menu styles */
+.modern-theme .nav-bar .mobile-menu {
+  position: absolute;
+  top: var(--nav-height);
+  left: 0;
+  right: 0;
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid rgba(229, 231, 235, 0.5);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  padding: 0.75rem;
+  transform-origin: top;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.modern-theme .nav-bar .mobile-menu.hidden {
+  transform: scaleY(0);
+  opacity: 0;
+}
+
+.modern-theme .nav-bar .mobile-menu .button-primary {
+  width: 100%;
+  justify-content: center;
+  margin-bottom: 0.5rem;
 }
 
 .modern-theme .card {

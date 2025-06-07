@@ -308,6 +308,55 @@ export default function ReservePage({ params }: PageProps) {
           )}
 
           <div>
+            <h2 className="text-xl font-semibold mb-4">Add Participants</h2>
+            <div className="space-y-4">
+              <UserSearch
+                onSelect={handleAddParticipant}
+                placeholder="Search for participants by name or email..."
+                className="mb-4"
+              />
+              
+              {participants.length > 0 && (
+                <div className="space-y-2">
+                  <h3 className="font-medium text-gray-700">Added Participants:</h3>
+                  <div className="space-y-2">
+                    {participants.map((participant) => (
+                      <div
+                        key={participant.email}
+                        className="flex items-center justify-between bg-white p-3 rounded-lg border"
+                      >
+                        <div className="flex items-center space-x-3">
+                          {participant.image && (
+                            <Image
+                              src={participant.image}
+                              alt={participant.name || participant.email}
+                              width={32}
+                              height={32}
+                              className="rounded-full"
+                            />
+                          )}
+                          <div>
+                            {participant.name && (
+                              <div className="font-medium">{participant.name}</div>
+                            )}
+                            <div className="text-sm text-gray-600">{participant.email}</div>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => handleRemoveParticipant(participant.email)}
+                          className="text-red-600 hover:text-red-800"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div>
             <h2 className="text-xl font-semibold mb-4">Add Notes (Optional)</h2>
             <textarea
               value={description}
@@ -347,38 +396,6 @@ export default function ReservePage({ params }: PageProps) {
                 />
               </div>
             )}
-          </div>
-
-          <div>
-            <h2 className="text-xl font-semibold mb-4">Add Participants</h2>
-            <div className="space-y-4">
-              <UserSearch onSelect={handleAddParticipant} selectedUsers={participants} />
-              <div className="flex flex-wrap gap-2">
-                {participants.map((participant) => (
-                  <div
-                    key={participant.email}
-                    className="flex items-center gap-2 bg-blue-50 px-3 py-1 rounded"
-                  >
-                    {participant.image && (
-                      <Image
-                        src={participant.image}
-                        alt={participant.name || ''}
-                        width={20}
-                        height={20}
-                        className="rounded-full"
-                      />
-                    )}
-                    <span>{participant.name}</span>
-                    <button
-                      onClick={() => handleRemoveParticipant(participant.email)}
-                      className="text-red-500 hover:text-red-700"
-                    >
-                      ×
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
           </div>
 
           <button

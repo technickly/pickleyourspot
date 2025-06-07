@@ -4,13 +4,24 @@ import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { signIn, signOut, useSession } from 'next-auth/react';
 import { FaGoogle } from 'react-icons/fa';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { HiMenu, HiX } from 'react-icons/hi';
+import Image from 'next/image';
 
 export default function NavigationBar() {
   const pathname = usePathname();
   const { data: session, status } = useSession();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 20);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const isCurrentPath = (path: string) => pathname === path;
 
@@ -22,141 +33,174 @@ export default function NavigationBar() {
     setIsMenuOpen(!isMenuOpen);
   };
 
-  return (
-    <nav className="nav-bar py-4 px-6">
-      <div className="max-w-6xl mx-auto w-full">
-        <div className="flex justify-between items-center">
-          <Link href="/" className="text-2xl font-bold text-primary hover:text-primary-dark transition-colors">
-            Pickle Your Spot
-          </Link>
+  const closeMenu = () => {
+    setIsMenuOpen(false);
+  };
 
-          {/* Mobile menu button */}
-          {status === 'authenticated' && (
+  return (
+    <nav className={`nav-bar ${isScrolled ? 'shadow-md' : ''}`}>
+      <div className="max-w-6xl mx-auto w-full flex items-center justify-between">
+        <Link 
+          href="/" 
+          className="text-lg font-semibold text-primary hover:text-primary-dark transition-colors"
+          onClick={closeMenu}
+        >
+          Pickle Your Spot
+        </Link>
+
+        {/* Mobile menu button */}
+        {status === 'authenticated' && (
+          <button
+            onClick={toggleMenu}
+            className="md:hidden p-1.5 rounded-md hover:bg-gray-100 transition-colors"
+            aria-label="Toggle menu"
+          >
+            {isMenuOpen ? (
+              <HiX className="h-5 w-5 text-gray-600" />
+            ) : (
+              <HiMenu className="h-5 w-5 text-gray-600" />
+            )}
+          </button>
+        )}
+
+        {/* Desktop navigation */}
+        <div className="hidden md:flex items-center gap-3">
+          {status === 'authenticated' ? (
+            <>
+              <div className="flex items-center gap-2">
+                {!isCurrentPath('/') && (
+                  <Link
+                    href="/"
+                    className="button-primary"
+                  >
+                    Home
+                  </Link>
+                )}
+                
+                {!isCurrentPath('/courts') && (
+                  <Link
+                    href="/courts"
+                    className="button-primary"
+                  >
+                    New Reservation
+                  </Link>
+                )}
+
+                {!isCurrentPath('/my-reservations') && (
+                  <Link
+                    href="/my-reservations"
+                    className="button-primary"
+                  >
+                    My Reservations
+                  </Link>
+                )}
+              </div>
+
+              <div className="user-info">
+                {session.user?.image && (
+                  <Image
+                    src={session.user.image}
+                    alt={session.user.name || 'User'}
+                    width={24}
+                    height={24}
+                    className="rounded-full"
+                  />
+                )}
+                <span className="user-name hidden sm:inline">
+                  {session.user?.name?.split(' ')[0] || 'Guest'}
+                </span>
+                <button
+                  onClick={() => signOut()}
+                  className="text-sm text-red-600 hover:text-red-700 transition-colors"
+                >
+                  Logout
+                </button>
+              </div>
+            </>
+          ) : status === 'loading' ? (
+            <div className="text-sm text-gray-600">Loading...</div>
+          ) : (
             <button
-              onClick={toggleMenu}
-              className="md:hidden p-2 rounded hover:bg-gray-100"
-              aria-label="Toggle menu"
+              onClick={handleSignIn}
+              className="button-primary"
             >
-              {isMenuOpen ? (
-                <HiX className="h-6 w-6 text-gray-600" />
-              ) : (
-                <HiMenu className="h-6 w-6 text-gray-600" />
-              )}
+              <FaGoogle className="text-sm" />
+              <span className="hidden sm:inline">Sign in with Google</span>
+              <span className="sm:hidden">Sign in</span>
             </button>
           )}
-
-          {/* Desktop navigation */}
-          <div className="hidden md:flex items-center gap-4">
-            {status === 'authenticated' ? (
-              <>
-                <div className="flex items-center gap-4">
-                  {!isCurrentPath('/') && (
-                    <Link
-                      href="/"
-                      className="button-primary hover-lift"
-                    >
-                      Home
-                    </Link>
-                  )}
-                  
-                  {!isCurrentPath('/courts') && (
-                    <Link
-                      href="/courts"
-                      className="button-primary hover-lift"
-                    >
-                      Make New Reservation
-                    </Link>
-                  )}
-
-                  {!isCurrentPath('/my-reservations') && (
-                    <Link
-                      href="/my-reservations"
-                      className="button-primary hover-lift"
-                    >
-                      My Reservations
-                    </Link>
-                  )}
-                </div>
-
-                <div className="user-info">
-                  <span className="user-name">
-                    Hello, {session?.user?.name?.split(' ')[0] || 'Guest'}
-                  </span>
-                  <button
-                    onClick={() => signOut()}
-                    className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-all duration-300 hover-lift"
-                  >
-                    Logout
-                  </button>
-                </div>
-              </>
-            ) : status === 'loading' ? (
-              <div className="text-gray-600">Loading...</div>
-            ) : (
-              <button
-                onClick={handleSignIn}
-                className="button-primary hover-lift inline-flex items-center gap-2"
-              >
-                <FaGoogle />
-                Sign in with Google
-              </button>
-            )}
-          </div>
         </div>
 
         {/* Mobile navigation menu */}
         {status === 'authenticated' && (
-          <div className={`md:hidden ${isMenuOpen ? 'block' : 'hidden'} mt-4 space-y-2 glass-card p-4 rounded-xl`}>
-            {!isCurrentPath('/') && (
-              <Link
-                href="/"
-                className="block button-primary w-full text-center mb-2"
-              >
-                Home
-              </Link>
-            )}
-            
-            {!isCurrentPath('/courts') && (
-              <Link
-                href="/courts"
-                className="block button-primary w-full text-center mb-2"
-              >
-                Make New Reservation
-              </Link>
-            )}
+          <div 
+            className={`mobile-menu ${isMenuOpen ? '' : 'hidden'}`}
+            onClick={closeMenu}
+          >
+            <div className="flex flex-col gap-2">
+              {!isCurrentPath('/') && (
+                <Link
+                  href="/"
+                  className="button-primary"
+                >
+                  Home
+                </Link>
+              )}
+              
+              {!isCurrentPath('/courts') && (
+                <Link
+                  href="/courts"
+                  className="button-primary"
+                >
+                  New Reservation
+                </Link>
+              )}
 
-            {!isCurrentPath('/my-reservations') && (
-              <Link
-                href="/my-reservations"
-                className="block button-primary w-full text-center mb-2"
-              >
-                My Reservations
-              </Link>
-            )}
+              {!isCurrentPath('/my-reservations') && (
+                <Link
+                  href="/my-reservations"
+                  className="button-primary"
+                >
+                  My Reservations
+                </Link>
+              )}
 
-            <div className="pt-2 mt-2 border-t border-gray-200">
-              <div className="text-gray-700 mb-2">
-                Hello, {session?.user?.name?.split(' ')[0] || 'Guest'}
+              <div className="flex items-center justify-between pt-2 mt-2 border-t border-gray-200">
+                <div className="flex items-center gap-2">
+                  {session.user?.image && (
+                    <Image
+                      src={session.user.image}
+                      alt={session.user.name || 'User'}
+                      width={24}
+                      height={24}
+                      className="rounded-full"
+                    />
+                  )}
+                  <span className="text-sm text-gray-700">
+                    {session.user?.name?.split(' ')[0] || 'Guest'}
+                  </span>
+                </div>
+                <button
+                  onClick={() => signOut()}
+                  className="text-sm text-red-600 hover:text-red-700 transition-colors"
+                >
+                  Logout
+                </button>
               </div>
-              <button
-                onClick={() => signOut()}
-                className="w-full bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-all duration-300"
-              >
-                Logout
-              </button>
             </div>
           </div>
         )}
 
         {/* Mobile sign in */}
         {status === 'unauthenticated' && (
-          <div className="md:hidden mt-4">
+          <div className="md:hidden">
             <button
               onClick={handleSignIn}
-              className="w-full button-primary inline-flex items-center justify-center gap-2"
+              className="button-primary"
             >
-              <FaGoogle />
-              Sign in with Google
+              <FaGoogle className="text-sm" />
+              <span className="hidden sm:inline">Sign in with Google</span>
+              <span className="sm:hidden">Sign in</span>
             </button>
           </div>
         )}

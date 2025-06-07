@@ -8,9 +8,11 @@ interface ParticipantStatusType {
   reservationId: string;
   hasPaid: boolean;
   isGoing: boolean;
-  userEmail: string;
-  userName: string | null;
-  userImage: string | null;
+  user: {
+    email: string;
+    name: string | null;
+    image: string | null;
+  };
 }
 
 export async function POST(
@@ -39,9 +41,14 @@ export async function POST(
       where: { id: reservationId },
       include: {
         participants: {
-          select: {
-            id: true,
-            email: true,
+          include: {
+            user: {
+              select: {
+                email: true,
+                name: true,
+                image: true,
+              },
+            },
           },
         },
       },
@@ -56,7 +63,7 @@ export async function POST(
 
     // Check if user is already a participant
     const isParticipant = reservation.participants.some(
-      (p: ParticipantStatusType) => p.userEmail === session.user.email
+      (p: ParticipantStatusType) => p.user.email === session.user.email
     );
 
     if (isParticipant) {
@@ -73,9 +80,6 @@ export async function POST(
         participants: {
           create: {
             userId: user.id,
-            userEmail: user.email,
-            userName: user.name,
-            userImage: user.image,
             hasPaid: false,
             isGoing: true
           }
@@ -84,8 +88,18 @@ export async function POST(
       include: {
         court: true,
         owner: true,
-        participants: true
-      }
+        participants: {
+          include: {
+            user: {
+              select: {
+                email: true,
+                name: true,
+                image: true,
+              },
+            },
+          },
+        },
+      },
     });
 
     // Transform the response to match the expected format
@@ -109,8 +123,9 @@ export async function POST(
         image: updatedReservation.owner.image,
       },
       participants: updatedReservation.participants.map((participant: ParticipantStatusType) => ({
-        name: participant.userName,
-        email: participant.userEmail,
+        name: participant.user.name,
+        email: participant.user.email,
+        image: participant.user.image,
         hasPaid: participant.hasPaid,
         isGoing: participant.isGoing,
       })),

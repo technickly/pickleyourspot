@@ -1,106 +1,112 @@
-import React, { useState, useEffect } from 'react';
+'use client';
+
+import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
-import { useDebounce } from '@/lib/hooks/useDebounce';
+import { debounce } from 'lodash';
 
 interface User {
+  id: string;
   name: string | null;
   email: string;
   image: string | null;
 }
 
-interface Props {
-  onSelect: (email: string) => Promise<void>;
-  selectedUsers: { email: string }[];
+interface UserSearchProps {
+  onSelect: (user: User) => void;
   placeholder?: string;
+  className?: string;
 }
 
-export default function UserSearch({ onSelect, selectedUsers, placeholder }: Props) {
+export default function UserSearch({ onSelect, placeholder = 'Search users...', className = '' }: UserSearchProps) {
   const [query, setQuery] = useState('');
   const [users, setUsers] = useState<User[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const debouncedQuery = useDebounce(query, 300);
+  const [isOpen, setIsOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const wrapperRef = useRef<HTMLDivElement>(null);
 
-  const searchUsers = async (searchQuery: string) => {
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const searchUsers = debounce(async (searchQuery: string) => {
     if (!searchQuery.trim()) {
       setUsers([]);
+      setLoading(false);
       return;
     }
 
-    setIsLoading(true);
+    setLoading(true);
     try {
       const response = await fetch(`/api/users/search?q=${encodeURIComponent(searchQuery)}`);
-      if (!response.ok) throw new Error('Failed to search users');
       const data = await response.json();
-      setUsers(data);
+      setUsers(data.users || []);
     } catch (error) {
       console.error('Error searching users:', error);
       setUsers([]);
-    } finally {
-      setIsLoading(false);
     }
+    setLoading(false);
+  }, 300);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setQuery(value);
+    setIsOpen(true);
+    searchUsers(value);
   };
 
-  // Effect to handle debounced search
-  useEffect(() => {
-    searchUsers(debouncedQuery);
-  }, [debouncedQuery]);
-
-  const handleSelect = async (email: string) => {
-    await onSelect(email);
+  const handleSelect = (user: User) => {
+    onSelect(user);
     setQuery('');
+    setIsOpen(false);
     setUsers([]);
   };
 
-  const isUserSelected = (email: string) => {
-    return selectedUsers.some(user => user.email === email);
-  };
-
   return (
-    <div className="relative">
+    <div ref={wrapperRef} className={`relative ${className}`}>
       <input
         type="text"
         value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        placeholder={placeholder || "Search users..."}
-        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        onChange={handleInputChange}
+        placeholder={placeholder}
+        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
       />
-
-      {isLoading && (
-        <div className="absolute right-3 top-2.5">
-          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500"></div>
+      
+      {loading && (
+        <div className="absolute right-3 top-3">
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
         </div>
       )}
 
-      {users.length > 0 && (
+      {isOpen && users.length > 0 && (
         <div className="absolute z-10 w-full mt-1 bg-white rounded-lg shadow-lg border border-gray-200 max-h-60 overflow-auto">
-          {users.map((user) => {
-            const isSelected = isUserSelected(user.email);
-            return (
-              <button
-                key={user.email}
-                onClick={() => !isSelected && handleSelect(user.email)}
-                disabled={isSelected}
-                className={`w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center space-x-2 ${
-                  isSelected ? 'bg-gray-100 cursor-not-allowed' : ''
-                }`}
-              >
-                {user.image && (
-                  <img
-                    src={user.image}
-                    alt={user.name || user.email}
-                    className="w-8 h-8 rounded-full"
-                  />
-                )}
-                <div>
-                  <div className="font-medium">{user.name || user.email}</div>
-                  {user.name && <div className="text-sm text-gray-500">{user.email}</div>}
-                </div>
-                {isSelected && (
-                  <span className="ml-auto text-sm text-gray-500">Already added</span>
-                )}
-              </button>
-            );
-          })}
+          {users.map((user) => (
+            <button
+              key={user.id}
+              onClick={() => handleSelect(user)}
+              className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center space-x-3"
+            >
+              {user.image && (
+                <Image
+                  src={user.image}
+                  alt={user.name || user.email}
+                  width={32}
+                  height={32}
+                  className="rounded-full"
+                />
+              )}
+              <div>
+                {user.name && <div className="font-medium">{user.name}</div>}
+                <div className="text-sm text-gray-600">{user.email}</div>
+              </div>
+            </button>
+          ))}
         </div>
       )}
     </div>

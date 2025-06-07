@@ -33,10 +33,13 @@ export default function SharedReservationPage({ params }: { params: { shortUrl: 
   const [reservation, setReservation] = useState<Reservation | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isJoining, setIsJoining] = useState(false);
+  const [shortUrl, setShortUrl] = useState<string>(params.shortUrl);
 
   useEffect(() => {
-    fetchReservation();
-  }, [params.shortUrl]);
+    if (shortUrl) {
+      fetchReservation();
+    }
+  }, [shortUrl]);
 
   useEffect(() => {
     // When user signs in, automatically try to join the reservation
@@ -54,7 +57,7 @@ export default function SharedReservationPage({ params }: { params: { shortUrl: 
 
   const fetchReservation = async () => {
     try {
-      const response = await fetch(`/api/reservations/shared/${params.shortUrl}`);
+      const response = await fetch(`/api/reservations/shared/${shortUrl}`);
       if (!response.ok) {
         throw new Error('Failed to fetch reservation');
       }
@@ -87,6 +90,7 @@ export default function SharedReservationPage({ params }: { params: { shortUrl: 
       toast.success('Successfully joined the reservation!');
       await fetchReservation(); // Refresh the reservation data
     } catch (error) {
+      console.error('Error joining reservation:', error);
       toast.error('Failed to join the reservation');
     } finally {
       setIsJoining(false);
@@ -118,7 +122,7 @@ export default function SharedReservationPage({ params }: { params: { shortUrl: 
         <h1 className="text-2xl font-bold mb-4">Join {reservation.name}</h1>
         <p className="text-gray-600 mb-6">Sign in to join this pickleball reservation.</p>
         <button
-          onClick={() => signIn('google', { callbackUrl: `/r/${params.shortUrl}` })}
+          onClick={() => signIn('google', { callbackUrl: `/r/${shortUrl}` })}
           className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 flex items-center gap-2"
         >
           <svg className="w-5 h-5" viewBox="0 0 24 24">

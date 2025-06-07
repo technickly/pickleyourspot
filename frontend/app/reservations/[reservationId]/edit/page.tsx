@@ -6,12 +6,21 @@ import { useSession } from 'next-auth/react';
 import { toast } from 'react-hot-toast';
 import { format, parse, addDays, startOfDay } from 'date-fns';
 import { formatInTimeZone } from 'date-fns-tz';
+import Image from 'next/image';
+import UserSearch from '@/app/components/UserSearch';
 
 interface TimeSlot {
   startTime: string;
   endTime: string;
   isAvailable: boolean;
   maxExtensionSlots: number;
+}
+
+interface User {
+  id: string;
+  name: string | null;
+  email: string;
+  image: string | null;
 }
 
 interface Reservation {
@@ -27,6 +36,7 @@ interface Reservation {
     name: string;
     description: string;
   };
+  participants: User[];
 }
 
 interface PageProps {
@@ -50,6 +60,7 @@ export default function EditReservationPage({ params }: PageProps) {
   const [name, setName] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [participants, setParticipants] = useState<User[]>([]);
   const { reservationId } = React.use(params);
 
   useEffect(() => {
@@ -147,6 +158,14 @@ export default function EditReservationPage({ params }: PageProps) {
     });
   };
 
+  const handleAddParticipant = (participant: User) => {
+    setParticipants(prev => [...prev, participant]);
+  };
+
+  const handleRemoveParticipant = (email: string) => {
+    setParticipants(prev => prev.filter(p => p.email !== email));
+  };
+
   const handleSave = async () => {
     if (selectedTimeSlots.length === 0) {
       toast.error('Please select at least one time slot');
@@ -177,6 +196,7 @@ export default function EditReservationPage({ params }: PageProps) {
           description: description.trim() || null,
           paymentRequired,
           paymentInfo: paymentInfo.trim() || null,
+          participantIds: participants.map(p => p.email),
         }),
       });
 
@@ -315,6 +335,55 @@ export default function EditReservationPage({ params }: PageProps) {
               </p>
             </div>
           )}
+
+          <div>
+            <h2 className="text-xl font-semibold mb-4">Add Participants</h2>
+            <div className="space-y-4">
+              <UserSearch
+                onSelect={handleAddParticipant}
+                placeholder="Search for participants by name or email..."
+                className="mb-4"
+              />
+              
+              {participants.length > 0 && (
+                <div className="space-y-2">
+                  <h3 className="font-medium text-gray-700">Added Participants:</h3>
+                  <div className="space-y-2">
+                    {participants.map((participant) => (
+                      <div
+                        key={participant.email}
+                        className="flex items-center justify-between bg-white p-3 rounded-lg border"
+                      >
+                        <div className="flex items-center space-x-3">
+                          {participant.image && (
+                            <Image
+                              src={participant.image}
+                              alt={participant.name || participant.email}
+                              width={32}
+                              height={32}
+                              className="rounded-full"
+                            />
+                          )}
+                          <div>
+                            {participant.name && (
+                              <div className="font-medium">{participant.name}</div>
+                            )}
+                            <div className="text-sm text-gray-600">{participant.email}</div>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => handleRemoveParticipant(participant.email)}
+                          className="text-red-600 hover:text-red-800"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
 
           <div>
             <h2 className="text-xl font-semibold mb-4">Notes (Optional)</h2>
