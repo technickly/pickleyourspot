@@ -21,27 +21,9 @@ export async function GET(
     const reservation = await prisma.reservation.findUnique({
       where: { id: reservationId },
       include: {
-        court: {
-          select: {
-            name: true,
-            description: true,
-            imageUrl: true,
-          },
-        },
-        owner: {
-          select: {
-            name: true,
-            email: true,
-            image: true,
-          },
-        },
-        participants: {
-          select: {
-            name: true,
-            email: true,
-            image: true,
-          },
-        },
+        court: true,
+        owner: true,
+        participants: true,
       },
     });
 
@@ -55,7 +37,7 @@ export async function GET(
     // Check if user has access to view this reservation
     const isOwner = reservation.owner.email === session.user.email;
     const isParticipant = reservation.participants.some(
-      (p) => p.email === session.user.email
+      (p) => p.userEmail === session.user.email
     );
 
     if (!isOwner && !isParticipant) {
@@ -65,7 +47,35 @@ export async function GET(
       );
     }
 
-    return NextResponse.json(reservation);
+    // Transform the response to match the expected format
+    const transformedReservation = {
+      id: reservation.id,
+      name: reservation.name,
+      startTime: reservation.startTime,
+      endTime: reservation.endTime,
+      description: reservation.description,
+      paymentRequired: reservation.paymentRequired,
+      paymentInfo: reservation.paymentInfo,
+      shortUrl: reservation.shortUrl,
+      court: {
+        name: reservation.court.name,
+        description: reservation.court.description,
+        imageUrl: reservation.court.imageUrl,
+      },
+      owner: {
+        name: reservation.owner.name,
+        email: reservation.owner.email,
+        image: reservation.owner.image,
+      },
+      participants: reservation.participants.map(participant => ({
+        name: participant.userName,
+        email: participant.userEmail,
+        hasPaid: participant.hasPaid,
+        isGoing: participant.isGoing,
+      })),
+    };
+
+    return NextResponse.json(transformedReservation);
   } catch (error) {
     console.error('Failed to fetch reservation:', error);
     return NextResponse.json(
@@ -177,28 +187,41 @@ export async function PUT(
         paymentInfo: paymentInfo?.trim(),
       },
       include: {
-        court: {
-          select: {
-            name: true,
-            description: true,
-          },
-        },
-        owner: {
-          select: {
-            name: true,
-            email: true,
-          },
-        },
-        participants: {
-          select: {
-            name: true,
-            email: true,
-          },
-        },
+        court: true,
+        owner: true,
+        participants: true,
       },
     });
 
-    return NextResponse.json(updatedReservation);
+    // Transform the response to match the expected format
+    const transformedReservation = {
+      id: updatedReservation.id,
+      name: updatedReservation.name,
+      startTime: updatedReservation.startTime,
+      endTime: updatedReservation.endTime,
+      description: updatedReservation.description,
+      paymentRequired: updatedReservation.paymentRequired,
+      paymentInfo: updatedReservation.paymentInfo,
+      shortUrl: updatedReservation.shortUrl,
+      court: {
+        name: updatedReservation.court.name,
+        description: updatedReservation.court.description,
+        imageUrl: updatedReservation.court.imageUrl,
+      },
+      owner: {
+        name: updatedReservation.owner.name,
+        email: updatedReservation.owner.email,
+        image: updatedReservation.owner.image,
+      },
+      participants: updatedReservation.participants.map(participant => ({
+        name: participant.userName,
+        email: participant.userEmail,
+        hasPaid: participant.hasPaid,
+        isGoing: participant.isGoing,
+      })),
+    };
+
+    return NextResponse.json(transformedReservation);
   } catch (error) {
     console.error('Failed to update reservation:', error);
     return NextResponse.json(

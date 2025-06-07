@@ -2,17 +2,16 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import prisma from '@/lib/prisma';
 
-interface ParticipantStatusWithUser {
+interface ParticipantStatus {
   id: string;
   hasPaid: boolean;
   isGoing: boolean;
   updatedAt: Date;
   userId: string;
   reservationId: string;
-  user: {
-    name: string | null;
-    email: string;
-  };
+  userEmail: string;
+  userName: string | null;
+  userImage: string | null;
 }
 
 interface PaymentStatusResponse {
@@ -51,25 +50,17 @@ export async function GET(
     }
 
     // Get all participant statuses for this reservation
-    const participantStatuses = await (prisma as any).ParticipantStatus.findMany({
+    const participantStatuses = await prisma.participantStatus.findMany({
       where: {
         reservationId: reservationId,
-      },
-      include: {
-        user: {
-          select: {
-            name: true,
-            email: true,
-          },
-        },
       },
     });
 
     // Format the response
-    const formattedStatuses: PaymentStatusResponse[] = participantStatuses.map((status: ParticipantStatusWithUser) => ({
+    const formattedStatuses: PaymentStatusResponse[] = participantStatuses.map((status: ParticipantStatus) => ({
       userId: status.userId,
-      name: status.user.name,
-      email: status.user.email,
+      name: status.userName,
+      email: status.userEmail,
       hasPaid: status.hasPaid,
       isGoing: status.isGoing,
     }));
@@ -121,7 +112,7 @@ export async function PUT(
     }
 
     // Update the payment status
-    const updatedStatus = await (prisma as any).ParticipantStatus.update({
+    const updatedStatus = await prisma.participantStatus.update({
       where: {
         userId_reservationId: {
           userId: userId,
@@ -131,20 +122,12 @@ export async function PUT(
       data: {
         hasPaid: hasPaid,
       },
-      include: {
-        user: {
-          select: {
-            name: true,
-            email: true,
-          },
-        },
-      },
     });
 
     const response: PaymentStatusResponse = {
       userId: updatedStatus.userId,
-      name: updatedStatus.user.name,
-      email: updatedStatus.user.email,
+      name: updatedStatus.userName,
+      email: updatedStatus.userEmail,
       hasPaid: updatedStatus.hasPaid,
       isGoing: updatedStatus.isGoing,
     };

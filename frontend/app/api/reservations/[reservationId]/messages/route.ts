@@ -1,7 +1,18 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import prisma from '@/lib/prisma';
-import { authOptions } from '../../../auth/[...nextauth]/route';
+import { authOptions } from '@/app/api/auth/[...nextauth]/auth';
+
+interface ParticipantStatus {
+  id: string;
+  userId: string;
+  reservationId: string;
+  hasPaid: boolean;
+  isGoing: boolean;
+  userEmail: string;
+  userName: string | null;
+  userImage: string | null;
+}
 
 export async function POST(
   request: Request,
@@ -30,14 +41,6 @@ export async function POST(
     // Get the user and check if they have access to this reservation
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
-      include: {
-        reservations: {
-          where: { id: reservationId },
-        },
-        participants: {
-          where: { id: reservationId },
-        },
-      },
     });
 
     if (!user) {
@@ -48,8 +51,25 @@ export async function POST(
     }
 
     // Check if user is owner or participant
-    const isOwner = user.reservations.length > 0;
-    const isParticipant = user.participants.length > 0;
+    const reservation = await prisma.reservation.findUnique({
+      where: { id: reservationId },
+      include: {
+        owner: true,
+        participants: true,
+      },
+    });
+
+    if (!reservation) {
+      return NextResponse.json(
+        { error: 'Reservation not found' },
+        { status: 404 }
+      );
+    }
+
+    const isOwner = reservation.owner.email === session.user.email;
+    const isParticipant = reservation.participants.some(
+      (p: ParticipantStatus) => p.userEmail === session.user.email
+    );
 
     if (!isOwner && !isParticipant) {
       return NextResponse.json(
@@ -103,14 +123,6 @@ export async function GET(
     // Check if user has access to this reservation
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
-      include: {
-        reservations: {
-          where: { id: reservationId },
-        },
-        participants: {
-          where: { id: reservationId },
-        },
-      },
     });
 
     if (!user) {
@@ -120,8 +132,26 @@ export async function GET(
       );
     }
 
-    const isOwner = user.reservations.length > 0;
-    const isParticipant = user.participants.length > 0;
+    // Check if user is owner or participant
+    const reservation = await prisma.reservation.findUnique({
+      where: { id: reservationId },
+      include: {
+        owner: true,
+        participants: true,
+      },
+    });
+
+    if (!reservation) {
+      return NextResponse.json(
+        { error: 'Reservation not found' },
+        { status: 404 }
+      );
+    }
+
+    const isOwner = reservation.owner.email === session.user.email;
+    const isParticipant = reservation.participants.some(
+      (p: ParticipantStatus) => p.userEmail === session.user.email
+    );
 
     if (!isOwner && !isParticipant) {
       return NextResponse.json(

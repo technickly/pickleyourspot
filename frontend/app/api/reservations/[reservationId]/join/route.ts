@@ -2,6 +2,17 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import prisma from '@/lib/prisma';
 
+interface ParticipantStatusType {
+  id: string;
+  userId: string;
+  reservationId: string;
+  hasPaid: boolean;
+  isGoing: boolean;
+  userEmail: string;
+  userName: string | null;
+  userImage: string | null;
+}
+
 export async function POST(
   request: Request,
   context: { params: Promise<{ reservationId: string }> }
@@ -45,7 +56,7 @@ export async function POST(
 
     // Check if user is already a participant
     const isParticipant = reservation.participants.some(
-      (p) => p.email === session.user.email
+      (p: ParticipantStatusType) => p.userEmail === session.user.email
     );
 
     if (isParticipant) {
@@ -60,31 +71,52 @@ export async function POST(
       where: { id: reservationId },
       data: {
         participants: {
-          connect: { id: user.id },
-        },
+          create: {
+            userId: user.id,
+            userEmail: user.email,
+            userName: user.name,
+            userImage: user.image,
+            hasPaid: false,
+            isGoing: true
+          }
+        }
       },
       include: {
-        court: {
-          select: {
-            name: true,
-          },
-        },
-        owner: {
-          select: {
-            name: true,
-            email: true,
-          },
-        },
-        participants: {
-          select: {
-            name: true,
-            email: true,
-          },
-        },
-      },
+        court: true,
+        owner: true,
+        participants: true
+      }
     });
 
-    return NextResponse.json(updatedReservation);
+    // Transform the response to match the expected format
+    const transformedReservation = {
+      id: updatedReservation.id,
+      name: updatedReservation.name,
+      startTime: updatedReservation.startTime,
+      endTime: updatedReservation.endTime,
+      description: updatedReservation.description,
+      paymentRequired: updatedReservation.paymentRequired,
+      paymentInfo: updatedReservation.paymentInfo,
+      shortUrl: updatedReservation.shortUrl,
+      court: {
+        name: updatedReservation.court.name,
+        description: updatedReservation.court.description,
+        imageUrl: updatedReservation.court.imageUrl,
+      },
+      owner: {
+        name: updatedReservation.owner.name,
+        email: updatedReservation.owner.email,
+        image: updatedReservation.owner.image,
+      },
+      participants: updatedReservation.participants.map((participant: ParticipantStatusType) => ({
+        name: participant.userName,
+        email: participant.userEmail,
+        hasPaid: participant.hasPaid,
+        isGoing: participant.isGoing,
+      })),
+    };
+
+    return NextResponse.json(transformedReservation);
   } catch (error) {
     console.error('Error joining reservation:', error);
     return NextResponse.json(
