@@ -45,10 +45,13 @@ export default function SharedReservationPage({ params }: Props) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [passwordError, setPasswordError] = useState(false);
   const resolvedParams = use(params);
+  const shortUrl = resolvedParams.shortUrl;
 
   useEffect(() => {
-    fetchReservation();
-  }, [resolvedParams.shortUrl]);
+    if (!reservation && !isLoading) {
+      fetchReservation();
+    }
+  }, [shortUrl]);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -57,8 +60,11 @@ export default function SharedReservationPage({ params }: Props) {
   }, [status]);
 
   const fetchReservation = async () => {
+    if (isLoading || reservation) return;
+    
+    setIsLoading(true);
     try {
-      const response = await fetch(`/api/reservations/short/${resolvedParams.shortUrl}`);
+      const response = await fetch(`/api/reservations/short/${shortUrl}`);
       if (!response.ok) {
         throw new Error('Failed to fetch reservation');
       }
