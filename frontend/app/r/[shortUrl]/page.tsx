@@ -73,6 +73,42 @@ const SimplePasswordInput = memo(({
 
 SimplePasswordInput.displayName = 'SimplePasswordInput';
 
+const UncontrolledPasswordInput = ({
+  onComplete,
+  error
+}: {
+  onComplete: (value: string) => void;
+  error: boolean;
+}) => {
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const handleBlur = () => {
+    if (inputRef.current) {
+      onComplete(inputRef.current.value);
+    }
+  };
+
+  return (
+    <div className="space-y-2">
+      <label htmlFor="password" className="block font-medium text-gray-700">
+        Password Required
+      </label>
+      <input
+        ref={inputRef}
+        id="password"
+        name="password"
+        type="text"
+        defaultValue=""
+        onBlur={handleBlur}
+        className="w-full p-3 border rounded-lg border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+      />
+      {error && (
+        <p className="text-red-500 text-sm">Incorrect password</p>
+      )}
+    </div>
+  );
+};
+
 export default function SharedReservationPage({ params }: Props) {
   const router = useRouter();
   const { data: session, status } = useSession();
@@ -314,9 +350,8 @@ export default function SharedReservationPage({ params }: Props) {
         )}
 
         {reservation.password && (
-          <SimplePasswordInput
-            initialValue={password}
-            onPasswordChange={handlePasswordUpdate}
+          <UncontrolledPasswordInput
+            onComplete={setPassword}
             error={passwordError}
           />
         )}
