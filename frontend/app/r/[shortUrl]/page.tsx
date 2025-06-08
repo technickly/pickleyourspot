@@ -48,10 +48,8 @@ export default function SharedReservationPage({ params }: Props) {
   const shortUrl = resolvedParams.shortUrl;
 
   useEffect(() => {
-    if (!reservation && !isLoading) {
-      fetchReservation();
-    }
-  }, [shortUrl]);
+    fetchReservation();
+  }, [resolvedParams.shortUrl]);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -60,11 +58,9 @@ export default function SharedReservationPage({ params }: Props) {
   }, [status]);
 
   const fetchReservation = async () => {
-    if (isLoading || reservation) return;
-    
     setIsLoading(true);
     try {
-      const response = await fetch(`/api/reservations/short/${shortUrl}`);
+      const response = await fetch(`/api/reservations/short/${resolvedParams.shortUrl}`);
       if (!response.ok) {
         throw new Error('Failed to fetch reservation');
       }
@@ -225,10 +221,7 @@ export default function SharedReservationPage({ params }: Props) {
           <div className="flex space-x-2">
             <button
               type="button"
-              onClick={(e) => {
-                e.preventDefault();
-                setIsGoing(true);
-              }}
+              onClick={() => setIsGoing(true)}
               className={`px-4 py-2 rounded-lg transition-colors ${
                 isGoing
                   ? 'bg-green-600 text-white'
@@ -239,10 +232,7 @@ export default function SharedReservationPage({ params }: Props) {
             </button>
             <button
               type="button"
-              onClick={(e) => {
-                e.preventDefault();
-                setIsGoing(false);
-              }}
+              onClick={() => setIsGoing(false)}
               className={`px-4 py-2 rounded-lg transition-colors ${
                 !isGoing
                   ? 'bg-red-600 text-white'
@@ -260,10 +250,7 @@ export default function SharedReservationPage({ params }: Props) {
             <div className="flex space-x-2">
               <button
                 type="button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  setHasPaid(true);
-                }}
+                onClick={() => setHasPaid(true)}
                 className={`px-4 py-2 rounded-lg transition-colors ${
                   hasPaid
                     ? 'bg-green-600 text-white'
@@ -274,10 +261,7 @@ export default function SharedReservationPage({ params }: Props) {
               </button>
               <button
                 type="button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  setHasPaid(false);
-                }}
+                onClick={() => setHasPaid(false)}
                 className={`px-4 py-2 rounded-lg transition-colors ${
                   !hasPaid
                     ? 'bg-red-600 text-white'
@@ -291,17 +275,14 @@ export default function SharedReservationPage({ params }: Props) {
         )}
 
         {reservation.password && (
-          <div className="space-y-2" onClick={(e) => e.stopPropagation()}>
+          <div className="space-y-2">
             <label className="block font-medium text-gray-700">
               Password Required
             </label>
             <input
               type="password"
               value={password}
-              onChange={(e) => {
-                e.stopPropagation();
-                handlePasswordChange(e);
-              }}
+              onChange={handlePasswordChange}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
                   e.preventDefault();
@@ -321,10 +302,7 @@ export default function SharedReservationPage({ params }: Props) {
 
         <button
           type="button"
-          onClick={(e) => {
-            e.preventDefault();
-            handleJoin(e);
-          }}
+          onClick={handleJoin}
           disabled={isSubmitting}
           className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors disabled:bg-blue-300"
         >
