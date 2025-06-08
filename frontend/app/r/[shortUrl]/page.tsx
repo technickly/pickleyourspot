@@ -34,47 +34,33 @@ interface Reservation {
 
 const timeZone = 'America/Los_Angeles';
 
-const PasswordInput = ({ 
-  value, 
-  onChange, 
-  error 
-}: { 
-  value: string; 
-  onChange: (value: string) => void; 
+const SimplePasswordInput = ({
+  value,
+  onChange,
+  error
+}: {
+  value: string;
+  onChange: (value: string) => void;
   error: boolean;
 }) => {
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  // Prevent any default form submission
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-    }
-  };
-
-  // Handle input changes without losing focus
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    onChange(e.target.value);
-  };
-
+  console.log('Rendering SimplePasswordInput, current value:', value);
+  
   return (
-    <div className="space-y-2" onClick={(e) => e.stopPropagation()}>
-      <label className="block font-medium text-gray-700">
+    <div className="space-y-2">
+      <label htmlFor="password" className="block font-medium text-gray-700">
         Password Required
       </label>
       <input
-        ref={inputRef}
-        type="password"
+        id="password"
+        name="password"
+        type="text"
+        autoComplete="new-password"
         value={value}
-        onChange={handleChange}
-        onKeyDown={handleKeyDown}
-        placeholder="Enter reservation password"
-        className={`w-full p-3 border rounded-lg ${
-          error ? 'border-red-500' : 'border-gray-300'
-        } focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
-        autoComplete="off"
+        onChange={(e) => {
+          console.log('Input change event, new value:', e.target.value);
+          onChange(e.target.value);
+        }}
+        className="w-full p-3 border rounded-lg border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
       />
       {error && (
         <p className="text-red-500 text-sm">Incorrect password</p>
@@ -129,13 +115,6 @@ export default function SharedReservationPage({ params }: Props) {
     await signIn('google', { 
       callbackUrl: currentPath,
     });
-  };
-
-  const handlePasswordChange = (newValue: string) => {
-    setPassword(newValue);
-    if (passwordError) {
-      setPasswordError(false);
-    }
   };
 
   const handleJoin = async (e: React.MouseEvent) => {
@@ -324,22 +303,11 @@ export default function SharedReservationPage({ params }: Props) {
         )}
 
         {reservation.password && (
-          <div className="space-y-2">
-            <label htmlFor="password" className="block font-medium text-gray-700">
-              Password Required
-            </label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter reservation password"
-              className="w-full p-3 border rounded-lg border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-            {passwordError && (
-              <p className="text-red-500 text-sm">Incorrect password</p>
-            )}
-          </div>
+          <SimplePasswordInput
+            value={password}
+            onChange={setPassword}
+            error={passwordError}
+          />
         )}
 
         <button
