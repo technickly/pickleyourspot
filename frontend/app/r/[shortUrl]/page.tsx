@@ -211,7 +211,7 @@ export default function SharedReservationPage({ params }: Props) {
     }
 
     return (
-      <form onSubmit={(e) => e.preventDefault()} className="space-y-4 bg-gray-50 p-4 rounded-lg">
+      <div className="space-y-4 bg-gray-50 p-4 rounded-lg">
         <h3 className="font-medium text-gray-700 mb-4">Your Response</h3>
         
         <div className="flex items-center justify-between">
@@ -219,7 +219,10 @@ export default function SharedReservationPage({ params }: Props) {
           <div className="flex space-x-2">
             <button
               type="button"
-              onClick={() => setIsGoing(true)}
+              onClick={(e) => {
+                e.preventDefault();
+                setIsGoing(true);
+              }}
               className={`px-4 py-2 rounded-lg transition-colors ${
                 isGoing
                   ? 'bg-green-600 text-white'
@@ -230,7 +233,10 @@ export default function SharedReservationPage({ params }: Props) {
             </button>
             <button
               type="button"
-              onClick={() => setIsGoing(false)}
+              onClick={(e) => {
+                e.preventDefault();
+                setIsGoing(false);
+              }}
               className={`px-4 py-2 rounded-lg transition-colors ${
                 !isGoing
                   ? 'bg-red-600 text-white'
@@ -248,7 +254,10 @@ export default function SharedReservationPage({ params }: Props) {
             <div className="flex space-x-2">
               <button
                 type="button"
-                onClick={() => setHasPaid(true)}
+                onClick={(e) => {
+                  e.preventDefault();
+                  setHasPaid(true);
+                }}
                 className={`px-4 py-2 rounded-lg transition-colors ${
                   hasPaid
                     ? 'bg-green-600 text-white'
@@ -259,7 +268,10 @@ export default function SharedReservationPage({ params }: Props) {
               </button>
               <button
                 type="button"
-                onClick={() => setHasPaid(false)}
+                onClick={(e) => {
+                  e.preventDefault();
+                  setHasPaid(false);
+                }}
                 className={`px-4 py-2 rounded-lg transition-colors ${
                   !hasPaid
                     ? 'bg-red-600 text-white'
@@ -273,14 +285,22 @@ export default function SharedReservationPage({ params }: Props) {
         )}
 
         {reservation.password && (
-          <div className="space-y-2">
+          <div className="space-y-2" onClick={(e) => e.stopPropagation()}>
             <label className="block font-medium text-gray-700">
               Password Required
             </label>
             <input
               type="password"
               value={password}
-              onChange={handlePasswordChange}
+              onChange={(e) => {
+                e.stopPropagation();
+                handlePasswordChange(e);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                }
+              }}
               placeholder="Enter reservation password"
               className={`w-full p-3 border rounded-lg ${
                 passwordError ? 'border-red-500' : 'border-gray-300'
@@ -295,13 +315,16 @@ export default function SharedReservationPage({ params }: Props) {
 
         <button
           type="button"
-          onClick={handleJoin}
+          onClick={(e) => {
+            e.preventDefault();
+            handleJoin(e);
+          }}
           disabled={isSubmitting}
           className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors disabled:bg-blue-300"
         >
           {isSubmitting ? 'Joining...' : 'Join Reservation'}
         </button>
-      </form>
+      </div>
     );
   };
 
