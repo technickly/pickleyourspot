@@ -35,7 +35,10 @@ export default function CourtsPage() {
 
   const fetchCourts = async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/courts`);
+      const response = await fetch('/api/courts');
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
       const data = await response.json();
       setCourts(data);
       
@@ -43,6 +46,7 @@ export default function CourtsPage() {
       const uniqueLocations = Array.from(new Set(data.map((court: Court) => court.location))) as string[];
       setLocations(uniqueLocations);
     } catch (error) {
+      console.error('Error fetching courts:', error);
       toast.error('Failed to fetch courts');
     }
   };
