@@ -50,6 +50,7 @@ export default function ReservePage({ params }: PageProps) {
   const [paymentInfo, setPaymentInfo] = useState('');
   const [reservationName, setReservationName] = useState('');
   const [interval, setInterval] = useState<'30' | '60'>('60');
+  const [password, setPassword] = useState<string | null>(null);
   const { courtId } = React.use(params);
 
   useEffect(() => {
@@ -184,6 +185,7 @@ export default function ReservePage({ params }: PageProps) {
           description: description.trim() || null,
           paymentRequired,
           paymentInfo: paymentInfo.trim() || null,
+          password: password || null,
         }),
       });
 
@@ -426,6 +428,40 @@ export default function ReservePage({ params }: PageProps) {
                   className="w-full p-3 border rounded text-gray-700 placeholder-gray-400"
                   rows={2}
                 />
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-4">
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="passwordProtected"
+                checked={!!password}
+                onChange={(e) => e.target.checked ? setPassword('') : setPassword(null)}
+                className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+              />
+              <label htmlFor="passwordProtected" className="text-gray-700">
+                Password Protected
+              </label>
+            </div>
+
+            {password !== null && (
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+                  Reservation Password
+                </label>
+                <input
+                  type="text"
+                  id="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Enter a password for participants to join"
+                  className="w-full p-3 border rounded text-gray-700 placeholder-gray-400"
+                />
+                <p className="mt-2 text-sm text-gray-500">
+                  Participants will need to enter this password when joining through the shared URL.
+                </p>
               </div>
             )}
           </div>
