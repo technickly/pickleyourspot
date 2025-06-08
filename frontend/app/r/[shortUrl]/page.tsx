@@ -110,18 +110,19 @@ const UncontrolledPasswordInput = ({
 };
 
 const PasswordInput = ({
-  value,
   onPasswordChange,
   error
 }: {
-  value: string;
   onPasswordChange: (value: string) => void;
   error: boolean;
 }) => {
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    onPasswordChange(e.target.value);
+  // Only update parent state when input loses focus
+  const handleBlur = () => {
+    if (inputRef.current) {
+      onPasswordChange(inputRef.current.value);
+    }
   };
 
   return (
@@ -134,8 +135,7 @@ const PasswordInput = ({
         id="password"
         name="password"
         type="password"
-        value={value}
-        onChange={handleChange}
+        onBlur={handleBlur}
         className="w-full p-3 border rounded-lg border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
       />
       {error && (
@@ -200,13 +200,17 @@ export default function SharedReservationPage({ params }: Props) {
       return;
     }
 
+    // Get the current password value directly from the input before submission
+    const passwordInput = document.getElementById('password') as HTMLInputElement;
+    const currentPassword = passwordInput?.value || '';
+
     // Validate password if required
     if (reservation?.password) {
-      if (!password.trim()) {
+      if (!currentPassword.trim()) {
         toast.error('Please enter the reservation password');
         return;
       }
-      if (password !== reservation.password) {
+      if (currentPassword !== reservation.password) {
         setPasswordError(true);
         toast.error('Incorrect password');
         return;
@@ -223,7 +227,7 @@ export default function SharedReservationPage({ params }: Props) {
         body: JSON.stringify({
           isGoing,
           hasPaid,
-          password: reservation?.password ? password : undefined,
+          password: currentPassword,
         }),
       });
 
@@ -387,8 +391,7 @@ export default function SharedReservationPage({ params }: Props) {
 
         {reservation.password && (
           <PasswordInput
-            value={password}
-            onPasswordChange={handlePasswordChange}
+            onPasswordChange={setPassword}
             error={passwordError}
           />
         )}
