@@ -101,6 +101,26 @@ export default function ParticipantList({
     newValue: boolean;
   } | null>(null);
 
+  const handleRemoveParticipant = async (email: string) => {
+    try {
+      const response = await fetch(`/api/reservations/${reservationId}/participants?email=${email}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to remove participant');
+      }
+
+      toast.success('Participant removed successfully');
+      if (onRemoveParticipant) {
+        onRemoveParticipant(email);
+      }
+    } catch (error) {
+      console.error('Error removing participant:', error);
+      toast.error('Failed to remove participant');
+    }
+  };
+
   const handleStatusUpdate = async (
     userId: string,
     type: 'payment' | 'attendance',
@@ -114,6 +134,7 @@ export default function ParticipantList({
       // Only allow status updates if user is the owner or updating their own status
       const participant = participants.find(p => p.userId === userId);
       if (!participant || (!isOwner && participant.email !== userEmail)) {
+        toast.error('You can only update your own status');
         return;
       }
 
@@ -309,7 +330,7 @@ export default function ParticipantList({
                   {/* Remove Button (only for owner) */}
                   {isOwner && participant.email !== ownerEmail && (
                     <button
-                      onClick={() => onRemoveParticipant(participant.email)}
+                      onClick={() => handleRemoveParticipant(participant.email)}
                       className="text-red-600 hover:text-red-700 transition-colors p-1.5 rounded-md hover:bg-red-50"
                       title="Remove participant"
                     >
@@ -418,8 +439,8 @@ export default function ParticipantList({
                         <div
                           className={`inline-flex items-center px-4 py-2 rounded-md text-sm font-medium min-w-[120px] justify-center ${
                             participant.hasPaid
-                              ? 'bg-green-50 text-green-700'
-                              : 'bg-yellow-50 text-yellow-700'
+                              ? 'bg-green-50 text-green-800'
+                              : 'bg-yellow-50 text-yellow-800'
                           }`}
                         >
                           {participant.hasPaid ? (
@@ -433,13 +454,13 @@ export default function ParticipantList({
                           )}
                         </div>
                       )}
-                      {isCurrentUser && canModifyStatus && (
-                        <div className="md:hidden flex items-center">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                          </svg>
-                          <span className="ml-1 text-xs text-gray-500">Tap to change</span>
-                        </div>
+                      {isOwner && !isCurrentUser && (
+                        <button
+                          onClick={() => handleRemoveParticipant(participant.email)}
+                          className="inline-flex items-center px-4 py-2 rounded-md text-sm font-medium transition-colors bg-red-100 text-red-800 hover:bg-red-200"
+                        >
+                          Remove
+                        </button>
                       )}
                     </div>
                   )}
