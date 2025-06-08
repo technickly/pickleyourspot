@@ -109,6 +109,42 @@ const UncontrolledPasswordInput = ({
   );
 };
 
+const PasswordInput = ({
+  value,
+  onPasswordChange,
+  error
+}: {
+  value: string;
+  onPasswordChange: (value: string) => void;
+  error: boolean;
+}) => {
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    onPasswordChange(e.target.value);
+  };
+
+  return (
+    <div className="space-y-2">
+      <label htmlFor="password" className="block font-medium text-gray-700">
+        Password Required
+      </label>
+      <input
+        ref={inputRef}
+        id="password"
+        name="password"
+        type="password"
+        value={value}
+        onChange={handleChange}
+        className="w-full p-3 border rounded-lg border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+      />
+      {error && (
+        <p className="text-red-500 text-sm">Incorrect password</p>
+      )}
+    </div>
+  );
+};
+
 export default function SharedReservationPage({ params }: Props) {
   const router = useRouter();
   const { data: session, status } = useSession();
@@ -209,12 +245,12 @@ export default function SharedReservationPage({ params }: Props) {
     }
   };
 
-  const handlePasswordUpdate = useCallback((newValue: string) => {
+  const handlePasswordChange = (newValue: string) => {
     setPassword(newValue);
     if (passwordError) {
       setPasswordError(false);
     }
-  }, [passwordError]);
+  };
 
   if (isLoading) {
     return <div className="flex justify-center items-center min-h-screen">Loading reservation details...</div>;
@@ -350,8 +386,9 @@ export default function SharedReservationPage({ params }: Props) {
         )}
 
         {reservation.password && (
-          <UncontrolledPasswordInput
-            onComplete={setPassword}
+          <PasswordInput
+            value={password}
+            onPasswordChange={handlePasswordChange}
             error={passwordError}
           />
         )}
