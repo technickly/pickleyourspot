@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession, signIn } from 'next-auth/react';
 import { toast } from 'react-hot-toast';
@@ -33,6 +33,55 @@ interface Reservation {
 }
 
 const timeZone = 'America/Los_Angeles';
+
+const PasswordInput = ({ 
+  value, 
+  onChange, 
+  error 
+}: { 
+  value: string; 
+  onChange: (value: string) => void; 
+  error: boolean;
+}) => {
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Prevent any default form submission
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+    }
+  };
+
+  // Handle input changes without losing focus
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onChange(e.target.value);
+  };
+
+  return (
+    <div className="space-y-2" onClick={(e) => e.stopPropagation()}>
+      <label className="block font-medium text-gray-700">
+        Password Required
+      </label>
+      <input
+        ref={inputRef}
+        type="password"
+        value={value}
+        onChange={handleChange}
+        onKeyDown={handleKeyDown}
+        placeholder="Enter reservation password"
+        className={`w-full p-3 border rounded-lg ${
+          error ? 'border-red-500' : 'border-gray-300'
+        } focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+        autoComplete="off"
+      />
+      {error && (
+        <p className="text-red-500 text-sm">Incorrect password</p>
+      )}
+    </div>
+  );
+};
 
 export default function SharedReservationPage({ params }: Props) {
   const router = useRouter();
@@ -82,8 +131,8 @@ export default function SharedReservationPage({ params }: Props) {
     });
   };
 
-  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setPassword(e.target.value);
+  const handlePasswordChange = (newValue: string) => {
+    setPassword(newValue);
     if (passwordError) {
       setPasswordError(false);
     }
@@ -275,29 +324,11 @@ export default function SharedReservationPage({ params }: Props) {
         )}
 
         {reservation.password && (
-          <div className="space-y-2">
-            <label className="block font-medium text-gray-700">
-              Password Required
-            </label>
-            <input
-              type="password"
-              value={password}
-              onChange={handlePasswordChange}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                }
-              }}
-              placeholder="Enter reservation password"
-              className={`w-full p-3 border rounded-lg ${
-                passwordError ? 'border-red-500' : 'border-gray-300'
-              } focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
-              autoComplete="off"
-            />
-            {passwordError && (
-              <p className="text-red-500 text-sm">Incorrect password</p>
-            )}
-          </div>
+          <PasswordInput
+            value={password}
+            onChange={handlePasswordChange}
+            error={passwordError}
+          />
         )}
 
         <button
