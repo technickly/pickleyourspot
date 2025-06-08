@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
+import { useSession, signIn } from 'next-auth/react';
 import { toast } from 'react-hot-toast';
 import { formatInTimeZone } from 'date-fns-tz';
 import { use } from 'react';
@@ -40,7 +40,7 @@ export default function SharedReservationPage({ params }: Props) {
   const [reservation, setReservation] = useState<Reservation | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [password, setPassword] = useState('');
-  const [isGoing, setIsGoing] = useState(false);
+  const [isGoing, setIsGoing] = useState(true);
   const [hasPaid, setHasPaid] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [passwordError, setPasswordError] = useState(false);
@@ -71,7 +71,7 @@ export default function SharedReservationPage({ params }: Props) {
     if (!session || status !== "authenticated") {
       // Store the current URL in localStorage before redirecting to sign in
       localStorage.setItem('redirectAfterSignIn', window.location.pathname);
-      router.push('/api/auth/signin');
+      signIn(undefined, { callbackUrl: window.location.pathname });
       return;
     }
 
@@ -90,19 +90,7 @@ export default function SharedReservationPage({ params }: Props) {
 
     setIsSubmitting(true);
     try {
-      // First verify the user exists in the database
-      const userVerifyResponse = await fetch('/api/user/verify', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!userVerifyResponse.ok) {
-        throw new Error('User verification failed');
-      }
-
-      // Now try to join the reservation
+      // Try to join the reservation
       const joinResponse = await fetch(`/api/reservations/${reservation?.id}/join`, {
         method: 'POST',
         headers: {
@@ -176,34 +164,60 @@ export default function SharedReservationPage({ params }: Props) {
             </div>
           )}
 
-          <div className="space-y-4">
+          <div className="space-y-4 bg-gray-50 p-4 rounded-lg">
+            <h3 className="font-medium text-gray-700 mb-4">Your Response</h3>
+            
             <div className="flex items-center justify-between">
-              <label className="font-medium text-gray-700">Going?</label>
-              <button
-                onClick={() => setIsGoing(!isGoing)}
-                className={`px-4 py-2 rounded-lg transition-colors ${
-                  isGoing
-                    ? 'bg-green-100 text-green-800 hover:bg-green-200'
-                    : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
-                }`}
-              >
-                {isGoing ? 'Going' : 'Not Going'}
-              </button>
+              <label className="font-medium text-gray-700">Are you going?</label>
+              <div className="flex space-x-2">
+                <button
+                  onClick={() => setIsGoing(true)}
+                  className={`px-4 py-2 rounded-lg transition-colors ${
+                    isGoing
+                      ? 'bg-green-600 text-white'
+                      : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+                  }`}
+                >
+                  Going
+                </button>
+                <button
+                  onClick={() => setIsGoing(false)}
+                  className={`px-4 py-2 rounded-lg transition-colors ${
+                    !isGoing
+                      ? 'bg-red-600 text-white'
+                      : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+                  }`}
+                >
+                  Not Going
+                </button>
+              </div>
             </div>
 
             {reservation.paymentRequired && (
               <div className="flex items-center justify-between">
                 <label className="font-medium text-gray-700">Payment Status</label>
-                <button
-                  onClick={() => setHasPaid(!hasPaid)}
-                  className={`px-4 py-2 rounded-lg transition-colors ${
-                    hasPaid
-                      ? 'bg-green-100 text-green-800 hover:bg-green-200'
-                      : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
-                  }`}
-                >
-                  {hasPaid ? 'Paid' : 'Not Paid'}
-                </button>
+                <div className="flex space-x-2">
+                  <button
+                    onClick={() => setHasPaid(true)}
+                    className={`px-4 py-2 rounded-lg transition-colors ${
+                      hasPaid
+                        ? 'bg-green-600 text-white'
+                        : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+                    }`}
+                  >
+                    Paid
+                  </button>
+                  <button
+                    onClick={() => setHasPaid(false)}
+                    className={`px-4 py-2 rounded-lg transition-colors ${
+                      !hasPaid
+                        ? 'bg-red-600 text-white'
+                        : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+                    }`}
+                  >
+                    Not Paid
+                  </button>
+                </div>
               </div>
             )}
 
