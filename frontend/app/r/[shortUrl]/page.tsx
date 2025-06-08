@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback, memo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession, signIn } from 'next-auth/react';
 import { toast } from 'react-hot-toast';
@@ -34,17 +34,23 @@ interface Reservation {
 
 const timeZone = 'America/Los_Angeles';
 
-const SimplePasswordInput = ({
-  value,
-  onChange,
+const SimplePasswordInput = memo(({
+  initialValue = '',
+  onPasswordChange,
   error
 }: {
-  value: string;
-  onChange: (value: string) => void;
+  initialValue?: string;
+  onPasswordChange: (value: string) => void;
   error: boolean;
 }) => {
-  console.log('Rendering SimplePasswordInput, current value:', value);
+  const [localValue, setLocalValue] = useState(initialValue);
   
+  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value;
+    setLocalValue(newValue);
+    onPasswordChange(newValue);
+  }, [onPasswordChange]);
+
   return (
     <div className="space-y-2">
       <label htmlFor="password" className="block font-medium text-gray-700">
@@ -54,12 +60,8 @@ const SimplePasswordInput = ({
         id="password"
         name="password"
         type="text"
-        autoComplete="new-password"
-        value={value}
-        onChange={(e) => {
-          console.log('Input change event, new value:', e.target.value);
-          onChange(e.target.value);
-        }}
+        value={localValue}
+        onChange={handleChange}
         className="w-full p-3 border rounded-lg border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
       />
       {error && (
@@ -67,7 +69,9 @@ const SimplePasswordInput = ({
       )}
     </div>
   );
-};
+});
+
+SimplePasswordInput.displayName = 'SimplePasswordInput';
 
 export default function SharedReservationPage({ params }: Props) {
   const router = useRouter();
@@ -168,6 +172,13 @@ export default function SharedReservationPage({ params }: Props) {
       setIsSubmitting(false);
     }
   };
+
+  const handlePasswordUpdate = useCallback((newValue: string) => {
+    setPassword(newValue);
+    if (passwordError) {
+      setPasswordError(false);
+    }
+  }, [passwordError]);
 
   if (isLoading) {
     return <div className="flex justify-center items-center min-h-screen">Loading reservation details...</div>;
@@ -304,8 +315,8 @@ export default function SharedReservationPage({ params }: Props) {
 
         {reservation.password && (
           <SimplePasswordInput
-            value={password}
-            onChange={setPassword}
+            initialValue={password}
+            onPasswordChange={handlePasswordUpdate}
             error={passwordError}
           />
         )}
