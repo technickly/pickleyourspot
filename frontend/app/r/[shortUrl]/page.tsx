@@ -324,11 +324,22 @@ export default function SharedReservationPage({ params }: Props) {
         )}
 
         {reservation.password && (
-          <PasswordInput
-            value={password}
-            onChange={handlePasswordChange}
-            error={passwordError}
-          />
+          <div className="space-y-2">
+            <label htmlFor="password" className="block font-medium text-gray-700">
+              Password Required
+            </label>
+            <input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Enter reservation password"
+              className="w-full p-3 border rounded-lg border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            {passwordError && (
+              <p className="text-red-500 text-sm">Incorrect password</p>
+            )}
+          </div>
         )}
 
         <button
