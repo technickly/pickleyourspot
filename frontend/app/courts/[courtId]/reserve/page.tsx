@@ -395,9 +395,9 @@ export default function ReservePage({ params }: PageProps) {
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Add any additional notes or instructions for participants..."
+              placeholder="Provide additional details about your reservation:&#13;&#10;• Tournament details and address&#13;&#10;• Contact information for questions&#13;&#10;• Skill level or format (e.g., round robin, mixed doubles)&#13;&#10;• Equipment requirements&#13;&#10;• Special instructions or rules"
               className="w-full p-4 border rounded min-h-[120px] text-gray-700 placeholder-gray-400"
-              rows={4}
+              rows={6}
             />
           </div>
 
