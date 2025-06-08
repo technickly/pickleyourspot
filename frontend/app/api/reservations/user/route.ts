@@ -9,17 +9,18 @@ interface User {
   image: string | null;
 }
 
-interface ParticipantStatus {
-  userId: string;
-  hasPaid: boolean;
-  isGoing: boolean;
-  user: User;
+interface Court {
+  id: string;
+  name: string;
+  description: string | null;
+  imageUrl: string | null;
 }
 
-interface Court {
-  name: string;
-  description: string;
-  imageUrl: string;
+interface ParticipantStatus {
+  userId: string;
+  user: User;
+  hasPaid: boolean;
+  isGoing: boolean;
 }
 
 interface Reservation {
@@ -118,6 +119,9 @@ export async function GET(
           some: {
             userId: user.id,
           },
+        },
+        NOT: {
+          ownerId: user.id, // Exclude reservations where the user is the owner
         },
       },
       include: {
