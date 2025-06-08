@@ -96,6 +96,7 @@ model Reservation {
   shortUrl        String              @unique @default(cuid())
   paymentRequired Boolean             @default(false)
   paymentInfo     String?
+  password        String?             // Optional password for joining
   createdAt       DateTime            @default(now())
   updatedAt       DateTime            @updatedAt
 
