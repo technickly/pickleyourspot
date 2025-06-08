@@ -5,11 +5,12 @@ import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { toast } from 'react-hot-toast';
 import { formatInTimeZone } from 'date-fns-tz';
+import { use } from 'react';
 
 interface Props {
-  params: {
+  params: Promise<{
     shortUrl: string;
-  };
+  }>;
 }
 
 interface Reservation {
@@ -43,14 +44,15 @@ export default function SharedReservationPage({ params }: Props) {
   const [hasPaid, setHasPaid] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [passwordError, setPasswordError] = useState(false);
+  const resolvedParams = use(params);
 
   useEffect(() => {
     fetchReservation();
-  }, [params.shortUrl]);
+  }, [resolvedParams.shortUrl]);
 
   const fetchReservation = async () => {
     try {
-      const response = await fetch(`/api/reservations/short/${params.shortUrl}`);
+      const response = await fetch(`/api/reservations/short/${resolvedParams.shortUrl}`);
       if (!response.ok) {
         throw new Error('Failed to fetch reservation');
       }
@@ -65,21 +67,43 @@ export default function SharedReservationPage({ params }: Props) {
   };
 
   const handleJoin = async () => {
-    if (!session) {
+    // Check if user is authenticated
+    if (!session || status !== "authenticated") {
       // Store the current URL in localStorage before redirecting to sign in
       localStorage.setItem('redirectAfterSignIn', window.location.pathname);
       router.push('/api/auth/signin');
       return;
     }
 
-    if (reservation?.password && password !== reservation.password) {
-      setPasswordError(true);
-      return;
+    // Validate password if required
+    if (reservation?.password) {
+      if (!password.trim()) {
+        toast.error('Please enter the reservation password');
+        return;
+      }
+      if (password !== reservation.password) {
+        setPasswordError(true);
+        toast.error('Incorrect password');
+        return;
+      }
     }
 
     setIsSubmitting(true);
     try {
-      const response = await fetch(`/api/reservations/${reservation?.id}/join`, {
+      // First verify the user exists in the database
+      const userVerifyResponse = await fetch('/api/user/verify', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!userVerifyResponse.ok) {
+        throw new Error('User verification failed');
+      }
+
+      // Now try to join the reservation
+      const joinResponse = await fetch(`/api/reservations/${reservation?.id}/join`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -87,17 +111,23 @@ export default function SharedReservationPage({ params }: Props) {
         body: JSON.stringify({
           isGoing,
           hasPaid,
+          password: reservation?.password ? password : undefined,
         }),
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to join reservation');
+      if (!joinResponse.ok) {
+        const error = await joinResponse.json();
+        throw new Error(error.message || 'Failed to join reservation');
       }
 
       toast.success('Successfully joined the reservation');
       router.push(`/reservations/${reservation?.id}`);
     } catch (error) {
-      toast.error('Failed to join the reservation');
+      if (error instanceof Error) {
+        toast.error(error.message);
+      } else {
+        toast.error('Failed to join the reservation');
+      }
     } finally {
       setIsSubmitting(false);
     }
