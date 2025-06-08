@@ -159,7 +159,7 @@ export default function ReservationPage({ params }: PageProps) {
       }
       const data = await response.json();
       const statusMap = data.reduce((acc: Record<string, boolean>, status: any) => {
-        acc[status.user.email] = status.hasPaid;
+        acc[status.email] = status.hasPaid;
         return acc;
       }, {});
       setPaymentStatuses(statusMap);

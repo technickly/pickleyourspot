@@ -53,7 +53,7 @@ export default function SharedReservationPage({ params }: { params: Promise<{ sh
   }, [resolvedParams.shortUrl]);
 
   useEffect(() => {
-    const attemptJoin = async () => {
+    const checkParticipantStatus = async () => {
       if (
         session?.user?.email && 
         reservation && 
@@ -66,6 +66,12 @@ export default function SharedReservationPage({ params }: { params: Promise<{ sh
         );
         const isOwner = reservation.owner.email === session.user?.email;
 
+        if (isAlreadyParticipant || isOwner) {
+          // Redirect to the actual reservation page
+          router.push(`/reservations/${reservation.id}`);
+          return;
+        }
+
         if (!isAlreadyParticipant && !isOwner) {
           setHasAttemptedJoin(true);
           await handleJoinReservation();
@@ -73,7 +79,7 @@ export default function SharedReservationPage({ params }: { params: Promise<{ sh
       }
     };
 
-    attemptJoin();
+    checkParticipantStatus();
   }, [session, reservation, status]);
 
   const fetchReservation = async () => {
@@ -118,6 +124,9 @@ export default function SharedReservationPage({ params }: { params: Promise<{ sh
 
       await fetchReservation(); // Refresh the reservation data
       toast.success('Successfully joined the reservation!');
+      
+      // Redirect to the actual reservation page after successful join
+      router.push(`/reservations/${reservation.id}`);
     } catch (error) {
       console.error('Error joining reservation:', error);
       const message = error instanceof Error ? error.message : 'Failed to join the reservation';

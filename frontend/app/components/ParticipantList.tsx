@@ -200,6 +200,17 @@ export default function ParticipantList({
     handlePaymentNotificationClose();
   };
 
+  const handlePaymentNotificationSkip = async () => {
+    if (pendingPaymentUpdate) {
+      await updateParticipantStatus(
+        pendingPaymentUpdate.userId,
+        'payment',
+        pendingPaymentUpdate.newValue
+      );
+    }
+    handlePaymentNotificationClose();
+  };
+
   const handleUnpaidConfirmationClose = () => {
     setShowUnpaidConfirmation(false);
     setPendingPaymentUpdate(null);
@@ -445,6 +456,7 @@ export default function ParticipantList({
         isOpen={showPaymentNotification}
         onClose={handlePaymentNotificationClose}
         onConfirm={handlePaymentNotificationConfirm}
+        onSkip={handlePaymentNotificationSkip}
         ownerName={ownerName || ownerEmail.split('@')[0]}
         reservationId={reservationId}
       />
