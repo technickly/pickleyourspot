@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback, memo } from 'react';
+import { useState, useEffect, useRef, useCallback, memo, useImperativeHandle, forwardRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession, signIn } from 'next-auth/react';
 import { toast } from 'react-hot-toast';
@@ -109,21 +109,25 @@ const UncontrolledPasswordInput = ({
   );
 };
 
-const PasswordInput = ({
-  onPasswordChange,
-  error
-}: {
-  onPasswordChange: (value: string) => void;
-  error: boolean;
-}) => {
+const PasswordInput = forwardRef<
+  { getPassword: () => string },
+  { onPasswordSubmit: (value: string) => void }
+>((props, ref) => {
+  const { onPasswordSubmit } = props;
   const inputRef = useRef<HTMLInputElement>(null);
+  const passwordValueRef = useRef<string>('');
 
-  // Only update parent state when input loses focus
-  const handleBlur = () => {
-    if (inputRef.current) {
-      onPasswordChange(inputRef.current.value);
-    }
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    passwordValueRef.current = e.target.value;
   };
+
+  // Expose the current password value through a method
+  const getPassword = () => passwordValueRef.current;
+
+  // Expose the method to parent through ref
+  useImperativeHandle(ref, () => ({
+    getPassword
+  }));
 
   return (
     <div className="space-y-2">
@@ -135,15 +139,15 @@ const PasswordInput = ({
         id="password"
         name="password"
         type="password"
-        onBlur={handleBlur}
+        onChange={handleChange}
+        defaultValue={passwordValueRef.current}
         className="w-full p-3 border rounded-lg border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
       />
-      {error && (
-        <p className="text-red-500 text-sm">Incorrect password</p>
-      )}
     </div>
   );
-};
+});
+
+PasswordInput.displayName = 'PasswordInput';
 
 export default function SharedReservationPage({ params }: Props) {
   const router = useRouter();
@@ -155,6 +159,7 @@ export default function SharedReservationPage({ params }: Props) {
   const [hasPaid, setHasPaid] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [passwordError, setPasswordError] = useState(false);
+  const passwordInputRef = useRef<{ getPassword: () => string }>(null);
   const resolvedParams = use(params);
   const shortUrl = resolvedParams.shortUrl;
 
@@ -200,9 +205,8 @@ export default function SharedReservationPage({ params }: Props) {
       return;
     }
 
-    // Get the current password value directly from the input before submission
-    const passwordInput = document.getElementById('password') as HTMLInputElement;
-    const currentPassword = passwordInput?.value || '';
+    // Get password value from ref
+    const currentPassword = passwordInputRef.current?.getPassword() || '';
 
     // Validate password if required
     if (reservation?.password) {
@@ -391,8 +395,8 @@ export default function SharedReservationPage({ params }: Props) {
 
         {reservation.password && (
           <PasswordInput
-            onPasswordChange={setPassword}
-            error={passwordError}
+            ref={passwordInputRef}
+            onPasswordSubmit={setPassword}
           />
         )}
 
