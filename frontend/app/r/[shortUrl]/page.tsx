@@ -50,6 +50,12 @@ export default function SharedReservationPage({ params }: Props) {
     fetchReservation();
   }, [resolvedParams.shortUrl]);
 
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      localStorage.setItem('redirectAfterSignIn', window.location.pathname);
+    }
+  }, [status]);
+
   const fetchReservation = async () => {
     try {
       const response = await fetch(`/api/reservations/short/${resolvedParams.shortUrl}`);
@@ -66,14 +72,24 @@ export default function SharedReservationPage({ params }: Props) {
     }
   };
 
-  const handleSignIn = () => {
-    localStorage.setItem('redirectAfterSignIn', window.location.pathname);
-    signIn(undefined, { callbackUrl: window.location.pathname });
+  const handleSignIn = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    const currentPath = window.location.pathname;
+    await signIn('google', { 
+      callbackUrl: currentPath,
+    });
   };
 
-  const handleJoin = async () => {
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    e.preventDefault();
+    setPassword(e.target.value);
+    setPasswordError(false);
+  };
+
+  const handleJoin = async (e: React.MouseEvent) => {
+    e.preventDefault();
     if (!session || status !== "authenticated") {
-      handleSignIn();
+      handleSignIn(e);
       return;
     }
 
@@ -194,13 +210,14 @@ export default function SharedReservationPage({ params }: Props) {
     }
 
     return (
-      <div className="space-y-4 bg-gray-50 p-4 rounded-lg">
+      <form onSubmit={(e) => e.preventDefault()} className="space-y-4 bg-gray-50 p-4 rounded-lg">
         <h3 className="font-medium text-gray-700 mb-4">Your Response</h3>
         
         <div className="flex items-center justify-between">
           <label className="font-medium text-gray-700">Are you going?</label>
           <div className="flex space-x-2">
             <button
+              type="button"
               onClick={() => setIsGoing(true)}
               className={`px-4 py-2 rounded-lg transition-colors ${
                 isGoing
@@ -211,6 +228,7 @@ export default function SharedReservationPage({ params }: Props) {
               Going
             </button>
             <button
+              type="button"
               onClick={() => setIsGoing(false)}
               className={`px-4 py-2 rounded-lg transition-colors ${
                 !isGoing
@@ -228,6 +246,7 @@ export default function SharedReservationPage({ params }: Props) {
             <label className="font-medium text-gray-700">Payment Status</label>
             <div className="flex space-x-2">
               <button
+                type="button"
                 onClick={() => setHasPaid(true)}
                 className={`px-4 py-2 rounded-lg transition-colors ${
                   hasPaid
@@ -238,6 +257,7 @@ export default function SharedReservationPage({ params }: Props) {
                 Paid
               </button>
               <button
+                type="button"
                 onClick={() => setHasPaid(false)}
                 className={`px-4 py-2 rounded-lg transition-colors ${
                   !hasPaid
@@ -259,10 +279,7 @@ export default function SharedReservationPage({ params }: Props) {
             <input
               type="text"
               value={password}
-              onChange={(e) => {
-                setPassword(e.target.value);
-                setPasswordError(false);
-              }}
+              onChange={handlePasswordChange}
               placeholder="Enter reservation password"
               className={`w-full p-3 border rounded-lg ${
                 passwordError ? 'border-red-500' : 'border-gray-300'
@@ -275,13 +292,14 @@ export default function SharedReservationPage({ params }: Props) {
         )}
 
         <button
+          type="button"
           onClick={handleJoin}
           disabled={isSubmitting}
           className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors disabled:bg-blue-300"
         >
           {isSubmitting ? 'Joining...' : 'Join Reservation'}
         </button>
-      </div>
+      </form>
     );
   };
 
