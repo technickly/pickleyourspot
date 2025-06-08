@@ -34,6 +34,7 @@ export const authOptions: AuthOptions = {
     signIn: '/',
     error: '/',
   },
+  trustHost: true,
   callbacks: {
     async signIn({ user, account, profile }) {
       if (!user.email) return false;
