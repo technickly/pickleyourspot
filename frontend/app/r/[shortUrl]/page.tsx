@@ -81,9 +81,10 @@ export default function SharedReservationPage({ params }: Props) {
   };
 
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    e.preventDefault();
     setPassword(e.target.value);
-    setPasswordError(false);
+    if (passwordError) {
+      setPasswordError(false);
+    }
   };
 
   const handleJoin = async (e: React.MouseEvent) => {
@@ -277,13 +278,14 @@ export default function SharedReservationPage({ params }: Props) {
               Password Required
             </label>
             <input
-              type="text"
+              type="password"
               value={password}
               onChange={handlePasswordChange}
               placeholder="Enter reservation password"
               className={`w-full p-3 border rounded-lg ${
                 passwordError ? 'border-red-500' : 'border-gray-300'
-              }`}
+              } focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+              autoComplete="off"
             />
             {passwordError && (
               <p className="text-red-500 text-sm">Incorrect password</p>
