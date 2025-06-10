@@ -26,7 +26,7 @@ export default function HomePage() {
             <span className="block text-primary mt-2">Let's Get Your Friends Together!</span>
           </h1>
           <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-            Already booked your court? Perfect! Use <span className="text-gray-900 font-bold">Pickle Your Spot</span> to organize your group, manage payments, and keep everyone in the loop. From casual games to tournaments, we've got your back!
+            Use <span className="text-gray-900 font-bold">Pickle Your Spot</span> to organize your group, manage payments, and keep everyone in the loop. From casual games to tournaments, making pickleball more fun together!
           </p>
           {status === 'loading' ? (
             <div className="animate-pulse">Loading...</div>

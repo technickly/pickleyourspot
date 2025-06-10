@@ -76,7 +76,7 @@ export default function CourtsPage() {
         <header className="mb-8">
           <div>
             <h1 className="text-3xl font-bold">Available Courts</h1>
-            <p className="text-gray-600 mt-2">Select a court to make your reservation</p>
+            <p className="text-gray-600 mt-2">Select a court you previously booked a reservation for</p>
           </div>
           
           <div className="mt-6">
