@@ -16,12 +16,17 @@ export default function HomePage() {
       {/* Hero Section */}
       <section className="pt-12 pb-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto text-center">
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-8 inline-block">
+            <p className="text-yellow-800 font-medium">
+              Note: This app does not make court reservations. Book your court first, then use this app to coordinate with players.
+            </p>
+          </div>
           <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-6">
-            Coordinate Pickleball Games
-            <span className="block text-primary mt-2">in San Francisco</span>
+            Pickleball Group
+            <span className="block text-primary mt-2">Coordination Made Easy</span>
           </h1>
           <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-            Effortlessly manage court time, organize tournaments, and coordinate with friends. From reservations to payment tracking, we've got your pickleball plans covered.
+            After you've booked your court elsewhere, use this app to coordinate players, track payments, and manage event details. Perfect for both casual games and tournaments.
           </p>
           {status === 'loading' ? (
             <div className="animate-pulse">Loading...</div>
@@ -31,7 +36,7 @@ export default function HomePage() {
               className="bg-primary text-white px-8 py-4 rounded-full font-semibold text-lg hover:bg-primary-hover transition-colors inline-flex items-center gap-2 shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200"
             >
               <FaGoogle className="text-xl" />
-              Get Started Free
+              Coordinate Games
             </button>
           ) : (
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -39,16 +44,40 @@ export default function HomePage() {
                 href="/courts"
                 className="bg-primary text-white px-8 py-4 rounded-full font-semibold text-lg hover:bg-primary-hover transition-colors shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200"
               >
-                New Reservation
+                Organize Group
               </Link>
               <Link
                 href="/my-reservations"
                 className="bg-primary text-white px-8 py-4 rounded-full font-semibold text-lg hover:bg-primary-hover transition-colors shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200"
               >
-                My Reservations
+                My Groups
               </Link>
             </div>
           )}
+        </div>
+      </section>
+
+      {/* How It Works Section */}
+      <section className="py-12 px-4 sm:px-6 lg:px-8 bg-gray-50">
+        <div className="max-w-5xl mx-auto text-center">
+          <h2 className="text-3xl font-bold mb-8">How It Works</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="bg-white p-6 rounded-lg shadow">
+              <div className="text-2xl font-bold text-primary mb-2">1</div>
+              <h3 className="text-lg font-semibold mb-2">Book Your Court</h3>
+              <p className="text-gray-600">First, reserve your court through the facility's own booking system</p>
+            </div>
+            <div className="bg-white p-6 rounded-lg shadow">
+              <div className="text-2xl font-bold text-primary mb-2">2</div>
+              <h3 className="text-lg font-semibold mb-2">Create Group</h3>
+              <p className="text-gray-600">Use this app to set up your group and invite players</p>
+            </div>
+            <div className="bg-white p-6 rounded-lg shadow">
+              <div className="text-2xl font-bold text-primary mb-2">3</div>
+              <h3 className="text-lg font-semibold mb-2">Coordinate</h3>
+              <p className="text-gray-600">Manage players, payments, and communications in one place</p>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -60,9 +89,9 @@ export default function HomePage() {
               <div className="text-primary text-2xl mb-4">
                 <FaComments />
               </div>
-              <h3 className="text-xl font-semibold mb-2 text-gray-900">Group Chats</h3>
+              <h3 className="text-xl font-semibold mb-2 text-gray-900">Group Chat</h3>
               <p className="text-gray-600">
-                Keep everyone in the loop. Share court details, confirm times, and stay connected with your playing group.
+                Keep your group in sync with dedicated chat channels. Share court details and coordinate with players after booking your court.
               </p>
             </div>
 
@@ -70,9 +99,9 @@ export default function HomePage() {
               <div className="text-primary text-2xl mb-4">
                 <FaDollarSign />
               </div>
-              <h3 className="text-xl font-semibold mb-2 text-gray-900">Split Payments</h3>
+              <h3 className="text-xl font-semibold mb-2 text-gray-900">Split Costs</h3>
               <p className="text-gray-600">
-                Track and split court fees between players. Keep everything organized in one place.
+                Track and divide court fees, tournament costs, or any group expenses. Automated payment tracking and reminders.
               </p>
             </div>
 
@@ -80,9 +109,9 @@ export default function HomePage() {
               <div className="text-primary text-2xl mb-4">
                 <FaEnvelope />
               </div>
-              <h3 className="text-xl font-semibold mb-2 text-gray-900">Email Notifications</h3>
+              <h3 className="text-xl font-semibold mb-2 text-gray-900">Notifications</h3>
               <p className="text-gray-600">
-                Get reminders about your planned games and stay updated when plans change.
+                Automated reminders for your scheduled games. Keep everyone informed about game times and any changes.
               </p>
             </div>
 
@@ -90,9 +119,9 @@ export default function HomePage() {
               <div className="text-primary text-2xl mb-4">
                 <FaShare />
               </div>
-              <h3 className="text-xl font-semibold mb-2 text-gray-900">One-Click Sharing</h3>
+              <h3 className="text-xl font-semibold mb-2 text-gray-900">Quick Invite</h3>
               <p className="text-gray-600">
-                Share your game details instantly. Court info, time, and participants - all in one shareable link.
+                Share your group details instantly with a single link. Players can easily join and view all the information.
               </p>
             </div>
           </div>
