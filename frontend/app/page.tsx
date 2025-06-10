@@ -18,15 +18,15 @@ export default function HomePage() {
         <div className="max-w-4xl mx-auto text-center">
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-8 inline-block">
             <p className="text-yellow-800 font-medium">
-              Note: This app does not make court reservations. Book your court first, then use this app to coordinate with players.
+              Note: Book your court through the facility's website first, then use this app to organize your group!
             </p>
           </div>
           <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-6">
-            Pickleball Group
-            <span className="block text-primary mt-2">Coordination Made Easy</span>
+            Got Your Court Booked?
+            <span className="block text-primary mt-2">Let's Get Your Friends Together!</span>
           </h1>
           <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-            After you've booked your court elsewhere, use this app to coordinate players, track payments, and manage event details. Perfect for both casual games and tournaments.
+            Already booked your court? Perfect! Use Pickle Your Spot to organize your group, manage payments, and keep everyone in the loop. From casual games to tournaments, we've got your back!
           </p>
           {status === 'loading' ? (
             <div className="animate-pulse">Loading...</div>
@@ -36,7 +36,7 @@ export default function HomePage() {
               className="bg-primary text-white px-8 py-4 rounded-full font-semibold text-lg hover:bg-primary-hover transition-colors inline-flex items-center gap-2 shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200"
             >
               <FaGoogle className="text-xl" />
-              Coordinate Games
+              Get Started
             </button>
           ) : (
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -44,13 +44,13 @@ export default function HomePage() {
                 href="/courts"
                 className="bg-primary text-white px-8 py-4 rounded-full font-semibold text-lg hover:bg-primary-hover transition-colors shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200"
               >
-                Organize Group
+                Organize Game
               </Link>
               <Link
                 href="/my-reservations"
                 className="bg-primary text-white px-8 py-4 rounded-full font-semibold text-lg hover:bg-primary-hover transition-colors shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200"
               >
-                My Groups
+                My Games
               </Link>
             </div>
           )}
@@ -63,19 +63,19 @@ export default function HomePage() {
           <h2 className="text-3xl font-bold mb-8">How It Works</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="bg-white p-6 rounded-lg shadow">
-              <div className="text-2xl font-bold text-primary mb-2">1</div>
+              <div className="text-4xl text-primary mb-4">🎾</div>
               <h3 className="text-lg font-semibold mb-2">Book Your Court</h3>
-              <p className="text-gray-600">First, reserve your court through the facility's own booking system</p>
+              <p className="text-gray-600">Reserve your court at your favorite facility's website</p>
             </div>
             <div className="bg-white p-6 rounded-lg shadow">
-              <div className="text-2xl font-bold text-primary mb-2">2</div>
-              <h3 className="text-lg font-semibold mb-2">Create Group</h3>
-              <p className="text-gray-600">Use this app to set up your group and invite players</p>
+              <div className="text-4xl text-primary mb-4">👥</div>
+              <h3 className="text-lg font-semibold mb-2">Invite Friends</h3>
+              <p className="text-gray-600">Create your group and invite players here</p>
             </div>
             <div className="bg-white p-6 rounded-lg shadow">
-              <div className="text-2xl font-bold text-primary mb-2">3</div>
-              <h3 className="text-lg font-semibold mb-2">Coordinate</h3>
-              <p className="text-gray-600">Manage players, payments, and communications in one place</p>
+              <div className="text-4xl text-primary mb-4">🎉</div>
+              <h3 className="text-lg font-semibold mb-2">Game Time!</h3>
+              <p className="text-gray-600">Everyone's informed, payments sorted - let's play!</p>
             </div>
           </div>
         </div>
@@ -91,7 +91,7 @@ export default function HomePage() {
               </div>
               <h3 className="text-xl font-semibold mb-2 text-gray-900">Group Chat</h3>
               <p className="text-gray-600">
-                Keep your group in sync with dedicated chat channels. Share court details and coordinate with players after booking your court.
+                Keep your group in the loop! Share details, coordinate meetup times, and keep the conversation going.
               </p>
             </div>
 
@@ -101,7 +101,7 @@ export default function HomePage() {
               </div>
               <h3 className="text-xl font-semibold mb-2 text-gray-900">Split Costs</h3>
               <p className="text-gray-600">
-                Track and divide court fees, tournament costs, or any group expenses. Automated payment tracking and reminders.
+                Track and divide court fees easily! Split costs fairly and see who's paid - all in one place.
               </p>
             </div>
 
@@ -111,7 +111,7 @@ export default function HomePage() {
               </div>
               <h3 className="text-xl font-semibold mb-2 text-gray-900">Notifications</h3>
               <p className="text-gray-600">
-                Automated reminders for your scheduled games. Keep everyone informed about game times and any changes.
+                Never miss a game! Get automatic reminders and updates about your upcoming matches.
               </p>
             </div>
 
@@ -121,7 +121,7 @@ export default function HomePage() {
               </div>
               <h3 className="text-xl font-semibold mb-2 text-gray-900">Quick Invite</h3>
               <p className="text-gray-600">
-                Share your group details instantly with a single link. Players can easily join and view all the information.
+                Share your group details instantly! One link is all your friends need to join in.
               </p>
             </div>
           </div>
