@@ -143,7 +143,7 @@ export default function MyReservationsPage() {
             href="/courts"
             className="button-primary hover-lift"
           >
-            Make New Reservation
+            Make New Event
           </Link>
         </header>
 

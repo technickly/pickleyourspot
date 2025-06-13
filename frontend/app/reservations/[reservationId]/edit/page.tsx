@@ -93,7 +93,7 @@ export default function EditReservationPage({ params }: PageProps) {
       setSelectedDate(startOfDay(new Date(data.startTime)));
     } catch (error) {
       toast.error('Failed to fetch reservation details');
-      router.push('/my-reservations');
+      router.push('/my-events');
     } finally {
       setIsLoading(false);
     }
@@ -206,7 +206,7 @@ export default function EditReservationPage({ params }: PageProps) {
       }
 
       toast.success('Reservation updated successfully');
-      router.push('/my-reservations');
+      router.push('/my-events');
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Failed to update reservation');
     } finally {
@@ -230,10 +230,10 @@ export default function EditReservationPage({ params }: PageProps) {
               <p className="text-gray-600 mt-2">{reservation.court.name}</p>
             </div>
             <button
-              onClick={() => router.push('/my-reservations')}
+              onClick={() => router.push('/my-events')}
               className="text-gray-600 hover:text-gray-800 flex items-center gap-2"
             >
-              <span>←</span> Back to My Reservations
+              <span>←</span> Back to My Events
             </button>
           </div>
         </header>
@@ -430,7 +430,7 @@ export default function EditReservationPage({ params }: PageProps) {
               {isSaving ? 'Saving Changes...' : 'Save Changes'}
             </button>
             <button
-              onClick={() => router.push('/my-reservations')}
+              onClick={() => router.push('/my-events')}
               className="flex-1 border-2 border-gray-300 text-gray-700 py-3 px-6 rounded-lg hover:bg-gray-50 transition-colors font-medium"
             >
               Cancel

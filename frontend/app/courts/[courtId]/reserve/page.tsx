@@ -203,11 +203,6 @@ export default function ReservePage() {
       return;
     }
 
-    if (requirePayment && !paymentDescription) {
-      toast.error('Please provide a payment description');
-      return;
-    }
-
     if (!reservationName.trim()) {
       toast.error('Please provide a name for the reservation');
       return;
@@ -234,7 +229,7 @@ export default function ReservePage() {
 
       if (response.ok) {
         toast.success('Reservation created successfully');
-        router.push('/my-reservations');
+        router.push('/my-events');
       } else {
         const data = await response.json();
         toast.error(data.error || 'Failed to create reservation');

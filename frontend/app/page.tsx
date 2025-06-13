@@ -42,10 +42,10 @@ export default function HomePage() {
                 New Reservation
               </Link>
               <Link
-                href="/my-reservations"
+                href="/my-events"
                 className="bg-primary text-white px-8 py-4 rounded-full font-semibold text-lg hover:bg-primary-hover transition-colors shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200"
               >
-                My Reservations
+                My Events
               </Link>
             </div>
           )}
