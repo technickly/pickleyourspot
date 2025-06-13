@@ -137,7 +137,11 @@ export async function GET(
       where: { id: reservationId },
       include: {
         owner: true,
-        participants: true,
+        participants: {
+          include: {
+            user: true
+          }
+        },
       },
     });
 
@@ -150,7 +154,7 @@ export async function GET(
 
     const isOwner = reservation.owner.email === session.user.email;
     const isParticipant = reservation.participants.some(
-      (p: any) => (p.userEmail || p.email) === session.user.email
+      (p: { user: { email: string } }) => p.user.email === session.user.email
     );
 
     if (!isOwner && !isParticipant) {

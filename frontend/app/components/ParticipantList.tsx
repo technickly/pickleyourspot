@@ -287,48 +287,52 @@ export default function ParticipantList({
 
                 <div className="flex items-center space-x-2">
                   {/* Going/Not Going Toggle */}
-                  <div className="flex flex-col space-y-2">
-                    <label className="inline-flex items-center">
-                      <input
-                        type="radio"
-                        checked={participant.isGoing}
-                        onChange={() => handleStatusUpdate(participant.userId, 'attendance', true)}
-                        className="form-radio text-primary"
-                      />
-                      <span className="ml-2">Going</span>
-                    </label>
-                    <label className="inline-flex items-center">
-                      <input
-                        type="radio"
-                        checked={!participant.isGoing}
-                        onChange={() => handleStatusUpdate(participant.userId, 'attendance', false)}
-                        className="form-radio text-primary"
-                      />
-                      <span className="ml-2">Not Going</span>
-                    </label>
+                  <div className="flex flex-col space-y-2 min-w-[120px]">
+                    <button
+                      onClick={() => handleStatusUpdate(participant.userId, 'attendance', true)}
+                      className={`w-full px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                        participant.isGoing
+                          ? 'bg-green-100 text-green-800 border-2 border-green-500'
+                          : 'bg-gray-100 text-gray-600 hover:bg-green-50 hover:text-green-700'
+                      }`}
+                    >
+                      Going
+                    </button>
+                    <button
+                      onClick={() => handleStatusUpdate(participant.userId, 'attendance', false)}
+                      className={`w-full px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                        !participant.isGoing
+                          ? 'bg-red-100 text-red-800 border-2 border-red-500'
+                          : 'bg-gray-100 text-gray-600 hover:bg-red-50 hover:text-red-700'
+                      }`}
+                    >
+                      Not Going
+                    </button>
                   </div>
 
                   {/* Payment Status Toggle */}
                   {paymentRequired && (
-                    <div className="flex flex-col space-y-2">
-                      <label className="inline-flex items-center">
-                        <input
-                          type="radio"
-                          checked={participant.hasPaid}
-                          onChange={() => handleStatusUpdate(participant.userId, 'payment', true)}
-                          className="form-radio text-primary"
-                        />
-                        <span className="ml-2">Paid</span>
-                      </label>
-                      <label className="inline-flex items-center">
-                        <input
-                          type="radio"
-                          checked={!participant.hasPaid}
-                          onChange={() => handleStatusUpdate(participant.userId, 'payment', false)}
-                          className="form-radio text-primary"
-                        />
-                        <span className="ml-2">Not Paid</span>
-                      </label>
+                    <div className="flex flex-col space-y-2 min-w-[120px]">
+                      <button
+                        onClick={() => handleStatusUpdate(participant.userId, 'payment', true)}
+                        className={`w-full px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                          participant.hasPaid
+                            ? 'bg-green-100 text-green-800 border-2 border-green-500'
+                            : 'bg-gray-100 text-gray-600 hover:bg-green-50 hover:text-green-700'
+                        }`}
+                      >
+                        Paid
+                      </button>
+                      <button
+                        onClick={() => handleStatusUpdate(participant.userId, 'payment', false)}
+                        className={`w-full px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                          !participant.hasPaid
+                            ? 'bg-red-100 text-red-800 border-2 border-red-500'
+                            : 'bg-gray-100 text-gray-600 hover:bg-red-50 hover:text-red-700'
+                        }`}
+                      >
+                        Not Paid
+                      </button>
                     </div>
                   )}
 
