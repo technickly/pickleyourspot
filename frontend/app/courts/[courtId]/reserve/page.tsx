@@ -232,21 +232,21 @@ export default function ReservePage() {
     for (let hour = startHour; hour < endHour; hour++) {
       if (timeInterval === '30min') {
         slots.push({
-          startTime: new Date(selectedDate).setHours(hour, 0, 0, 0).toString(),
-          endTime: new Date(selectedDate).setHours(hour, 30, 0, 0).toString(),
+          startTime: new Date(new Date(selectedDate).setHours(hour, 0, 0, 0)).toISOString(),
+          endTime: new Date(new Date(selectedDate).setHours(hour, 30, 0, 0)).toISOString(),
           isAvailable: true,
           maxExtensionSlots: 1
         });
         slots.push({
-          startTime: new Date(selectedDate).setHours(hour, 30, 0, 0).toString(),
-          endTime: new Date(selectedDate).setHours(hour + 1, 0, 0, 0).toString(),
+          startTime: new Date(new Date(selectedDate).setHours(hour, 30, 0, 0)).toISOString(),
+          endTime: new Date(new Date(selectedDate).setHours(hour + 1, 0, 0, 0)).toISOString(),
           isAvailable: true,
           maxExtensionSlots: 1
         });
       } else {
         slots.push({
-          startTime: new Date(selectedDate).setHours(hour, 0, 0, 0).toString(),
-          endTime: new Date(selectedDate).setHours(hour + 1, 0, 0, 0).toString(),
+          startTime: new Date(new Date(selectedDate).setHours(hour, 0, 0, 0)).toISOString(),
+          endTime: new Date(new Date(selectedDate).setHours(hour + 1, 0, 0, 0)).toISOString(),
           isAvailable: true,
           maxExtensionSlots: 1
         });
