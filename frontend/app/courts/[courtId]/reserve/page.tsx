@@ -240,8 +240,9 @@ export default function ReservePage() {
       });
 
       if (response.ok) {
+        const data = await response.json();
         toast.success('Reservation created successfully');
-        router.push('/my-reservations');
+        router.push(`/reservations/${data.id}`);
       } else {
         const data = await response.json();
         toast.error(data.error || 'Failed to create reservation');

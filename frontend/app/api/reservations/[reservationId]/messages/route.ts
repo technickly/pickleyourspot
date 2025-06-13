@@ -68,7 +68,7 @@ export async function POST(
 
     const isOwner = reservation.owner.email === session.user.email;
     const isParticipant = reservation.participants.some(
-      (p: ParticipantStatus) => p.userEmail === session.user.email
+      (p: any) => (p.userEmail || p.email) === session.user.email
     );
 
     if (!isOwner && !isParticipant) {
@@ -150,7 +150,7 @@ export async function GET(
 
     const isOwner = reservation.owner.email === session.user.email;
     const isParticipant = reservation.participants.some(
-      (p: ParticipantStatus) => p.userEmail === session.user.email
+      (p: any) => (p.userEmail || p.email) === session.user.email
     );
 
     if (!isOwner && !isParticipant) {
