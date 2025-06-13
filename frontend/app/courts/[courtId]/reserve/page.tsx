@@ -77,8 +77,7 @@ export default function ReservePage() {
 
   useEffect(() => {
     if (selectedDate && court && session?.user) {
-      // Set default reservation name
-      const defaultName = `${session.user.name || 'Your'}'s ${format(selectedDate, 'EEEE')} ${court.name} Reservation`;
+      const defaultName = `${session.user.name || 'Your'}'s ${format(selectedDate, 'EEEE')} ${court.name} Event`;
       setReservationName(defaultName);
     }
   }, [selectedDate, court, session]);
@@ -113,19 +112,13 @@ export default function ReservePage() {
     setSelectedDate(parse(date, 'yyyy-MM-dd', new Date()));
   };
 
-  const handleAddParticipant = () => {
-    if (!selectedUser) {
-      toast.error('Please select a user from the dropdown');
-      return;
-    }
-
-    if (participants.some(p => p.email === selectedUser.email)) {
+  const handleAddParticipant = (user: User) => {
+    if (participants.some(p => p.email === user.email)) {
       toast.error('This participant has already been added');
       return;
     }
 
-    setParticipants([...participants, { email: selectedUser.email, name: selectedUser.name || undefined, image: selectedUser.image || undefined }]);
-    setSelectedUser(null);
+    setParticipants([...participants, { email: user.email, name: user.name || undefined, image: user.image || undefined }]);
   };
 
   const handleRemoveParticipant = (email: string) => {
@@ -230,6 +223,7 @@ export default function ReservePage() {
   const availableDates = Array.from({ length: 14 }, (_, i) => addDays(new Date(), i));
 
   const generateTimeSlots = () => {
+    if (!selectedDate) return [];
     const slots: TimeSlot[] = [];
     const startHour = 8; // 8 AM
     const endHour = 20; // 8 PM
@@ -238,21 +232,21 @@ export default function ReservePage() {
     for (let hour = startHour; hour < endHour; hour++) {
       if (timeInterval === '30min') {
         slots.push({
-          startTime: `${hour.toString().padStart(2, '0')}:00`,
-          endTime: `${hour.toString().padStart(2, '0')}:30`,
+          startTime: new Date(selectedDate).setHours(hour, 0, 0, 0).toString(),
+          endTime: new Date(selectedDate).setHours(hour, 30, 0, 0).toString(),
           isAvailable: true,
           maxExtensionSlots: 1
         });
         slots.push({
-          startTime: `${hour.toString().padStart(2, '0')}:30`,
-          endTime: `${(hour + 1).toString().padStart(2, '0')}:00`,
+          startTime: new Date(selectedDate).setHours(hour, 30, 0, 0).toString(),
+          endTime: new Date(selectedDate).setHours(hour + 1, 0, 0, 0).toString(),
           isAvailable: true,
           maxExtensionSlots: 1
         });
       } else {
         slots.push({
-          startTime: `${hour.toString().padStart(2, '0')}:00`,
-          endTime: `${(hour + 1).toString().padStart(2, '0')}:00`,
+          startTime: new Date(selectedDate).setHours(hour, 0, 0, 0).toString(),
+          endTime: new Date(selectedDate).setHours(hour + 1, 0, 0, 0).toString(),
           isAvailable: true,
           maxExtensionSlots: 1
         });
@@ -285,37 +279,10 @@ export default function ReservePage() {
             <h2 className="text-xl font-semibold mb-4">Add Participants</h2>
             <div className="space-y-4">
               <UserSearch
-                onSelect={(user) => setSelectedUser(user)}
+                onSelect={handleAddParticipant}
                 placeholder="Search for participants by name or email..."
                 className="mb-4"
               />
-              {selectedUser && (
-                <div className="flex items-center justify-between bg-white p-3 rounded-lg border">
-                  <div className="flex items-center space-x-3">
-                    {selectedUser.image && (
-                      <Image
-                        src={selectedUser.image}
-                        alt={selectedUser.name || selectedUser.email}
-                        width={32}
-                        height={32}
-                        className="rounded-full"
-                      />
-                    )}
-                    <div>
-                      {selectedUser.name && (
-                        <div className="font-medium">{selectedUser.name}</div>
-                      )}
-                      <div className="text-sm text-gray-600">{selectedUser.email}</div>
-                    </div>
-                  </div>
-                  <button
-                    onClick={handleAddParticipant}
-                    className="text-blue-600 hover:text-blue-800"
-                  >
-                    Add
-                  </button>
-                </div>
-              )}
               {participants.length > 0 && (
                 <div className="space-y-2">
                   <h3 className="font-medium text-gray-700">Added Participants:</h3>
@@ -496,24 +463,22 @@ export default function ReservePage() {
 
             {requirePayment && (
               <div className="bg-gray-50 p-4 rounded-lg">
-                <label htmlFor="paymentAmount" className="block text-sm font-medium text-gray-700 mb-2">
-                  Payment Amount ($)
+                <label htmlFor="paymentDescription" className="block text-sm font-medium text-gray-700 mb-2">
+                  Payment Description
                 </label>
                 <input
-                  id="paymentAmount"
-                  value={paymentAmount}
-                  onChange={(e) => setPaymentAmount(e.target.value)}
+                  id="paymentDescription"
+                  value={paymentDescription}
+                  onChange={(e) => setPaymentDescription(e.target.value)}
+                  placeholder="Example: Venmo $6.25 per person @nick"
                   className="w-full p-3 border rounded text-gray-700 placeholder-gray-400"
-                  placeholder="Enter payment amount"
-                  min="0"
-                  step="0.01"
                 />
               </div>
             )}
           </div>
 
           <div className="space-y-4">
-            <div className="flex items-center">
+            <div className="flex items-center space-x-2">
               <input
                 type="checkbox"
                 id="requirePassword"
@@ -521,55 +486,33 @@ export default function ReservePage() {
                 onChange={(e) => setPaymentRequired(e.target.checked)}
                 className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
               />
-              <label htmlFor="requirePassword" className="ml-2 block text-sm text-gray-700">
+              <label htmlFor="requirePassword" className="text-gray-700">
                 Require password to join
               </label>
             </div>
 
             {paymentRequired && (
               <div className="bg-gray-50 p-4 rounded-lg">
-                <label htmlFor="paymentInfo" className="block text-sm font-medium text-gray-700 mb-2">
-                  Payment Information
+                <label htmlFor="eventPassword" className="block text-sm font-medium text-gray-700 mb-2">
+                  Event Password
                 </label>
-                <textarea
-                  id="paymentInfo"
-                  value={paymentInfo}
-                  onChange={(e) => setPaymentInfo(e.target.value)}
-                  placeholder="Example: Send $5 per person to @venmo-username"
+                <input
+                  id="eventPassword"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Enter a password for the event"
                   className="w-full p-3 border rounded text-gray-700 placeholder-gray-400"
-                  rows={2}
                 />
               </div>
             )}
-          </div>
-
-          <div>
-            <h2 className="text-xl font-semibold mb-4">Payment Description</h2>
-            <input
-              type="text"
-              value={paymentDescription}
-              onChange={(e) => setPaymentDescription(e.target.value)}
-              placeholder="Example: Venmo $6.25 per person @nick"
-              className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-500"
-            />
-          </div>
-
-          <div>
-            <h2 className="text-xl font-semibold mb-4">Event Password</h2>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter a password for the event"
-              className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
           </div>
 
           <button
             onClick={handleReservation}
             className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors"
           >
-            Create Reservation
+            Create Event
           </button>
         </div>
       </div>
