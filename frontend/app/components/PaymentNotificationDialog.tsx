@@ -5,7 +5,6 @@ interface Props {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: () => void;
-  onSkip: () => void;
   ownerName: string;
   reservationId: string;
 }
@@ -14,7 +13,6 @@ export default function PaymentNotificationDialog({
   isOpen,
   onClose,
   onConfirm,
-  onSkip,
   ownerName,
   reservationId,
 }: Props) {
@@ -65,7 +63,7 @@ export default function PaymentNotificationDialog({
         </div>
         <div className="flex justify-end gap-3">
           <button
-            onClick={onSkip}
+            onClick={onClose}
             className="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium"
             disabled={isSending}
           >

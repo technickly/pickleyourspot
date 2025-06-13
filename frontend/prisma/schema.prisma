@@ -10,7 +10,7 @@ datasource db {
 enum MembershipTier {
   FREE
   BASIC
-  SUPR
+  PREMIUM
   ADMIN
 }
 
@@ -21,13 +21,6 @@ enum FeatureType {
   ENHANCED_COURTS
   PRIORITY_SUPPORT
   PAYMENT_TRACKING
-  PARTICIPANT_MANAGEMENT
-  COURT_ACCESS
-  COURT_MANAGEMENT
-  PAYMENT_NOTIFICATIONS
-  SUPPORT
-  COMING_SOON
-  SYSTEM_ACCESS
 }
 
 model TierFeature {
@@ -96,7 +89,6 @@ model Reservation {
   shortUrl        String              @unique @default(cuid())
   paymentRequired Boolean             @default(false)
   paymentInfo     String?
-  password        String?             // Optional password for joining
   createdAt       DateTime            @default(now())
   updatedAt       DateTime            @updatedAt
 
@@ -200,18 +192,4 @@ model Membership {
   updatedAt           DateTime      @updatedAt
 
   @@index([userId])
-}
-
-model Notification {
-  id            String      @id @default(cuid())
-  type          String      // e.g., 'PAYMENT_SENT'
-  userId        String      // The user who should receive the notification
-  message       String
-  read          Boolean     @default(false)
-  reservationId String?
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
-
-  @@index([userId])
-  @@index([reservationId])
 }

@@ -13,7 +13,6 @@ import MessageSystem from '@/app/components/MessageSystem';
 import ParticipantList from '@/app/components/ParticipantList';
 import ReservationTitle from '@/app/components/ReservationTitle';
 import ReservationActions from '@/app/components/ReservationActions';
-import { useLoading } from '@/app/providers/LoadingProvider';
 
 interface User {
   name: string | null;
@@ -67,7 +66,6 @@ const timeZone = 'America/Los_Angeles';
 export default function ReservationPage({ params }: PageProps) {
   const router = useRouter();
   const { data: session, status } = useSession();
-  const { setIsLoading } = useLoading();
   const unwrappedParams = React.use(params);
   const [reservation, setReservation] = useState<Reservation | null>(null);
   const [newMessage, setNewMessage] = useState('');
@@ -93,11 +91,10 @@ export default function ReservationPage({ params }: PageProps) {
     fetchMessages();
     fetchPaymentStatuses();
 
-    // Set up polling for new messages, payment statuses, and participant updates
+    // Set up polling for new messages and payment statuses
     const interval = setInterval(() => {
       fetchMessages();
       fetchPaymentStatuses();
-      fetchReservation(); // Added to poll for participant updates
     }, 5000);
     return () => clearInterval(interval);
   }, [session, status, router, reservationId]);
@@ -124,17 +121,9 @@ export default function ReservationPage({ params }: PageProps) {
         throw new Error('Failed to fetch reservation');
       }
       const data = await response.json();
-      
-      // Only update if there are changes to avoid unnecessary re-renders
-      if (JSON.stringify(data) !== JSON.stringify(reservation)) {
-        setReservation(data);
-      }
+      setReservation(data);
     } catch (error) {
-      console.error('Error fetching reservation:', error);
-      if (!reservation) { // Only show error and redirect if initial load fails
-        toast.error('Failed to fetch reservation details');
-        router.push('/my-reservations');
-      }
+      toast.error('Failed to fetch reservation details');
     }
   };
 
@@ -159,7 +148,7 @@ export default function ReservationPage({ params }: PageProps) {
       }
       const data = await response.json();
       const statusMap = data.reduce((acc: Record<string, boolean>, status: any) => {
-        acc[status.email] = status.hasPaid;
+        acc[status.user.email] = status.hasPaid;
         return acc;
       }, {});
       setPaymentStatuses(statusMap);
@@ -198,7 +187,6 @@ export default function ReservationPage({ params }: PageProps) {
     if (!reservation) return;
 
     try {
-      setIsLoading(true);
       const response = await fetch(`/api/reservations/${reservation.id}/participants`, {
         method: 'POST',
         headers: {
@@ -216,8 +204,6 @@ export default function ReservationPage({ params }: PageProps) {
     } catch (error) {
       console.error('Error adding participant:', error);
       toast.error('Failed to add participant');
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -302,136 +288,76 @@ export default function ReservationPage({ params }: PageProps) {
             </div>
           </header>
 
-          <div>
-            <h2 className="text-xl font-semibold mb-4">Reservation Details</h2>
-            <div className="bg-white rounded-lg border p-6 space-y-4">
-              <div>
-                <h3 className="font-medium text-gray-700">Date & Time (PT)</h3>
-                <p>
-                  {formatInTimeZone(new Date(reservation.startTime), timeZone, 'EEEE, MMMM d, yyyy')}
-                  <br />
-                  {formatInTimeZone(new Date(reservation.startTime), timeZone, 'h:mm a')} -{' '}
-                  {formatInTimeZone(new Date(reservation.endTime), timeZone, 'h:mm a')}
-                </p>
-              </div>
-
-              <div>
-                <h3 className="font-medium text-gray-700">Owner</h3>
-                <p>{reservation.owner.name || reservation.owner.email}</p>
-              </div>
-
-              {reservation.description && (
+          <div className="grid md:grid-cols-2 gap-8">
+            <div>
+              <h2 className="text-xl font-semibold mb-4">Reservation Details</h2>
+              <div className="bg-white rounded-lg border p-6 space-y-4">
                 <div>
-                  <h3 className="font-medium text-gray-700">Court Description:</h3>
-                  <p className="text-gray-600 whitespace-pre-wrap mt-2 bg-gray-50 p-3 rounded-lg">{reservation.description}</p>
+                  <h3 className="font-medium text-gray-700">Date & Time (PT)</h3>
+                  <p>
+                    {formatInTimeZone(new Date(reservation.startTime), timeZone, 'EEEE, MMMM d, yyyy')}
+                    <br />
+                    {formatInTimeZone(new Date(reservation.startTime), timeZone, 'h:mm a')} -{' '}
+                    {formatInTimeZone(new Date(reservation.endTime), timeZone, 'h:mm a')}
+                  </p>
                 </div>
-              )}
 
-              {reservation.paymentRequired && (
                 <div>
-                  <h3 className="font-medium text-gray-700">Payment Information</h3>
-                  <div className="mt-2 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
-                    <p className="text-gray-800 whitespace-pre-wrap">{reservation.paymentInfo}</p>
+                  <h3 className="font-medium text-gray-700">Owner</h3>
+                  <p>{reservation.owner.name || reservation.owner.email}</p>
+                </div>
+
+                {reservation.description && (
+                  <div>
+                    <h3 className="font-medium text-gray-700">Court Description:</h3>
+                    <p className="text-gray-600 whitespace-pre-wrap mt-2 bg-gray-50 p-3 rounded-lg">{reservation.description}</p>
+                  </div>
+                )}
+
+                {reservation.paymentRequired && (
+                  <div>
+                    <h3 className="font-medium text-gray-700">Payment Information</h3>
+                    <div className="mt-2 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+                      <p className="text-gray-800 whitespace-pre-wrap">{reservation.paymentInfo}</p>
+                    </div>
+                  </div>
+                )}
+
+                <div>
+                  <h3 className="font-medium text-gray-700">Share Reservation</h3>
+                  <div className="mt-2">
+                    <CopyButton 
+                      text={`${window.location.origin}/r/${reservation.shortUrl}`}
+                      label="Copy Link"
+                    />
                   </div>
                 </div>
-              )}
 
-              <div>
-                <h3 className="font-medium text-gray-700">Share Reservation</h3>
-                <div className="mt-2">
-                  <CopyButton 
-                    text={`${window.location.origin}/r/${reservation.shortUrl}`}
-                    label="Copy Link"
+                <div className="mt-6">
+                  <ParticipantList
+                    participants={reservation.participants}
+                    reservationId={reservation.id}
+                    isOwner={isOwner}
+                    ownerEmail={reservation.owner.email}
+                    ownerName={reservation.owner.name}
+                    paymentRequired={reservation.paymentRequired}
+                    userEmail={session?.user?.email || undefined}
+                    onAddParticipant={handleAddParticipant}
+                    onRemoveParticipant={handleRemoveParticipant}
                   />
                 </div>
               </div>
-
-              <div className="mt-6">
-                <ParticipantList
-                  participants={reservation.participants}
-                  reservationId={reservation.id}
-                  reservationName={reservation.name}
-                  isOwner={isOwner}
-                  ownerEmail={reservation.owner.email}
-                  ownerName={reservation.owner.name}
-                  paymentRequired={reservation.paymentRequired}
-                  userEmail={session?.user?.email || undefined}
-                  onAddParticipant={handleAddParticipant}
-                  onRemoveParticipant={handleRemoveParticipant}
-                />
-              </div>
-            </div>
-          </div>
-
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold">Messages</h2>
-              <button
-                onClick={() => setIsMessagesActive(!isMessagesActive)}
-                className="text-blue-500 hover:text-blue-600 text-sm font-medium flex items-center gap-1"
-              >
-                {isMessagesActive ? (
-                  <>
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M5 10a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1z" clipRule="evenodd" />
-                    </svg>
-                    Hide Messages
-                  </>
-                ) : (
-                  <>
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" />
-                    </svg>
-                    Show Messages
-                  </>
-                )}
-              </button>
             </div>
 
-            {/* Message Preview */}
-            {!isMessagesActive && messages.length > 0 && (
-              <div className="bg-gray-50 rounded-lg p-4 mb-4 cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => setIsMessagesActive(true)}>
-                <div className="space-y-2">
-                  {messages.slice(-3).map((message) => (
-                    <div key={message.id} className="flex items-start gap-2">
-                      <div className="flex-shrink-0">
-                        <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
-                          <span className="text-blue-600 text-sm font-medium">
-                            {message.user.name ? message.user.name[0].toUpperCase() : message.user.email[0].toUpperCase()}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900">
-                          {message.user.name || message.user.email.split('@')[0]}
-                        </p>
-                        <p className="text-sm text-gray-500 truncate">
-                          {message.content}
-                        </p>
-                      </div>
-                      <div className="flex-shrink-0">
-                        <p className="text-xs text-gray-400">
-                          {format(new Date(message.createdAt), 'h:mm a')}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <div className="mt-2 text-center">
-                  <span className="text-sm text-blue-500 font-medium">Click to view all messages</span>
-                </div>
-              </div>
-            )}
-
-            {/* Full Messages Section */}
-            {isMessagesActive && (
-              <div className="bg-white rounded-lg border shadow-sm">
+            <div>
+              <h2 className="text-xl font-semibold mb-4">Messages</h2>
+              <div className="mt-8">
                 <MessageSystem 
                   reservationId={reservationId} 
                   initialMessages={messages}
                 />
               </div>
-            )}
+            </div>
           </div>
         </div>
       </div>

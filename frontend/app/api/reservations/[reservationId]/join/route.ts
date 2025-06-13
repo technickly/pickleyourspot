@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import prisma from '@/lib/prisma';
-import { authOptions } from '@/app/api/auth/[...nextauth]/auth';
 
 interface ParticipantStatusType {
   id: string;
@@ -16,71 +15,128 @@ interface ParticipantStatusType {
   };
 }
 
-interface JoinRequestBody {
-  isGoing: boolean;
-  hasPaid: boolean;
-}
-
 export async function POST(
   request: Request,
   context: { params: Promise<{ reservationId: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 });
+    const session = await getServerSession();
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { reservationId } = await context.params;
-    const { isGoing, hasPaid } = await request.json() as JoinRequestBody;
 
-    // Find the reservation
+    // Find the user
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email },
+    });
+
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    // Check if the reservation exists
     const reservation = await prisma.reservation.findUnique({
       where: { id: reservationId },
       include: {
         participants: {
           include: {
-            user: true,
+            user: {
+              select: {
+                email: true,
+                name: true,
+                image: true,
+              },
+            },
           },
         },
       },
     });
 
     if (!reservation) {
-      return new Response(JSON.stringify({ error: 'Reservation not found' }), { status: 404 });
+      return NextResponse.json(
+        { error: 'Reservation not found' },
+        { status: 404 }
+      );
     }
 
     // Check if user is already a participant
-    const existingParticipant = reservation.participants.find(
-      (p) => p.user.id === session.user.id
+    const isParticipant = reservation.participants.some(
+      (p: ParticipantStatusType) => p.user.email === session.user.email
     );
 
-    if (existingParticipant) {
-      return new Response(JSON.stringify({ error: 'Already a participant' }), { status: 400 });
+    if (isParticipant) {
+      return NextResponse.json(
+        { error: 'Already a participant' },
+        { status: 400 }
+      );
     }
 
-    // Create participant status
-    const participantStatus = await prisma.participantStatus.create({
+    // Add user as a participant
+    const updatedReservation = await prisma.reservation.update({
+      where: { id: reservationId },
       data: {
-        userId: session.user.id,
-        reservationId,
-        isGoing,
-        hasPaid,
+        participants: {
+          create: {
+            userId: user.id,
+            hasPaid: false,
+            isGoing: true
+          }
+        }
       },
       include: {
-        user: {
-          select: {
-            name: true,
-            email: true,
-            image: true,
+        court: true,
+        owner: true,
+        participants: {
+          include: {
+            user: {
+              select: {
+                email: true,
+                name: true,
+                image: true,
+              },
+            },
           },
         },
       },
     });
 
-    return new Response(JSON.stringify(participantStatus));
+    // Transform the response to match the expected format
+    const transformedReservation = {
+      id: updatedReservation.id,
+      name: updatedReservation.name,
+      startTime: updatedReservation.startTime,
+      endTime: updatedReservation.endTime,
+      description: updatedReservation.description,
+      paymentRequired: updatedReservation.paymentRequired,
+      paymentInfo: updatedReservation.paymentInfo,
+      shortUrl: updatedReservation.shortUrl,
+      court: {
+        name: updatedReservation.court.name,
+        description: updatedReservation.court.description,
+        imageUrl: updatedReservation.court.imageUrl,
+      },
+      owner: {
+        name: updatedReservation.owner.name,
+        email: updatedReservation.owner.email,
+        image: updatedReservation.owner.image,
+      },
+      participants: updatedReservation.participants.map((participant: ParticipantStatusType) => ({
+        name: participant.user.name,
+        email: participant.user.email,
+        image: participant.user.image,
+        hasPaid: participant.hasPaid,
+        isGoing: participant.isGoing,
+      })),
+    };
+
+    return NextResponse.json(transformedReservation);
   } catch (error) {
     console.error('Error joining reservation:', error);
-    return new Response(JSON.stringify({ error: 'Failed to join reservation' }), { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to join reservation' },
+      { status: 500 }
+    );
   }
 } 

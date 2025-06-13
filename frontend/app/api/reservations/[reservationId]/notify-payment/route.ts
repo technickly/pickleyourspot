@@ -5,41 +5,72 @@ import prisma from '@/lib/prisma';
 
 export async function POST(
   request: Request,
-  context: { params: Promise<{ reservationId: string }> }
+  { params }: { params: { reservationId: string } }
 ) {
   try {
-    // Get the current user's session
     const session = await getServerSession(authOptions);
-    if (!session?.user?.email || !session?.user?.id) {
-      return new NextResponse('Unauthorized', { status: 401 });
+    if (!session?.user?.email) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
     }
 
-    // Await the params before using them
-    const { reservationId } = await context.params;
-    if (!reservationId) {
-      return new NextResponse('Reservation ID is required', { status: 400 });
-    }
-
-    // Find the participant status and update it
-    const participantStatus = await prisma.participantStatus.update({
-      where: {
-        userId_reservationId: {
-          userId: session.user.id,
-          reservationId: reservationId
-        }
+    // Fetch the reservation with owner details
+    const reservation = await prisma.reservation.findUnique({
+      where: { id: params.reservationId },
+      include: {
+        owner: true,
+        participants: {
+          include: {
+            user: true,
+          },
+        },
       },
-      data: {
-        hasPaid: true
-      }
     });
 
-    if (!participantStatus) {
-      return new NextResponse('Failed to update payment status', { status: 400 });
+    if (!reservation) {
+      return NextResponse.json(
+        { error: 'Reservation not found' },
+        { status: 404 }
+      );
     }
 
-    return NextResponse.json({ message: 'Payment status updated successfully' });
+    // Verify the user is a participant
+    const isParticipant = reservation.participants.some(
+      (p: { user: { email: string } }) => p.user.email === session.user?.email
+    );
+
+    if (!isParticipant) {
+      return NextResponse.json(
+        { error: 'Not authorized to send payment notifications for this reservation' },
+        { status: 403 }
+      );
+    }
+
+    // Create a notification record
+    await prisma.notification.create({
+      data: {
+        type: 'PAYMENT_SENT',
+        userId: reservation.owner.id,
+        title: 'Payment Notification',
+        message: `${session.user.email} has sent payment for the reservation "${reservation.name}"`,
+        reservationId: reservation.id,
+      },
+    });
+
+    // In a real application, you might want to:
+    // 1. Send an email to the owner
+    // 2. Send a push notification
+    // 3. Create a notification in your notification system
+    // 4. Update the payment status automatically
+
+    return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Error updating payment status:', error);
-    return new NextResponse('Internal Server Error', { status: 500 });
+    console.error('Error sending payment notification:', error);
+    return NextResponse.json(
+      { error: 'Failed to send payment notification' },
+      { status: 500 }
+    );
   }
 } 

@@ -35,10 +35,7 @@ export default function CourtsPage() {
 
   const fetchCourts = async () => {
     try {
-      const response = await fetch('/api/courts');
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/courts`);
       const data = await response.json();
       setCourts(data);
       
@@ -46,7 +43,6 @@ export default function CourtsPage() {
       const uniqueLocations = Array.from(new Set(data.map((court: Court) => court.location))) as string[];
       setLocations(uniqueLocations);
     } catch (error) {
-      console.error('Error fetching courts:', error);
       toast.error('Failed to fetch courts');
     }
   };
@@ -74,9 +70,17 @@ export default function CourtsPage() {
     <main className="min-h-screen p-8">
       <div className="max-w-6xl mx-auto">
         <header className="mb-8">
-          <div>
-            <h1 className="text-3xl font-bold">Available Courts</h1>
-            <p className="text-gray-600 mt-2">Select a court you previously booked a reservation for</p>
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-3xl font-bold">Available Courts</h1>
+              <p className="text-gray-600 mt-2">Select a court to make your reservation</p>
+            </div>
+            <button
+              onClick={handleRequestNewCourt}
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Request New Court
+            </button>
           </div>
           
           <div className="mt-6">
@@ -120,15 +124,6 @@ export default function CourtsPage() {
               </div>
             </div>
           ))}
-        </div>
-
-        <div className="mt-12 text-center">
-          <button
-            onClick={handleRequestNewCourt}
-            className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors inline-flex items-center gap-2"
-          >
-            <span>Request Unavailable Court</span>
-          </button>
         </div>
 
         {showRequestModal && (

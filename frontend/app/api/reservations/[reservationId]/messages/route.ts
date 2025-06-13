@@ -55,11 +55,7 @@ export async function POST(
       where: { id: reservationId },
       include: {
         owner: true,
-        participants: {
-          include: {
-            user: true,
-          },
-        },
+        participants: true,
       },
     });
 
@@ -72,7 +68,7 @@ export async function POST(
 
     const isOwner = reservation.owner.email === session.user.email;
     const isParticipant = reservation.participants.some(
-      (p) => p.user.email === session.user.email
+      (p: ParticipantStatus) => p.userEmail === session.user.email
     );
 
     if (!isOwner && !isParticipant) {
@@ -141,11 +137,7 @@ export async function GET(
       where: { id: reservationId },
       include: {
         owner: true,
-        participants: {
-          include: {
-            user: true,
-          },
-        },
+        participants: true,
       },
     });
 
@@ -158,7 +150,7 @@ export async function GET(
 
     const isOwner = reservation.owner.email === session.user.email;
     const isParticipant = reservation.participants.some(
-      (p) => p.user.email === session.user.email
+      (p: ParticipantStatus) => p.userEmail === session.user.email
     );
 
     if (!isOwner && !isParticipant) {

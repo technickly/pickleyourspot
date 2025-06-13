@@ -5,7 +5,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { format } from 'date-fns';
-import { FaCamera } from 'react-icons/fa';
+import { FaCamera, FaEnvelope, FaDiscord } from 'react-icons/fa';
 import { toast } from 'react-hot-toast';
 import MembershipTiers from '@/app/components/MembershipTiers';
 
@@ -131,7 +131,7 @@ export default function MyAccountPage() {
         return 'text-gray-600';
       case 'BASIC':
         return 'text-blue-600';
-      case 'SUPR':
+      case 'PREMIUM':
         return 'text-purple-600';
       case 'ADMIN':
         return 'text-red-600';
@@ -204,96 +204,91 @@ export default function MyAccountPage() {
           </div>
         )}
 
-        {/* Reservation Statistics with reduced blur */}
+        {/* Reservation Statistics */}
         {reservationStats && (
-          <div className={`relative ${userStats?.membershipTier === 'FREE' ? 'pointer-events-none' : ''}`}>
-            <div className={`bg-white rounded-lg shadow-lg p-6 mb-8 ${userStats?.membershipTier === 'FREE' ? 'blur-[2px]' : ''}`}>
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Reservation Statistics</h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="bg-purple-50 rounded-lg p-4">
-                  <p className="text-sm text-gray-600">Upcoming Reservations</p>
-                  <p className="text-2xl font-bold text-purple-600">{reservationStats.upcomingReservations}</p>
-                </div>
-                <div className="bg-yellow-50 rounded-lg p-4">
-                  <p className="text-sm text-gray-600">Past Reservations</p>
-                  <p className="text-2xl font-bold text-yellow-600">{reservationStats.pastReservations}</p>
-                </div>
-                <div className="bg-indigo-50 rounded-lg p-4">
-                  <p className="text-sm text-gray-600">Average Participants</p>
-                  <p className="text-2xl font-bold text-indigo-600">
-                    {reservationStats.averageParticipants.toFixed(1)}
-                  </p>
-                </div>
+          <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Reservation Statistics</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="bg-purple-50 rounded-lg p-4">
+                <p className="text-sm text-gray-600">Upcoming Reservations</p>
+                <p className="text-2xl font-bold text-purple-600">{reservationStats.upcomingReservations}</p>
               </div>
+              <div className="bg-yellow-50 rounded-lg p-4">
+                <p className="text-sm text-gray-600">Past Reservations</p>
+                <p className="text-2xl font-bold text-yellow-600">{reservationStats.pastReservations}</p>
+              </div>
+              <div className="bg-indigo-50 rounded-lg p-4">
+                <p className="text-sm text-gray-600">Average Participants</p>
+                <p className="text-2xl font-bold text-indigo-600">
+                  {reservationStats.averageParticipants.toFixed(1)}
+                </p>
+              </div>
+            </div>
 
-              {/* Participant Statistics */}
-              <div className="mt-8">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Participant Statistics</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="text-sm text-gray-600">Going</span>
-                      <span className="text-sm font-semibold text-green-600">
-                        {reservationStats.participantStats.going}
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">Not Going</span>
-                      <span className="text-sm font-semibold text-red-600">
-                        {reservationStats.participantStats.notGoing}
-                      </span>
-                    </div>
+            {/* Participant Statistics */}
+            <div className="mt-8">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Participant Statistics</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-sm text-gray-600">Going</span>
+                    <span className="text-sm font-semibold text-green-600">
+                      {reservationStats.participantStats.going}
+                    </span>
                   </div>
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="text-sm text-gray-600">Paid</span>
-                      <span className="text-sm font-semibold text-green-600">
-                        {reservationStats.participantStats.paid}
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">Unpaid</span>
-                      <span className="text-sm font-semibold text-red-600">
-                        {reservationStats.participantStats.unpaid}
-                      </span>
-                    </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">Not Going</span>
+                    <span className="text-sm font-semibold text-red-600">
+                      {reservationStats.participantStats.notGoing}
+                    </span>
+                  </div>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-sm text-gray-600">Paid</span>
+                    <span className="text-sm font-semibold text-green-600">
+                      {reservationStats.participantStats.paid}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">Unpaid</span>
+                    <span className="text-sm font-semibold text-red-600">
+                      {reservationStats.participantStats.unpaid}
+                    </span>
                   </div>
                 </div>
               </div>
             </div>
-
-            {/* Upgrade overlay for free users */}
-            {userStats?.membershipTier === 'FREE' && (
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="bg-white/80 rounded-lg p-6 text-center max-w-md shadow-lg">
-                  <h3 className="text-xl font-semibold mb-2">Unlock Full Statistics</h3>
-                  <p className="text-gray-600 mb-4">
-                    Upgrade to Basic to access complete reservation analytics
-                  </p>
-                  <button
-                    onClick={() => router.push('/upgrade')}
-                    className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary-hover transition-colors"
-                  >
-                    View Plans
-                  </button>
-                </div>
-              </div>
-            )}
           </div>
         )}
+
+        {/* Contact Section */}
+        <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">Get in Touch</h2>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+            <a
+              href="mailto:technickly@gmail.com"
+              className="inline-flex items-center gap-2 text-primary hover:text-primary-dark transition-colors"
+            >
+              <FaEnvelope className="text-xl" />
+              technickly@gmail.com
+            </a>
+            <span className="hidden sm:inline text-gray-400">|</span>
+            <a
+              href="https://discord.com/channels/1380819915467919420/1380819915467919423"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 text-primary hover:text-primary-dark transition-colors"
+            >
+              <FaDiscord className="text-xl" />
+              Join our Discord
+            </a>
+          </div>
+        </div>
 
         {/* Membership Tiers */}
         {userStats && (
           <div id="membership-tiers">
-            <div className="flex justify-between items-center mb-8">
-              <h2 className="text-2xl font-bold text-gray-900">Membership Plans</h2>
-              <button
-                onClick={() => router.push('/upgrade')}
-                className="px-4 py-2 text-primary hover:text-primary-hover transition-colors"
-              >
-                View All Plans
-              </button>
-            </div>
             <MembershipTiers currentTier={userStats.membershipTier} />
           </div>
         )}

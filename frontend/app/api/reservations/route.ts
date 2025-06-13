@@ -1,17 +1,16 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import prisma from '@/lib/prisma';
-import { authOptions } from '@/app/api/auth/[...nextauth]/auth';
+import { Prisma } from '@prisma/client';
 
 interface CreateReservationBody {
   courtId: string;
-  name: string;
   startTime: string;
   endTime: string;
   description?: string | null;
+  participantIds: string[];
   paymentRequired?: boolean;
   paymentInfo?: string | null;
-  password?: string | null;
 }
 
 interface ParticipantStatusType {
@@ -112,7 +111,6 @@ async function createReservation(data: {
   description?: string | null;
   paymentRequired?: boolean;
   paymentInfo?: string | null;
-  password?: string | null;
   courtId: string;
   ownerId: string;
 }) {
@@ -139,44 +137,39 @@ async function findReservationWithRelations(id: string) {
 
 export async function POST(request: Request) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 });
+    const session = await getServerSession();
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const userId = session.user.id;
-    const body = await request.json() as CreateReservationBody;
-    const { 
-      courtId, 
-      name, 
-      startTime, 
-      endTime, 
-      description, 
-      paymentRequired, 
-      paymentInfo,
-      password 
-    } = body;
+    const { courtId, startTime, endTime, participantIds, description, paymentRequired, paymentInfo } = await request.json() as CreateReservationBody;
 
     // Validate required fields
-    if (!courtId || !name || !startTime || !endTime) {
-      return new Response(JSON.stringify({ error: 'Missing required fields' }), { status: 400 });
+    if (!courtId || !startTime || !endTime) {
+      return NextResponse.json(
+        { error: 'Missing required fields' },
+        { status: 400 }
+      );
     }
 
     // Validate payment info if required
     if (paymentRequired && !paymentInfo?.trim()) {
-      return new Response(JSON.stringify({ error: 'Payment information is required when payment is required' }), { status: 400 });
+      return NextResponse.json(
+        { error: 'Payment information is required when payment is required' },
+        { status: 400 }
+      );
     }
 
     // Find the user making the reservation
     const user = await findUserByEmail(session.user.email);
     if (!user) {
-      return new Response(JSON.stringify({ error: 'User not found' }), { status: 404 });
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
     // Get the court details
     const court = await findCourtById(courtId);
     if (!court) {
-      return new Response(JSON.stringify({ error: 'Court not found' }), { status: 404 });
+      return NextResponse.json({ error: 'Court not found' }, { status: 404 });
     }
 
     // Generate the reservation name
@@ -184,34 +177,39 @@ export async function POST(request: Request) {
 
     // Create the reservation
     const reservation = await createReservation({
-      courtId,
-      name,
+      name: reservationName,
       startTime: new Date(startTime),
       endTime: new Date(endTime),
-      description: description || null,
+      description: description?.trim(),
       paymentRequired: paymentRequired || false,
-      paymentInfo: paymentInfo ? paymentInfo.trim() : null,
-      password: password ? password.trim() : null,
-      ownerId: userId,
+      paymentInfo: paymentInfo?.trim(),
+      courtId,
+      ownerId: user.id,
     });
 
     // Add participants if any
-    if (reservation.participants.length > 0) {
-      for (const participant of reservation.participants) {
-        await createParticipantStatus(
-          participant.userId,
-          reservation.id,
-          participant.userEmail,
-          participant.userName,
-          participant.userImage
-        );
+    if (participantIds.length > 0) {
+      for (const email of participantIds) {
+        const participant = await findUserByEmail(email);
+        if (participant) {
+          await createParticipantStatus(
+            participant.id,
+            reservation.id,
+            participant.email,
+            participant.name,
+            participant.image
+          );
+        }
       }
     }
 
     // Fetch the complete reservation with all relations
     const completeReservation = await findReservationWithRelations(reservation.id);
     if (!completeReservation) {
-      return new Response(JSON.stringify({ error: 'Failed to fetch created reservation' }), { status: 500 });
+      return NextResponse.json(
+        { error: 'Failed to fetch created reservation' },
+        { status: 500 }
+      );
     }
 
     // Transform the response to include only the fields we need
@@ -248,9 +246,12 @@ export async function POST(request: Request) {
       })),
     };
 
-    return new Response(JSON.stringify(transformedReservation));
+    return NextResponse.json(transformedReservation);
   } catch (error) {
     console.error('Error creating reservation:', error);
-    return new Response(JSON.stringify({ error: 'Failed to create reservation' }), { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to create reservation' },
+      { status: 500 }
+    );
   }
 } 

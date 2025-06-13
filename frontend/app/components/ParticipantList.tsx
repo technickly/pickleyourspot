@@ -101,26 +101,6 @@ export default function ParticipantList({
     newValue: boolean;
   } | null>(null);
 
-  const handleRemoveParticipant = async (email: string) => {
-    try {
-      const response = await fetch(`/api/reservations/${reservationId}/participants?email=${email}`, {
-        method: 'DELETE',
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to remove participant');
-      }
-
-      toast.success('Participant removed successfully');
-      if (onRemoveParticipant) {
-        onRemoveParticipant(email);
-      }
-    } catch (error) {
-      console.error('Error removing participant:', error);
-      toast.error('Failed to remove participant');
-    }
-  };
-
   const handleStatusUpdate = async (
     userId: string,
     type: 'payment' | 'attendance',
@@ -129,13 +109,6 @@ export default function ParticipantList({
     try {
       if (!userId) {
         throw new Error('Invalid user ID');
-      }
-
-      // Only allow status updates if user is the owner or updating their own status
-      const participant = participants.find(p => p.userId === userId);
-      if (!participant || (!isOwner && participant.email !== userEmail)) {
-        toast.error('You can only update your own status');
-        return;
       }
 
       if (type === 'payment') {
@@ -148,10 +121,14 @@ export default function ParticipantList({
           setShowUnpaidConfirmation(true);
           return;
         }
-      } else if (type === 'attendance') {
-        setPendingAttendanceUpdate({ userId, newValue });
-        setShowAttendanceConfirmation(true);
-        return;
+      } else if (type === 'attendance' && userEmail) {
+        // Only show confirmation for the current user changing their own status
+        const participant = participants.find(p => p.email === userEmail);
+        if (participant && participant.userId === userId) {
+          setPendingAttendanceUpdate({ userId, newValue });
+          setShowAttendanceConfirmation(true);
+          return;
+        }
       }
 
       await updateParticipantStatus(userId, type, newValue);
@@ -221,17 +198,6 @@ export default function ParticipantList({
     handlePaymentNotificationClose();
   };
 
-  const handlePaymentNotificationSkip = async () => {
-    if (pendingPaymentUpdate) {
-      await updateParticipantStatus(
-        pendingPaymentUpdate.userId,
-        'payment',
-        pendingPaymentUpdate.newValue
-      );
-    }
-    handlePaymentNotificationClose();
-  };
-
   const handleUnpaidConfirmationClose = () => {
     setShowUnpaidConfirmation(false);
     setPendingPaymentUpdate(null);
@@ -247,15 +213,8 @@ export default function ParticipantList({
     }
   };
 
-  // Sort participants: owner first, then alphabetically by name/email
-  const sortedParticipants = [...participants].sort((a, b) => {
-    if (a.email === ownerEmail) return -1;
-    if (b.email === ownerEmail) return 1;
-    return (a.name || a.email).localeCompare(b.name || b.email);
-  });
-
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h3 className="font-medium text-gray-700">Participants</h3>
         {isOwner && (
@@ -290,49 +249,90 @@ export default function ParticipantList({
       )}
 
       {participants.length > 0 ? (
-        <div className="space-y-4">
-          {participants.map((participant) => {
-            const isCurrentUser = participant.email === userEmail;
-            const canModifyStatus = isOwner || isCurrentUser;
-
-            return (
-              <div
-                key={participant.email}
-                className="bg-white rounded-lg shadow-sm border p-4"
-              >
-                {/* Participant Info Section */}
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center space-x-3">
-                    {participant.image && (
-                      <Image
-                        src={participant.image}
-                        alt={participant.name || participant.email}
-                        width={40}
-                        height={40}
-                        className="rounded-full"
-                      />
-                    )}
-                    <div>
-                      <div className="flex items-center space-x-2">
-                        <span className="font-medium text-gray-900">
-                          {participant.name || participant.email}
+        <div className="space-y-3">
+          {participants.map((participant) => (
+            <div
+              key={participant.email}
+              className={`bg-white rounded-lg shadow-sm border p-4 transition-all ${
+                participant.email === ownerEmail
+                  ? 'border-indigo-200 bg-indigo-50'
+                  : 'border-gray-200 hover:border-gray-300'
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  {participant.image && (
+                    <Image
+                      src={participant.image}
+                      alt={participant.name || participant.email}
+                      width={40}
+                      height={40}
+                      className="rounded-full"
+                    />
+                  )}
+                  <div>
+                    <div className="flex items-center space-x-2">
+                      <span className="font-medium text-gray-900">
+                        {participant.name || participant.email}
+                      </span>
+                      {participant.email === ownerEmail && (
+                        <span className="bg-indigo-100 text-indigo-800 text-xs px-2 py-0.5 rounded-full font-medium">
+                          Owner
                         </span>
-                        {participant.email === ownerEmail && (
-                          <span className="bg-indigo-100 text-indigo-800 text-xs px-2 py-0.5 rounded-full font-medium">
-                            Owner
-                          </span>
-                        )}
-                      </div>
-                      <span className="text-sm text-gray-500">{participant.email}</span>
+                      )}
                     </div>
+                    <span className="text-sm text-gray-500">{participant.email}</span>
                   </div>
+                </div>
 
-                  {/* Remove Button (only for owner) */}
+                <div className="flex items-center space-x-2">
+                  {/* Going/Not Going Toggle */}
+                  <button
+                    onClick={() => handleStatusUpdate(participant.userId, 'attendance', !participant.isGoing)}
+                    className={`inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                      participant.isGoing
+                        ? 'bg-green-100 text-green-800 hover:bg-green-200'
+                        : 'bg-red-100 text-red-800 hover:bg-red-200'
+                    }`}
+                  >
+                    {participant.isGoing ? (
+                      <>
+                        <span className="mr-1">✓</span> Going
+                      </>
+                    ) : (
+                      <>
+                        <span className="mr-1">✗</span> Not Going
+                      </>
+                    )}
+                  </button>
+
+                  {/* Payment Status Toggle */}
+                  {paymentRequired && (
+                    <button
+                      onClick={() => handleStatusUpdate(participant.userId, 'payment', !participant.hasPaid)}
+                      className={`inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                        participant.hasPaid
+                          ? 'bg-green-100 text-green-800 hover:bg-green-200'
+                          : 'bg-red-100 text-red-800 hover:bg-red-200'
+                      }`}
+                    >
+                      {participant.hasPaid ? (
+                        <>
+                          <span className="mr-1">✓</span> Paid
+                        </>
+                      ) : (
+                        <>
+                          <span className="mr-1">✗</span> Unpaid
+                        </>
+                      )}
+                    </button>
+                  )}
+
+                  {/* Remove Button */}
                   {isOwner && participant.email !== ownerEmail && (
                     <button
-                      onClick={() => handleRemoveParticipant(participant.email)}
-                      className="text-red-600 hover:text-red-700 transition-colors p-1.5 rounded-md hover:bg-red-50"
-                      title="Remove participant"
+                      onClick={() => onRemoveParticipant(participant.email)}
+                      className="text-red-600 hover:text-red-700 transition-colors"
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                         <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
@@ -340,134 +340,9 @@ export default function ParticipantList({
                     </button>
                   )}
                 </div>
-
-                {/* Status Buttons Section */}
-                <div className="flex items-center gap-3 pt-1">
-                  {/* Going/Not Going Status */}
-                  <div className="flex items-center gap-1">
-                    {canModifyStatus ? (
-                      <button
-                        onClick={() => handleStatusUpdate(participant.userId, 'attendance', !participant.isGoing)}
-                        className={`inline-flex items-center px-4 py-2 rounded-md text-sm font-medium transition-colors min-w-[120px] justify-center relative group ${
-                          participant.isGoing
-                            ? 'bg-green-100 text-green-800 hover:bg-green-200'
-                            : 'bg-red-100 text-red-800 hover:bg-red-200'
-                        }`}
-                      >
-                        {participant.isGoing ? (
-                          <>
-                            <span className="mr-1">✓</span> Going
-                            {isCurrentUser && (
-                              <span className="absolute -top-7 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                                Click to mark as not going
-                              </span>
-                            )}
-                          </>
-                        ) : (
-                          <>
-                            <span className="mr-1">✗</span> Not Going
-                            {isCurrentUser && (
-                              <span className="absolute -top-7 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                                Click to mark as going
-                              </span>
-                            )}
-                          </>
-                        )}
-                      </button>
-                    ) : (
-                      <div
-                        className={`inline-flex items-center px-4 py-2 rounded-md text-sm font-medium min-w-[120px] justify-center ${
-                          participant.isGoing
-                            ? 'bg-green-50 text-green-700'
-                            : 'bg-red-50 text-red-700'
-                        }`}
-                      >
-                        {participant.isGoing ? (
-                          <>
-                            <span className="mr-1">✓</span> Going
-                          </>
-                        ) : (
-                          <>
-                            <span className="mr-1">✗</span> Not Going
-                          </>
-                        )}
-                      </div>
-                    )}
-                    {isCurrentUser && canModifyStatus && (
-                      <div className="md:hidden flex items-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                        </svg>
-                        <span className="ml-1 text-xs text-gray-500">Tap to change</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Payment Status */}
-                  {paymentRequired && (
-                    <div className="flex items-center gap-1">
-                      {canModifyStatus ? (
-                        <button
-                          onClick={() => handleStatusUpdate(participant.userId, 'payment', !participant.hasPaid)}
-                          className={`inline-flex items-center px-4 py-2 rounded-md text-sm font-medium transition-colors min-w-[120px] justify-center relative group ${
-                            participant.hasPaid
-                              ? 'bg-green-100 text-green-800 hover:bg-green-200'
-                              : 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
-                          }`}
-                        >
-                          {participant.hasPaid ? (
-                            <>
-                              <span className="mr-1">✓</span> Paid
-                              {isCurrentUser && (
-                                <span className="absolute -top-7 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                                  Click to mark as unpaid
-                                </span>
-                              )}
-                            </>
-                          ) : (
-                            <>
-                              <span className="mr-1">$</span> Unpaid
-                              {isCurrentUser && (
-                                <span className="absolute -top-7 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                                  Click to mark as paid
-                                </span>
-                              )}
-                            </>
-                          )}
-                        </button>
-                      ) : (
-                        <div
-                          className={`inline-flex items-center px-4 py-2 rounded-md text-sm font-medium min-w-[120px] justify-center ${
-                            participant.hasPaid
-                              ? 'bg-green-50 text-green-800'
-                              : 'bg-yellow-50 text-yellow-800'
-                          }`}
-                        >
-                          {participant.hasPaid ? (
-                            <>
-                              <span className="mr-1">✓</span> Paid
-                            </>
-                          ) : (
-                            <>
-                              <span className="mr-1">$</span> Unpaid
-                            </>
-                          )}
-                        </div>
-                      )}
-                      {isOwner && !isCurrentUser && (
-                        <button
-                          onClick={() => handleRemoveParticipant(participant.email)}
-                          className="inline-flex items-center px-4 py-2 rounded-md text-sm font-medium transition-colors bg-red-100 text-red-800 hover:bg-red-200"
-                        >
-                          Remove
-                        </button>
-                      )}
-                    </div>
-                  )}
-                </div>
               </div>
-            );
-          })}
+            </div>
+          ))}
         </div>
       ) : (
         <p className="text-gray-500 text-center py-4">No participants yet</p>
@@ -477,7 +352,6 @@ export default function ParticipantList({
         isOpen={showPaymentNotification}
         onClose={handlePaymentNotificationClose}
         onConfirm={handlePaymentNotificationConfirm}
-        onSkip={handlePaymentNotificationSkip}
         ownerName={ownerName || ownerEmail.split('@')[0]}
         reservationId={reservationId}
       />
