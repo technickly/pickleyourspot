@@ -25,6 +25,7 @@ interface Reservation {
     name: string | null;
     email: string;
   };
+  passwordRequired: boolean;
 }
 
 const timeZone = 'America/Los_Angeles';
@@ -35,6 +36,10 @@ export default function SharedReservationPage({ params }: { params: Promise<{ sh
   const [reservation, setReservation] = useState<Reservation | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isJoining, setIsJoining] = useState(false);
+  const [eventPassword, setEventPassword] = useState('');
+  const [isGoing, setIsGoing] = useState(true);
+  const [hasPaid, setHasPaid] = useState(false);
+  const [showPasswordError, setShowPasswordError] = useState(false);
   const resolvedParams = React.use(params);
 
   useEffect(() => {
@@ -81,14 +86,25 @@ export default function SharedReservationPage({ params }: { params: Promise<{ sh
         headers: {
           'Content-Type': 'application/json',
         },
+        body: JSON.stringify({
+          password: eventPassword,
+          isGoing,
+          hasPaid,
+        }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to join reservation');
+        if (response.status === 401) {
+          setShowPasswordError(true);
+          toast.error(`Wrong password, reach out to ${reservation.owner.name || reservation.owner.email}`);
+        } else {
+          throw new Error('Failed to join reservation');
+        }
+      } else {
+        toast.success('Successfully joined the reservation!');
+        await fetchReservation(); // Refresh the reservation data
+        router.push(`/reservations/${reservation.id}`);
       }
-
-      toast.success('Successfully joined the reservation!');
-      await fetchReservation(); // Refresh the reservation data
     } catch (error) {
       console.error('Error joining reservation:', error);
       toast.error('Failed to join the reservation');
@@ -205,6 +221,79 @@ export default function SharedReservationPage({ params }: { params: Promise<{ sh
                   )}
                 </div>
               </div>
+
+              {!reservation.participants.some(p => p.email === session.user?.email) && (
+                <div className="mt-6">
+                  <h2 className="text-lg font-semibold mb-2">Join Event</h2>
+                  {reservation.passwordRequired && (
+                    <div className="mb-4">
+                      <label htmlFor="eventPassword" className="block text-sm font-medium text-gray-700 mb-2">
+                        Enter Event Password
+                      </label>
+                      <input
+                        id="eventPassword"
+                        type="password"
+                        value={eventPassword}
+                        onChange={(e) => setEventPassword(e.target.value)}
+                        placeholder="Enter the event password"
+                        className="w-full p-3 border rounded text-gray-700 placeholder-gray-400"
+                      />
+                      {showPasswordError && (
+                        <p className="text-red-600 mt-2">Wrong password, reach out to {reservation.owner.name || reservation.owner.email}</p>
+                      )}
+                    </div>
+                  )}
+                  <div className="flex items-center space-x-4 mb-4">
+                    <label className="inline-flex items-center">
+                      <input
+                        type="radio"
+                        checked={isGoing}
+                        onChange={() => setIsGoing(true)}
+                        className="form-radio text-primary"
+                      />
+                      <span className="ml-2">Going</span>
+                    </label>
+                    <label className="inline-flex items-center">
+                      <input
+                        type="radio"
+                        checked={!isGoing}
+                        onChange={() => setIsGoing(false)}
+                        className="form-radio text-primary"
+                      />
+                      <span className="ml-2">Not Going</span>
+                    </label>
+                  </div>
+                  {reservation.paymentRequired && (
+                    <div className="flex items-center space-x-4 mb-4">
+                      <label className="inline-flex items-center">
+                        <input
+                          type="radio"
+                          checked={hasPaid}
+                          onChange={() => setHasPaid(true)}
+                          className="form-radio text-primary"
+                        />
+                        <span className="ml-2">Paid</span>
+                      </label>
+                      <label className="inline-flex items-center">
+                        <input
+                          type="radio"
+                          checked={!hasPaid}
+                          onChange={() => setHasPaid(false)}
+                          className="form-radio text-primary"
+                        />
+                        <span className="ml-2">Not Paid</span>
+                      </label>
+                    </div>
+                  )}
+                  <button
+                    onClick={handleJoinReservation}
+                    className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors"
+                    disabled={isJoining}
+                  >
+                    {isJoining ? 'Joining...' : 'Join Event'}
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
