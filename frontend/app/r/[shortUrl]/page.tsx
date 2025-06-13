@@ -79,6 +79,12 @@ export default function SharedReservationPage({ params }: { params: Promise<{ sh
   const handleJoinReservation = async () => {
     if (!session?.user?.email || !reservation) return;
 
+    // Check if user is already a participant
+    if (reservation.participants.some(p => p.email === session.user?.email)) {
+      router.push(`/reservations/${reservation.id}`);
+      return;
+    }
+
     setIsJoining(true);
     try {
       const response = await fetch(`/api/reservations/${reservation.id}/join`, {
@@ -94,11 +100,13 @@ export default function SharedReservationPage({ params }: { params: Promise<{ sh
       });
 
       if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
         if (response.status === 401 && reservation.passwordRequired && eventPassword && !reservation.participants.some(p => p.email === session.user?.email)) {
           setShowPasswordError(true);
           toast.error(`Wrong password, reach out to ${reservation.owner.name || reservation.owner.email}`);
         } else {
-          throw new Error('Failed to join reservation');
+          console.error('Failed to join reservation:', errorData);
+          toast.error(errorData.error || 'Failed to join reservation');
         }
       } else {
         toast.success('Successfully joined the reservation!');
@@ -107,7 +115,7 @@ export default function SharedReservationPage({ params }: { params: Promise<{ sh
       }
     } catch (error) {
       console.error('Error joining reservation:', error);
-      toast.error('Failed to join the reservation');
+      toast.error(error instanceof Error ? error.message : 'Failed to join the reservation');
     } finally {
       setIsJoining(false);
     }
