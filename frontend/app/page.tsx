@@ -61,21 +61,21 @@ export default function HomePage() {
               <div className="bg-white p-6 rounded-2xl shadow-lg mb-4">
                 <div className="text-4xl mb-2">✅</div>
                 <h3 className="text-xl font-semibold mb-2">Book Your Court</h3>
-                <p className="text-gray-600">First, book your court through your facility. Then, create an event here to manage your group.</p>
+                <p className="text-gray-600">Reserve your court at your favorite facility's website</p>
               </div>
             </div>
             <div className="text-center">
               <div className="bg-white p-6 rounded-2xl shadow-lg mb-4">
                 <div className="text-4xl mb-2">👥</div>
-                <h3 className="text-xl font-semibold mb-2">Create Your Event</h3>
-                <p className="text-gray-600">Set up your event details, invite players, and manage everything in one place.</p>
+                <h3 className="text-xl font-semibold mb-2">Invite Friends</h3>
+                <p className="text-gray-600">Create your group and invite players here</p>
               </div>
             </div>
             <div className="text-center">
               <div className="bg-white p-6 rounded-2xl shadow-lg mb-4">
                 <div className="text-4xl mb-2">🎉</div>
-                <h3 className="text-xl font-semibold mb-2">Play & Enjoy!</h3>
-                <p className="text-gray-600">Show up and play! All the coordination is handled, so you can focus on the game.</p>
+                <h3 className="text-xl font-semibold mb-2">Game Time!</h3>
+                <p className="text-gray-600">Everyone's informed, payments sorted - let's play!</p>
               </div>
             </div>
           </div>
@@ -93,7 +93,7 @@ export default function HomePage() {
               </div>
               <h3 className="text-xl font-semibold mb-2 text-gray-900">Group Chat</h3>
               <p className="text-gray-600">
-                Chat with your group.
+                Stay connected with your group.
               </p>
             </div>
 
@@ -103,7 +103,7 @@ export default function HomePage() {
               </div>
               <h3 className="text-xl font-semibold mb-2 text-gray-900">Split Costs</h3>
               <p className="text-gray-600">
-                Split payments easily.
+                Track & Divide fees.
               </p>
             </div>
 
@@ -113,7 +113,7 @@ export default function HomePage() {
               </div>
               <h3 className="text-xl font-semibold mb-2 text-gray-900">Notifications</h3>
               <p className="text-gray-600">
-                Stay updated always.
+                Never miss a game.
               </p>
             </div>
 
@@ -123,7 +123,7 @@ export default function HomePage() {
               </div>
               <h3 className="text-xl font-semibold mb-2 text-gray-900">Quick Invite</h3>
               <p className="text-gray-600">
-                Invite friends instantly.
+                One link to share and join.
               </p>
             </div>
           </div>
