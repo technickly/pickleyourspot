@@ -50,7 +50,7 @@ export default function ReservePage() {
   const router = useRouter();
   const { data: session, status } = useSession();
   const [court, setCourt] = useState<Court | null>(null);
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
   const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([]);
   const [selectedTimeSlots, setSelectedTimeSlots] = useState<TimeSlot[]>([]);
   const [participants, setParticipants] = useState<Participant[]>([]);
@@ -61,7 +61,6 @@ export default function ReservePage() {
   const [newParticipantEmail, setNewParticipantEmail] = useState('');
   const [timeInterval, setTimeInterval] = useState<'30min' | '1hour'>('1hour');
   const [requirePayment, setRequirePayment] = useState(false);
-  const [paymentAmount, setPaymentAmount] = useState('');
   const [paymentDescription, setPaymentDescription] = useState('');
   const [password, setPassword] = useState('');
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
@@ -171,8 +170,8 @@ export default function ReservePage() {
       return;
     }
 
-    if (requirePayment && (!paymentAmount || !paymentDescription)) {
-      toast.error('Please provide payment amount and description');
+    if (requirePayment && !paymentDescription) {
+      toast.error('Please provide a payment description');
       return;
     }
 
@@ -196,10 +195,6 @@ export default function ReservePage() {
           description: description.trim() || null,
           paymentRequired,
           paymentInfo: paymentInfo.trim() || null,
-          payment: requirePayment ? {
-            amount: parseFloat(paymentAmount),
-            description: paymentDescription
-          } : null,
           userId: session?.user?.id,
         }),
       });
