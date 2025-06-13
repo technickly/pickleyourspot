@@ -81,6 +81,39 @@ export default function ReservePage() {
     }
   }, [selectedDate, court, session]);
 
+  const generateTimeSlots = () => {
+    if (!selectedDate) return [];
+    const slots: TimeSlot[] = [];
+    const startHour = 8; // 8 AM
+    const endHour = 20; // 8 PM
+    const interval = timeInterval === '30min' ? 30 : 60;
+
+    for (let hour = startHour; hour < endHour; hour++) {
+      if (timeInterval === '30min') {
+        slots.push({
+          startTime: new Date(new Date(selectedDate).setHours(hour, 0, 0, 0)).toISOString(),
+          endTime: new Date(new Date(selectedDate).setHours(hour, 30, 0, 0)).toISOString(),
+          isAvailable: true,
+          maxExtensionSlots: 1
+        });
+        slots.push({
+          startTime: new Date(new Date(selectedDate).setHours(hour, 30, 0, 0)).toISOString(),
+          endTime: new Date(new Date(selectedDate).setHours(hour + 1, 0, 0, 0)).toISOString(),
+          isAvailable: true,
+          maxExtensionSlots: 1
+        });
+      } else {
+        slots.push({
+          startTime: new Date(new Date(selectedDate).setHours(hour, 0, 0, 0)).toISOString(),
+          endTime: new Date(new Date(selectedDate).setHours(hour + 1, 0, 0, 0)).toISOString(),
+          isAvailable: true,
+          maxExtensionSlots: 1
+        });
+      }
+    }
+    return slots;
+  };
+
   useEffect(() => {
     if (selectedDate) {
       const slots = generateTimeSlots();
@@ -216,39 +249,6 @@ export default function ReservePage() {
   }
 
   const availableDates = Array.from({ length: 14 }, (_, i) => addDays(new Date(), i));
-
-  const generateTimeSlots = () => {
-    if (!selectedDate) return [];
-    const slots: TimeSlot[] = [];
-    const startHour = 8; // 8 AM
-    const endHour = 20; // 8 PM
-    const interval = timeInterval === '30min' ? 30 : 60;
-
-    for (let hour = startHour; hour < endHour; hour++) {
-      if (timeInterval === '30min') {
-        slots.push({
-          startTime: new Date(new Date(selectedDate).setHours(hour, 0, 0, 0)).toISOString(),
-          endTime: new Date(new Date(selectedDate).setHours(hour, 30, 0, 0)).toISOString(),
-          isAvailable: true,
-          maxExtensionSlots: 1
-        });
-        slots.push({
-          startTime: new Date(new Date(selectedDate).setHours(hour, 30, 0, 0)).toISOString(),
-          endTime: new Date(new Date(selectedDate).setHours(hour + 1, 0, 0, 0)).toISOString(),
-          isAvailable: true,
-          maxExtensionSlots: 1
-        });
-      } else {
-        slots.push({
-          startTime: new Date(new Date(selectedDate).setHours(hour, 0, 0, 0)).toISOString(),
-          endTime: new Date(new Date(selectedDate).setHours(hour + 1, 0, 0, 0)).toISOString(),
-          isAvailable: true,
-          maxExtensionSlots: 1
-        });
-      }
-    }
-    return slots;
-  };
 
   return (
     <main className="min-h-screen p-8">
