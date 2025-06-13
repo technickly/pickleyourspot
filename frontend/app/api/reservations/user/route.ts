@@ -1,38 +1,20 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
+import { authOptions } from '@/app/api/auth/[...nextauth]/auth';
 import prisma from '@/lib/prisma';
+import type { Reservation, User, ParticipantStatus } from '@prisma/client';
 
-interface User {
-  id: string;
-  name: string | null;
-  email: string;
-  image: string | null;
-}
-
-interface ParticipantStatus {
-  userId: string;
-  hasPaid: boolean;
-  isGoing: boolean;
-  user: User;
+interface ReservationWithParticipants extends Reservation {
+  participants: (ParticipantStatus & {
+    user: Pick<User, 'name' | 'email' | 'image'>;
+  })[];
+  ownerEmail: string;
 }
 
 interface Court {
   name: string;
   description: string;
   imageUrl: string;
-}
-
-interface Reservation {
-  id: string;
-  shortUrl: string;
-  name: string;
-  startTime: Date;
-  endTime: Date;
-  description: string | null;
-  paymentRequired: boolean;
-  paymentInfo: string | null;
-  court: Court;
-  participants: ParticipantStatus[];
 }
 
 interface FormattedReservation {
@@ -56,128 +38,82 @@ interface FormattedReservation {
   isOwner: boolean;
 }
 
-export async function GET(
-  request: Request
-) {
+export async function GET() {
   try {
-    const session = await getServerSession();
-    const url = new URL(request.url);
-    const userEmail = url.searchParams.get('email');
-
+    const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    if (!userEmail) {
-      return NextResponse.json(
-        { error: 'Email parameter is required' },
-        { status: 400 }
-      );
-    }
-
-    // Only allow users to view their own reservations
-    if (session.user.email !== userEmail) {
-      return NextResponse.json(
-        { error: 'Not authorized to view these reservations' },
-        { status: 403 }
-      );
-    }
-
-    // Find the user
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-    });
-
-    if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
-    }
-
-    // Get owned reservations
+    // Get reservations where user is owner
     const ownedReservations = await prisma.reservation.findMany({
       where: {
-        ownerId: user.id,
+        ownerEmail: session.user.email,
       },
       include: {
-        court: true,
-        owner: true,
         participants: {
           include: {
-            user: true
-          }
-        }
+            user: {
+              select: {
+                name: true,
+                email: true,
+                image: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: {
+        startTime: 'desc',
       },
     });
 
-    // Get participated reservations
-    const participatedReservations = await prisma.reservation.findMany({
+    // Get reservations where user is participant
+    const participantReservations = await prisma.reservation.findMany({
       where: {
         participants: {
           some: {
-            userId: user.id,
+            user: {
+              email: session.user.email,
+            },
           },
         },
       },
       include: {
-        court: true,
-        owner: true,
         participants: {
           include: {
-            user: true
-          }
-        }
+            user: {
+              select: {
+                name: true,
+                email: true,
+                image: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: {
+        startTime: 'desc',
       },
     });
 
-    // Format the response to include whether the user is the owner
-    const allReservations: FormattedReservation[] = [
-      ...ownedReservations.map((reservation: Reservation) => ({
-        id: reservation.id,
-        shortUrl: reservation.shortUrl,
-        name: reservation.name,
-        courtName: reservation.court.name,
-        startTime: reservation.startTime,
-        endTime: reservation.endTime,
-        description: reservation.description,
-        paymentRequired: reservation.paymentRequired,
-        paymentInfo: reservation.paymentInfo,
-        participants: reservation.participants.map((participant: ParticipantStatus) => ({
-          userId: participant.userId,
-          name: participant.user.name,
-          email: participant.user.email,
-          image: participant.user.image,
-          hasPaid: participant.hasPaid,
-          isGoing: participant.isGoing,
-        })),
+    // Combine and format the results
+    const allReservations = [
+      ...ownedReservations.map((r: ReservationWithParticipants) => ({
+        ...r,
         isOwner: true,
       })),
-      ...participatedReservations.map((reservation: Reservation) => ({
-        id: reservation.id,
-        shortUrl: reservation.shortUrl,
-        name: reservation.name,
-        courtName: reservation.court.name,
-        startTime: reservation.startTime,
-        endTime: reservation.endTime,
-        description: reservation.description,
-        paymentRequired: reservation.paymentRequired,
-        paymentInfo: reservation.paymentInfo,
-        participants: reservation.participants.map((participant: ParticipantStatus) => ({
-          userId: participant.userId,
-          name: participant.user.name,
-          email: participant.user.email,
-          image: participant.user.image,
-          hasPaid: participant.hasPaid,
-          isGoing: participant.isGoing,
+      ...participantReservations
+        .filter((r: ReservationWithParticipants) => r.ownerEmail !== session.user.email)
+        .map((r: ReservationWithParticipants) => ({
+          ...r,
+          isOwner: false,
         })),
-        isOwner: false,
-      })),
-    ].sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
+    ];
 
     return NextResponse.json(allReservations);
   } catch (error) {
-    console.error('Error in user reservations route:', error);
+    console.error('Error fetching user reservations:', error);
     return NextResponse.json(
       { error: 'Failed to fetch reservations' },
       { status: 500 }

@@ -94,28 +94,6 @@ export default function SharedReservationPage({ params }: { params: Promise<{ sh
     }
 
     try {
-      // First check if user is already a participant
-      const checkResponse = await fetch(`/api/reservations/${reservation.id}/participants`, {
-        headers: {
-          'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache'
-        }
-      });
-      
-      if (!checkResponse.ok) {
-        const errorData = await checkResponse.json();
-        throw new Error(errorData.error || 'Failed to check participant status');
-      }
-      
-      const participants = await checkResponse.json();
-      const isParticipant = participants.some((p: { user: { email: string } }) => p.user.email === session.user.email);
-
-      if (isParticipant) {
-        // If already a participant, just redirect to the reservation page
-        router.push(`/reservations/${reservation.id}`);
-        return;
-      }
-
       // If password is required, show password dialog
       if (reservation.passwordRequired) {
         setShowPasswordDialog(true);
@@ -123,12 +101,16 @@ export default function SharedReservationPage({ params }: { params: Promise<{ sh
       }
 
       // If no password required, proceed with joining
-      const response = await fetch(`/api/reservations/${reservation.id}/participants`, {
+      const response = await fetch(`/api/reservations/${reservation.id}/join`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email: session.user.email }),
+        body: JSON.stringify({ 
+          email: session.user.email,
+          isGoing: true,
+          hasPaid: false
+        }),
       });
 
       if (!response.ok) {
