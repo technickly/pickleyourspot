@@ -3,6 +3,7 @@
 import { useSession, signIn } from 'next-auth/react';
 import Link from 'next/link';
 import { FaGoogle, FaComments, FaDollarSign, FaEnvelope, FaShare, FaDiscord } from 'react-icons/fa';
+import PickleballIcon from './components/PickleballIcon';
 
 export default function HomePage() {
   const { data: session, status } = useSession();
@@ -63,7 +64,9 @@ export default function HomePage() {
           <h2 className="text-3xl font-bold mb-8">How It Works</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="bg-white p-6 rounded-lg shadow">
-              <div className="text-4xl text-primary mb-4">🎾</div>
+              <div className="text-4xl text-primary mb-4 flex justify-center">
+                <PickleballIcon />
+              </div>
               <h3 className="text-lg font-semibold mb-2">Book Your Court</h3>
               <p className="text-gray-600">Reserve your court at your favorite facility's website</p>
             </div>
