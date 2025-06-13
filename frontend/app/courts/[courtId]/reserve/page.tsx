@@ -444,23 +444,26 @@ export default function ReservePage() {
             <div className="bg-blue-50 p-4 rounded-lg mt-4">
               <h3 className="font-medium text-blue-900">Selected Time</h3>
               <p className="text-blue-800">
-                {formatInTimeZone(
-                  new Date(selectedTimeSlots[0].startTime),
-                  timeZone,
-                  'EEEE, MMMM d, yyyy'
-                )}
+                {(() => {
+                  const startTime = new Date(selectedTimeSlots[0].startTime);
+                  return startTime instanceof Date && !isNaN(startTime.getTime()) 
+                    ? formatInTimeZone(startTime, timeZone, 'EEEE, MMMM d, yyyy')
+                    : 'Invalid Time';
+                })()}
                 <br />
-                {formatInTimeZone(
-                  new Date(selectedTimeSlots[0].startTime),
-                  timeZone,
-                  'h:mm a'
-                )}{' '}
+                {(() => {
+                  const startTime = new Date(selectedTimeSlots[0].startTime);
+                  return startTime instanceof Date && !isNaN(startTime.getTime()) 
+                    ? formatInTimeZone(startTime, timeZone, 'h:mm a')
+                    : 'Invalid Time';
+                })()}{' '}
                 -{' '}
-                {formatInTimeZone(
-                  new Date(selectedTimeSlots[selectedTimeSlots.length - 1].endTime),
-                  timeZone,
-                  'h:mm a'
-                )}{' '}
+                {(() => {
+                  const endTime = new Date(selectedTimeSlots[selectedTimeSlots.length - 1].endTime);
+                  return endTime instanceof Date && !isNaN(endTime.getTime()) 
+                    ? formatInTimeZone(endTime, timeZone, 'h:mm a')
+                    : 'Invalid Time';
+                })()}{' '}
                 PT
               </p>
             </div>
