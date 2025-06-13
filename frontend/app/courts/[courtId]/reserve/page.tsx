@@ -34,6 +34,7 @@ interface User {
 interface Participant {
   email: string;
   name?: string;
+  image?: string | null;
 }
 
 interface PageProps {
@@ -97,6 +98,7 @@ export default function ReservePage() {
   };
 
   const fetchTimeSlots = async () => {
+    if (!selectedDate) return;
     try {
       const response = await fetch(
         `/api/courts/${courtId}/time-slots?date=${format(selectedDate, 'yyyy-MM-dd')}`
@@ -261,8 +263,6 @@ export default function ReservePage() {
     }
     return slots;
   };
-
-  const timeSlots = generateTimeSlots();
 
   // Auto-generate event name when date and time slots are selected
   useEffect(() => {
