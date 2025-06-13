@@ -78,12 +78,13 @@ export default function MessageSystem({ reservationId, initialMessages }: Messag
     const fetchMessages = async () => {
       try {
         const response = await fetch(`/api/reservations/${reservationId}/messages`);
+        const data = await response.json();
+        
         if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          console.error('Failed to fetch messages:', errorData);
+          console.error('Failed to fetch messages:', data);
           return; // Return silently to keep existing messages
         }
-        const data = await response.json();
+        
         setMessages(data);
       } catch (error) {
         console.error('Failed to fetch messages:', error);
