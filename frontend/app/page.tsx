@@ -14,12 +14,14 @@ export default function HomePage() {
   return (
     <div className="min-h-screen">
       {/* Notification Banner */}
-      <div className="bg-yellow-100 border-b border-yellow-200">
-        <div className="max-w-7xl mx-auto py-3 px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-center">
-            <p className="text-yellow-800 text-center font-medium">
-              Note: Book your court through the facility's website first, then use this app to organize your group!
-            </p>
+      <div className="pt-4">
+        <div className="max-w-3xl mx-auto px-4">
+          <div className="bg-yellow-100 border border-yellow-200 rounded-lg shadow-sm">
+            <div className="py-3 px-4">
+              <p className="text-yellow-800 text-center font-medium">
+                Note: Book your court through the facility's website first, then use this app to organize your group!
+              </p>
+            </div>
           </div>
         </div>
       </div>
@@ -32,7 +34,7 @@ export default function HomePage() {
             <span className="block text-primary mt-2">Let's Get Your Group Together!</span>
           </h1>
           <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-            <span className="font-bold">Pickle Your Spot</span> helps you manage your court time, organize tournaments, and coordinate with friends. Book your court through your facility first, then use our app to bring everyone together!
+            <span className="font-bold">Pickle Your Spot</span> helps you manage your court time, organize group pickleball games and tournaments, and coordinate with friends. Book your court through your facility first, then use our app to bring everyone together!
           </p>
           {status === 'loading' ? (
             <div className="animate-pulse">Loading...</div>

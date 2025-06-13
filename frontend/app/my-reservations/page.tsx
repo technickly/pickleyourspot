@@ -308,8 +308,8 @@ export default function MyReservationsPage() {
                               {reservation.paymentRequired && (
                                 <span className={`px-2 py-0.5 rounded text-xs ${
                                   participant.hasPaid
-                                    ? 'bg-blue-100 text-blue-700'
-                                    : 'bg-gray-100 text-gray-600'
+                                    ? 'bg-green-100 text-green-700'
+                                    : 'bg-red-100 text-red-700'
                                 }`}>
                                   {participant.hasPaid ? 'Paid' : 'Unpaid'}
                                 </span>

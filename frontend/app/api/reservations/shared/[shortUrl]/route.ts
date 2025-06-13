@@ -40,9 +40,10 @@ export async function GET(
         name: reservation.owner.name,
         email: reservation.owner.email,
       },
-      participants: reservation.participants.map(p => ({
+      participants: reservation.participants.map((p: { name: string | null; email: string; userId: string }) => ({
         name: p.name,
         email: p.email,
+        userId: p.userId,
       })),
     };
 

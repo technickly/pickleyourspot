@@ -19,6 +19,7 @@ interface Reservation {
   participants: {
     name: string | null;
     email: string;
+    userId: string;
   }[];
   owner: {
     name: string | null;
@@ -194,7 +195,7 @@ export default function SharedReservationPage({ params }: { params: Promise<{ sh
                     <div className="grid gap-2">
                       {reservation.participants.map((participant) => (
                         <div
-                          key={participant.email}
+                          key={participant.userId}
                           className="flex items-center justify-between bg-gray-50 p-2 rounded"
                         >
                           <span>{participant.name || participant.email}</span>
