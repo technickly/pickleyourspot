@@ -121,12 +121,19 @@ export default function MyReservationsPage() {
     return new Date(endTime) < new Date();
   };
 
-  const filteredReservations = reservations.filter(reservation => {
-    if (filter === 'all') return true;
-    if (filter === 'active') return !isPastEvent(reservation.endTime);
-    if (filter === 'past') return isPastEvent(reservation.endTime);
-    return true;
-  });
+  const filteredReservations = reservations
+    .filter(reservation => {
+      // If user is owner, show only as owner
+      if (reservation.isOwner) return true;
+      // If user is not owner, show as participant
+      return !reservations.some(r => r.id === reservation.id && r.isOwner);
+    })
+    .filter(reservation => {
+      if (filter === 'all') return true;
+      if (filter === 'active') return !isPastEvent(reservation.endTime);
+      if (filter === 'past') return isPastEvent(reservation.endTime);
+      return true;
+    });
 
   if (status === 'loading' || isLoading) {
     return <div className="flex justify-center items-center min-h-screen">Loading...</div>;
@@ -147,10 +154,10 @@ export default function MyReservationsPage() {
   }
 
   return (
-    <div className="min-h-screen p-8">
+    <div className="min-h-screen p-8 bg-gray-50">
       <div className="max-w-4xl mx-auto">
         <header className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold">My Events</h1>
+          <h1 className="text-3xl font-bold text-gray-900">My Events</h1>
           <Link
             href="/courts"
             className="button-primary hover-lift"
@@ -162,30 +169,30 @@ export default function MyReservationsPage() {
         <div className="mb-6 flex gap-4">
           <button
             onClick={() => setFilter('all')}
-            className={`px-4 py-2 rounded-lg ${
+            className={`px-4 py-2 rounded-lg transition-colors ${
               filter === 'all'
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                ? 'bg-primary text-white'
+                : 'bg-white text-gray-700 hover:bg-gray-100'
             }`}
           >
             All Events
           </button>
           <button
             onClick={() => setFilter('active')}
-            className={`px-4 py-2 rounded-lg ${
+            className={`px-4 py-2 rounded-lg transition-colors ${
               filter === 'active'
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                ? 'bg-primary text-white'
+                : 'bg-white text-gray-700 hover:bg-gray-100'
             }`}
           >
             Active Events
           </button>
           <button
             onClick={() => setFilter('past')}
-            className={`px-4 py-2 rounded-lg ${
+            className={`px-4 py-2 rounded-lg transition-colors ${
               filter === 'past'
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                ? 'bg-primary text-white'
+                : 'bg-white text-gray-700 hover:bg-gray-100'
             }`}
           >
             Past Events
@@ -193,7 +200,7 @@ export default function MyReservationsPage() {
         </div>
 
         {filteredReservations.length === 0 ? (
-          <div className="text-center py-12">
+          <div className="text-center py-12 bg-white rounded-lg shadow-sm">
             <p className="text-gray-600 text-lg mb-4">
               {filter === 'all'
                 ? "You haven't created or joined any events yet."
@@ -209,113 +216,149 @@ export default function MyReservationsPage() {
             </Link>
           </div>
         ) : (
-          <div className="space-y-6">
+          <div className="space-y-4">
             {filteredReservations.map((reservation, index) => (
               <div
                 key={`${reservation.id}-${index}`}
-                className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow"
+                className="bg-white rounded-lg shadow-sm hover:shadow-md transition-all cursor-pointer group"
+                onClick={() => router.push(`/r/${reservation.shortUrl}`)}
               >
-                <div className="flex justify-between items-start mb-4">
-                  <div>
-                    <h2 className="text-xl font-semibold mb-2">{reservation.name}</h2>
-                    <p className="text-gray-600">{reservation.courtName}</p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <CopyButton
-                      text={`${window.location.origin}/r/${reservation.shortUrl}`}
-                      label="Copy Link"
-                    />
-                    {reservation.isOwner && !isPastEvent(reservation.endTime) && (
-                      <Link
-                        href={`/reservations/${reservation.id}/edit`}
-                        className="button-secondary"
-                      >
-                        Modify
-                      </Link>
-                    )}
-                    {reservation.isOwner && (
-                      <button
-                        onClick={() => setShowDeleteConfirm(reservation.id)}
-                        className="text-red-600 hover:text-red-700"
-                        disabled={isDeleting}
-                      >
-                        Delete
-                      </button>
-                    )}
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                  <div>
-                    <p className="text-sm text-gray-500">Date & Time</p>
-                    <p className="font-medium">
-                      {formatInTimeZone(
-                        new Date(reservation.startTime),
-                        timeZone,
-                        'EEEE, MMMM d, yyyy'
+                <div className="p-6">
+                  <div className="flex justify-between items-start mb-4">
+                    <div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <h2 className="text-xl font-semibold text-gray-900">{reservation.name}</h2>
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          isPastEvent(reservation.endTime)
+                            ? 'bg-gray-100 text-gray-600'
+                            : 'bg-green-100 text-green-700'
+                        }`}>
+                          {isPastEvent(reservation.endTime) ? 'Past' : 'Active'}
+                        </span>
+                      </div>
+                      <p className="text-gray-600">{reservation.courtName}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <CopyButton
+                        text={`${window.location.origin}/r/${reservation.shortUrl}`}
+                        label="Share Event"
+                      />
+                      {reservation.isOwner && !isPastEvent(reservation.endTime) && (
+                        <Link
+                          href={`/reservations/${reservation.id}/edit`}
+                          className="button-secondary"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          Modify
+                        </Link>
                       )}
-                    </p>
-                    <p className="font-medium">
-                      {formatInTimeZone(
-                        new Date(reservation.startTime),
-                        timeZone,
-                        'h:mm a'
-                      )}{' '}
-                      -{' '}
-                      {formatInTimeZone(
-                        new Date(reservation.endTime),
-                        timeZone,
-                        'h:mm a'
+                      {reservation.isOwner && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowDeleteConfirm(reservation.id);
+                          }}
+                          className="text-red-600 hover:text-red-700"
+                          disabled={isDeleting}
+                        >
+                          Delete
+                        </button>
                       )}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500">Participants</p>
-                    <p className="font-medium">
-                      {reservation.participants.filter(p => p.isGoing).length} going
-                    </p>
-                    {reservation.paymentRequired && (
-                      <p className="font-medium">
-                        {reservation.participants.filter(p => p.hasPaid).length} paid
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                {reservation.description && (
-                  <div className="mb-4">
-                    <p className="text-sm text-gray-500">Description</p>
-                    <p className="text-gray-700">{reservation.description}</p>
-                  </div>
-                )}
-
-                {reservation.paymentRequired && reservation.paymentInfo && (
-                  <div className="mb-4">
-                    <p className="text-sm text-gray-500">Payment Information</p>
-                    <p className="text-gray-700">{reservation.paymentInfo}</p>
-                  </div>
-                )}
-
-                {showDeleteConfirm === reservation.id && (
-                  <div className="mt-4 p-4 bg-red-50 rounded-lg">
-                    <p className="text-red-700 mb-2">Are you sure you want to delete this event?</p>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => handleDeleteReservation(reservation.id)}
-                        className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
-                        disabled={isDeleting}
-                      >
-                        {isDeleting ? 'Deleting...' : 'Yes, Delete'}
-                      </button>
-                      <button
-                        onClick={() => setShowDeleteConfirm(null)}
-                        className="bg-gray-200 text-gray-700 px-4 py-2 rounded hover:bg-gray-300"
-                      >
-                        Cancel
-                      </button>
                     </div>
                   </div>
-                )}
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                      <p className="text-sm text-gray-500 mb-1">Date & Time</p>
+                      <p className="font-medium text-gray-900">
+                        {formatInTimeZone(
+                          new Date(reservation.startTime),
+                          timeZone,
+                          'EEEE, MMMM d, yyyy'
+                        )}
+                      </p>
+                      <p className="font-medium text-gray-900">
+                        {formatInTimeZone(
+                          new Date(reservation.startTime),
+                          timeZone,
+                          'h:mm a'
+                        )}{' '}
+                        -{' '}
+                        {formatInTimeZone(
+                          new Date(reservation.endTime),
+                          timeZone,
+                          'h:mm a'
+                        )}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500 mb-1">Participants</p>
+                      <div className="space-y-2">
+                        {reservation.participants.map((participant, idx) => (
+                          <div key={idx} className="flex items-center gap-2">
+                            <span className="text-gray-900">{participant.name || participant.email}</span>
+                            <div className="flex gap-1">
+                              <span className={`px-2 py-0.5 rounded text-xs ${
+                                participant.isGoing
+                                  ? 'bg-green-100 text-green-700'
+                                  : 'bg-gray-100 text-gray-600'
+                              }`}>
+                                {participant.isGoing ? 'Going' : 'Not Going'}
+                              </span>
+                              {reservation.paymentRequired && (
+                                <span className={`px-2 py-0.5 rounded text-xs ${
+                                  participant.hasPaid
+                                    ? 'bg-blue-100 text-blue-700'
+                                    : 'bg-gray-100 text-gray-600'
+                                }`}>
+                                  {participant.hasPaid ? 'Paid' : 'Unpaid'}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {reservation.description && (
+                    <div className="mb-4">
+                      <p className="text-sm text-gray-500 mb-1">Description</p>
+                      <p className="text-gray-700">{reservation.description}</p>
+                    </div>
+                  )}
+
+                  {reservation.paymentRequired && reservation.paymentInfo && (
+                    <div className="mb-4">
+                      <p className="text-sm text-gray-500 mb-1">Payment Information</p>
+                      <p className="text-gray-700">{reservation.paymentInfo}</p>
+                    </div>
+                  )}
+
+                  {showDeleteConfirm === reservation.id && (
+                    <div 
+                      className="mt-4 p-4 bg-red-50 rounded-lg"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <p className="text-red-700 mb-2">Are you sure you want to delete this event?</p>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleDeleteReservation(reservation.id)}
+                          className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+                          disabled={isDeleting}
+                        >
+                          {isDeleting ? 'Deleting...' : 'Yes, Delete'}
+                        </button>
+                        <button
+                          onClick={() => setShowDeleteConfirm(null)}
+                          className="bg-gray-200 text-gray-700 px-4 py-2 rounded hover:bg-gray-300"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             ))}
           </div>

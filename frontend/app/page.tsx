@@ -13,6 +13,17 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen">
+      {/* Notification Banner */}
+      <div className="bg-yellow-100 border-b border-yellow-200">
+        <div className="max-w-7xl mx-auto py-3 px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-center">
+            <p className="text-yellow-800 text-center font-medium">
+              Note: Book your court through the facility's website first, then use this app to organize your group!
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* Hero Section */}
       <section className="pt-12 pb-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto text-center">
