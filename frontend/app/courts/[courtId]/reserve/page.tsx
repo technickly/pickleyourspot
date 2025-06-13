@@ -87,6 +87,15 @@ export default function ReservePage() {
     }
   }, [selectedDate]);
 
+  // Auto-generate event name when date and time slots are selected
+  useEffect(() => {
+    if (selectedDate && selectedTimeSlots.length > 0) {
+      const dateStr = selectedDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+      const timeStr = selectedTimeSlots[0].startTime;
+      setReservationName(`Pickleball ${dateStr} ${timeStr}`);
+    }
+  }, [selectedDate, selectedTimeSlots]);
+
   const fetchCourt = async () => {
     try {
       const response = await fetch(`/api/courts/${courtId}`);
@@ -263,15 +272,6 @@ export default function ReservePage() {
     }
     return slots;
   };
-
-  // Auto-generate event name when date and time slots are selected
-  useEffect(() => {
-    if (selectedDate && selectedTimeSlots.length > 0) {
-      const dateStr = selectedDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-      const timeStr = selectedTimeSlots[0].startTime;
-      setReservationName(`Pickleball ${dateStr} ${timeStr}`);
-    }
-  }, [selectedDate, selectedTimeSlots]);
 
   return (
     <main className="min-h-screen p-8">
