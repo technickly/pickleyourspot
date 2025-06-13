@@ -38,6 +38,7 @@ export default function MyReservationsPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [filter, setFilter] = useState<'all' | 'active' | 'past'>('active');
   const router = useRouter();
 
   useEffect(() => {
@@ -116,6 +117,17 @@ export default function MyReservationsPage() {
     }
   };
 
+  const isPastEvent = (endTime: string) => {
+    return new Date(endTime) < new Date();
+  };
+
+  const filteredReservations = reservations.filter(reservation => {
+    if (filter === 'all') return true;
+    if (filter === 'active') return !isPastEvent(reservation.endTime);
+    if (filter === 'past') return isPastEvent(reservation.endTime);
+    return true;
+  });
+
   if (status === 'loading' || isLoading) {
     return <div className="flex justify-center items-center min-h-screen">Loading...</div>;
   }
@@ -138,7 +150,7 @@ export default function MyReservationsPage() {
     <main className="min-h-screen p-8">
       <div className="max-w-4xl mx-auto">
         <header className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold">My Reservations</h1>
+          <h1 className="text-3xl font-bold">My Events</h1>
           <Link
             href="/courts"
             className="button-primary hover-lift"
@@ -147,153 +159,212 @@ export default function MyReservationsPage() {
           </Link>
         </header>
 
+        <div className="mb-6 flex gap-4">
+          <button
+            onClick={() => setFilter('all')}
+            className={`px-4 py-2 rounded-lg ${
+              filter === 'all'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            All Events
+          </button>
+          <button
+            onClick={() => setFilter('active')}
+            className={`px-4 py-2 rounded-lg ${
+              filter === 'active'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            Active Events
+          </button>
+          <button
+            onClick={() => setFilter('past')}
+            className={`px-4 py-2 rounded-lg ${
+              filter === 'past'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            Past Events
+          </button>
+        </div>
+
         <div className="grid gap-4">
-          {reservations.map((reservation) => (
-            <Link
-              key={reservation.id}
-              href={`/reservations/${reservation.id}`}
-              className="block border rounded-lg p-4 hover:shadow-lg transition-all hover:border-blue-200 cursor-pointer"
-            >
-              <div className="flex justify-between items-start">
-                <div className="space-y-3 w-full">
-                  <div>
-                    <h3 className="text-xl font-semibold text-gray-900">{reservation.name}</h3>
-                    <p className="text-gray-600">
-                      {reservation.courtName} • {formatInTimeZone(new Date(reservation.startTime), timeZone, 'EEEE, MMMM d, yyyy')} at{' '}
-                      {formatInTimeZone(new Date(reservation.startTime), timeZone, 'h:mm a')} -{' '}
-                      {formatInTimeZone(new Date(reservation.endTime), timeZone, 'h:mm a')} PT
-                    </p>
-                  </div>
-
-                  {reservation.description && (
-                    <div className="text-sm text-gray-600">
-                      <div className="p-2 bg-gray-50 rounded">
-                        <span className="font-medium">Notes: </span>
-                        {reservation.description}
+          {filteredReservations.map((reservation) => {
+            const isPast = isPastEvent(reservation.endTime);
+            return (
+              <Link
+                key={reservation.id}
+                href={`/reservations/${reservation.id}`}
+                className={`block border rounded-lg p-4 hover:shadow-lg transition-all hover:border-blue-200 cursor-pointer ${
+                  isPast ? 'bg-gray-50' : ''
+                }`}
+              >
+                <div className="flex justify-between items-start">
+                  <div className="space-y-3 w-full">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-xl font-semibold text-gray-900">{reservation.name}</h3>
+                        {isPast && (
+                          <span className="px-2 py-1 bg-gray-200 text-gray-700 rounded text-sm">
+                            Past Event
+                          </span>
+                        )}
                       </div>
+                      <p className="text-gray-600">
+                        {reservation.courtName} • {formatInTimeZone(new Date(reservation.startTime), timeZone, 'EEEE, MMMM d, yyyy')} at{' '}
+                        {formatInTimeZone(new Date(reservation.startTime), timeZone, 'h:mm a')} -{' '}
+                        {formatInTimeZone(new Date(reservation.endTime), timeZone, 'h:mm a')} PT
+                      </p>
                     </div>
-                  )}
 
-                  {reservation.paymentRequired && (
-                    <div className="text-sm">
-                      <div className="p-2 bg-yellow-50 rounded">
-                        <span className="font-medium text-yellow-800">💰 Payment Required • </span>
-                        <span className="text-yellow-700">{reservation.paymentInfo}</span>
+                    {reservation.description && (
+                      <div className="text-sm text-gray-600">
+                        <div className="p-2 bg-gray-50 rounded">
+                          <span className="font-medium">Notes: </span>
+                          {reservation.description}
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
 
-                  {reservation.participants.length > 0 && (
-                    <div className="text-sm">
-                      <div className="font-medium text-gray-700 mb-1">Participants:</div>
-                      <div className="grid grid-cols-1 gap-2">
-                        {reservation.participants.map((participant) => (
-                          <div
-                            key={participant.email}
-                            className="flex items-center justify-between p-2 rounded bg-gray-50"
-                            onClick={(e) => e.preventDefault()}
-                          >
-                            <span>{participant.name || participant.email}</span>
-                            <div className="flex gap-2">
-                              <button
-                                onClick={() =>
-                                  handleStatusUpdate(
-                                    reservation.id,
-                                    participant.userId,
-                                    'attendance',
-                                    !participant.isGoing
-                                  )
-                                }
-                                className={`px-2 py-1 rounded text-xs font-medium ${
-                                  participant.isGoing
-                                    ? 'bg-green-100 text-green-800 hover:bg-green-200'
-                                    : 'bg-red-100 text-red-800 hover:bg-red-200'
-                                }`}
-                              >
-                                {participant.isGoing ? '✓ Going' : '✗ Not Going'}
-                              </button>
-                              {reservation.paymentRequired && (
+                    {reservation.paymentRequired && (
+                      <div className="text-sm">
+                        <div className="p-2 bg-yellow-50 rounded">
+                          <span className="font-medium text-yellow-800">💰 Payment Required • </span>
+                          <span className="text-yellow-700">{reservation.paymentInfo}</span>
+                        </div>
+                      </div>
+                    )}
+
+                    {reservation.participants.length > 0 && (
+                      <div className="text-sm">
+                        <div className="font-medium text-gray-700 mb-1">Participants:</div>
+                        <div className="grid grid-cols-1 gap-2">
+                          {reservation.participants.map((participant) => (
+                            <div
+                              key={participant.email}
+                              className="flex items-center justify-between p-2 rounded bg-gray-50"
+                              onClick={(e) => e.preventDefault()}
+                            >
+                              <span>{participant.name || participant.email}</span>
+                              <div className="flex gap-2">
                                 <button
                                   onClick={() =>
                                     handleStatusUpdate(
                                       reservation.id,
                                       participant.userId,
-                                      'payment',
-                                      !participant.hasPaid
+                                      'attendance',
+                                      !participant.isGoing
                                     )
                                   }
                                   className={`px-2 py-1 rounded text-xs font-medium ${
-                                    participant.hasPaid
+                                    participant.isGoing
                                       ? 'bg-green-100 text-green-800 hover:bg-green-200'
                                       : 'bg-red-100 text-red-800 hover:bg-red-200'
                                   }`}
                                 >
-                                  {participant.hasPaid ? '✓ Paid' : '✗ Not Paid'}
+                                  {participant.isGoing ? '✓ Going' : '✗ Not Going'}
                                 </button>
-                              )}
+                                {reservation.paymentRequired && (
+                                  <button
+                                    onClick={() =>
+                                      handleStatusUpdate(
+                                        reservation.id,
+                                        participant.userId,
+                                        'payment',
+                                        !participant.hasPaid
+                                      )
+                                    }
+                                    className={`px-2 py-1 rounded text-xs font-medium ${
+                                      participant.hasPaid
+                                        ? 'bg-green-100 text-green-800 hover:bg-green-200'
+                                        : 'bg-red-100 text-red-800 hover:bg-red-200'
+                                    }`}
+                                  >
+                                    {participant.hasPaid ? '✓ Paid' : '✗ Not Paid'}
+                                  </button>
+                                )}
+                              </div>
                             </div>
-                          </div>
-                        ))}
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
+                  </div>
+                  <div className="flex flex-col items-end gap-2">
+                    <span
+                      className={`px-2 py-1 rounded text-sm ${
+                        reservation.isOwner
+                          ? 'bg-blue-100 text-blue-800'
+                          : 'bg-gray-100 text-gray-800'
+                      }`}
+                    >
+                      {reservation.isOwner ? 'Owner' : 'Participant'}
+                    </span>
+                    {reservation.isOwner && !isPast && (
+                      <div className="flex gap-2" onClick={(e) => e.preventDefault()}>
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            router.push(`/reservations/${reservation.id}/edit`);
+                          }}
+                          className="px-3 py-1 bg-blue-100 text-blue-800 rounded hover:bg-blue-200 text-sm font-medium transition-colors"
+                        >
+                          Modify
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setShowDeleteConfirm(reservation.id);
+                          }}
+                          className="px-3 py-1 bg-red-100 text-red-800 rounded hover:bg-red-200 text-sm font-medium transition-colors"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    )}
+                    {reservation.isOwner && isPast && (
+                      <div className="flex gap-2" onClick={(e) => e.preventDefault()}>
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setShowDeleteConfirm(reservation.id);
+                          }}
+                          className="px-3 py-1 bg-red-100 text-red-800 rounded hover:bg-red-200 text-sm font-medium transition-colors"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <div className="flex flex-col items-end gap-2">
-                  <span
-                    className={`px-2 py-1 rounded text-sm ${
-                      reservation.isOwner
-                        ? 'bg-blue-100 text-blue-800'
-                        : 'bg-gray-100 text-gray-800'
-                    }`}
-                  >
-                    {reservation.isOwner ? 'Owner' : 'Participant'}
-                  </span>
-                  {reservation.isOwner && (
-                    <div className="flex gap-2" onClick={(e) => e.preventDefault()}>
-                      <button
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          router.push(`/reservations/${reservation.id}/edit`);
-                        }}
-                        className="px-3 py-1 bg-blue-100 text-blue-800 rounded hover:bg-blue-200 text-sm font-medium transition-colors"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          setShowDeleteConfirm(reservation.id);
-                        }}
-                        className="px-3 py-1 bg-red-100 text-red-800 rounded hover:bg-red-200 text-sm font-medium transition-colors"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
 
-              <div className="mt-4 flex gap-4 items-center">
-                <span className="text-blue-500">View Details →</span>
-                <div className="h-4 w-px bg-gray-300" />
-                <div onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                }}>
-                  <CopyButton 
-                    text={typeof window !== 'undefined' ? `${window.location.origin}/r/${reservation.shortUrl}` : `${process.env.NEXT_PUBLIC_URL || ''}/r/${reservation.shortUrl}`}
-                    label="Share"
-                  />
+                <div className="mt-4 flex gap-4 items-center">
+                  <span className="text-blue-500">View Details →</span>
+                  <div className="h-4 w-px bg-gray-300" />
+                  <div onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                  }}>
+                    <CopyButton 
+                      text={typeof window !== 'undefined' ? `${window.location.origin}/r/${reservation.shortUrl}` : `${process.env.NEXT_PUBLIC_URL || ''}/r/${reservation.shortUrl}`}
+                      label="Share"
+                    />
+                  </div>
                 </div>
-              </div>
-            </Link>
-          ))}
+              </Link>
+            );
+          })}
 
-          {reservations.length === 0 && (
+          {filteredReservations.length === 0 && (
             <p className="text-gray-500 text-center py-8">
-              No reservations found. Make your first reservation!
+              No {filter === 'all' ? '' : filter} events found. Make your first event!
             </p>
           )}
         </div>

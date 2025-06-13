@@ -209,6 +209,11 @@ export default function ReservePage() {
       return;
     }
 
+    if (paymentRequired && !password.trim()) {
+      toast.error('Please enter event password to join');
+      return;
+    }
+
     try {
       const response = await fetch('/api/reservations', {
         method: 'POST',
