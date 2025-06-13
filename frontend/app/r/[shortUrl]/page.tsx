@@ -94,7 +94,7 @@ export default function SharedReservationPage({ params }: { params: Promise<{ sh
       });
 
       if (!response.ok) {
-        if (response.status === 401) {
+        if (response.status === 401 && reservation.passwordRequired && eventPassword && !reservation.participants.some(p => p.email === session.user?.email)) {
           setShowPasswordError(true);
           toast.error(`Wrong password, reach out to ${reservation.owner.name || reservation.owner.email}`);
         } else {
