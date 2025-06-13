@@ -33,7 +33,7 @@ interface User {
 
 interface Participant {
   email: string;
-  name?: string;
+  name?: string | null;
   image?: string | null;
 }
 
@@ -64,6 +64,7 @@ export default function ReservePage() {
   const [paymentAmount, setPaymentAmount] = useState('');
   const [paymentDescription, setPaymentDescription] = useState('');
   const [password, setPassword] = useState('');
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
   useEffect(() => {
     if (!session && status !== 'loading') {
@@ -84,9 +85,10 @@ export default function ReservePage() {
 
   useEffect(() => {
     if (selectedDate) {
-      fetchTimeSlots();
+      const slots = generateTimeSlots();
+      setTimeSlots(slots);
     }
-  }, [selectedDate]);
+  }, [selectedDate, timeInterval]);
 
   // Auto-generate event name when date and time slots are selected
   useEffect(() => {
@@ -107,37 +109,23 @@ export default function ReservePage() {
     }
   };
 
-  const fetchTimeSlots = async () => {
-    if (!selectedDate) return;
-    try {
-      const response = await fetch(
-        `/api/courts/${courtId}/time-slots?date=${format(selectedDate, 'yyyy-MM-dd')}`
-      );
-      const data = await response.json();
-      setTimeSlots(data);
-      setSelectedTimeSlots([]); // Reset selection when date changes
-    } catch (error) {
-      toast.error('Failed to fetch available time slots');
-    }
-  };
-
   const handleDateChange = (date: string) => {
     setSelectedDate(parse(date, 'yyyy-MM-dd', new Date()));
   };
 
   const handleAddParticipant = () => {
-    if (!newParticipantEmail) {
-      toast.error('Please enter an email address');
+    if (!selectedUser) {
+      toast.error('Please select a user from the dropdown');
       return;
     }
 
-    if (participants.some(p => p.email === newParticipantEmail)) {
+    if (participants.some(p => p.email === selectedUser.email)) {
       toast.error('This participant has already been added');
       return;
     }
 
-    setParticipants([...participants, { email: newParticipantEmail }]);
-    setNewParticipantEmail('');
+    setParticipants([...participants, { email: selectedUser.email, name: selectedUser.name || undefined, image: selectedUser.image || undefined }]);
+    setSelectedUser(null);
   };
 
   const handleRemoveParticipant = (email: string) => {
@@ -241,7 +229,6 @@ export default function ReservePage() {
 
   const availableDates = Array.from({ length: 14 }, (_, i) => addDays(new Date(), i));
 
-  // Generate time slots based on interval and timezone
   const generateTimeSlots = () => {
     const slots: TimeSlot[] = [];
     const startHour = 8; // 8 AM
@@ -298,10 +285,37 @@ export default function ReservePage() {
             <h2 className="text-xl font-semibold mb-4">Add Participants</h2>
             <div className="space-y-4">
               <UserSearch
-                onSelect={handleAddParticipant}
+                onSelect={(user) => setSelectedUser(user)}
                 placeholder="Search for participants by name or email..."
                 className="mb-4"
               />
+              {selectedUser && (
+                <div className="flex items-center justify-between bg-white p-3 rounded-lg border">
+                  <div className="flex items-center space-x-3">
+                    {selectedUser.image && (
+                      <Image
+                        src={selectedUser.image}
+                        alt={selectedUser.name || selectedUser.email}
+                        width={32}
+                        height={32}
+                        className="rounded-full"
+                      />
+                    )}
+                    <div>
+                      {selectedUser.name && (
+                        <div className="font-medium">{selectedUser.name}</div>
+                      )}
+                      <div className="text-sm text-gray-600">{selectedUser.email}</div>
+                    </div>
+                  </div>
+                  <button
+                    onClick={handleAddParticipant}
+                    className="text-blue-600 hover:text-blue-800"
+                  >
+                    Add
+                  </button>
+                </div>
+              )}
               {participants.length > 0 && (
                 <div className="space-y-2">
                   <h3 className="font-medium text-gray-700">Added Participants:</h3>
