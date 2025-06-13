@@ -35,36 +35,39 @@ const timeZone = 'America/Los_Angeles';
 export default function MyReservationsPage() {
   const { data: session, status } = useSession();
   const [reservations, setReservations] = useState<Reservation[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [filter, setFilter] = useState<'all' | 'active' | 'past'>('active');
   const router = useRouter();
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const fetchReservations = async () => {
+    try {
+      const response = await fetch('/api/reservations/user', {
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch reservations');
+      }
+      const data = await response.json();
+      setReservations(data);
+    } catch (error) {
+      console.error('Error fetching reservations:', error);
+      toast.error('Failed to load reservations');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (session?.user?.email) {
       fetchReservations();
     }
   }, [session]);
-
-  const fetchReservations = async () => {
-    try {
-      setIsLoading(true);
-      const response = await fetch(`/api/reservations/user?email=${encodeURIComponent(session?.user?.email || '')}`);
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to fetch reservations');
-      }
-      const data = await response.json();
-      setReservations(data);
-    } catch (error) {
-      console.error('Error fetching reservations:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to fetch reservations');
-      setReservations([]); // Reset to empty array on error
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleDeleteReservation = async (reservationId: string) => {
     setIsDeleting(true);
@@ -134,6 +137,13 @@ export default function MyReservationsPage() {
       if (filter === 'past') return isPastEvent(reservation.endTime);
       return true;
     });
+
+  // Implement pagination
+  const reservationsPerPage = 10;
+  const totalPages = Math.ceil(reservations.length / reservationsPerPage);
+  const startIndex = (currentPage - 1) * reservationsPerPage;
+  const endIndex = startIndex + reservationsPerPage;
+  const currentReservations = reservations.slice(startIndex, endIndex);
 
   if (status === 'loading' || isLoading) {
     return <div className="flex justify-center items-center min-h-screen">Loading...</div>;
@@ -217,7 +227,7 @@ export default function MyReservationsPage() {
           </div>
         ) : (
           <div className="space-y-4">
-            {filteredReservations.map((reservation, index) => (
+            {currentReservations.map((reservation, index) => (
               <div
                 key={`${reservation.id}-${index}`}
                 className="bg-white rounded-lg shadow-sm hover:shadow-md transition-all cursor-pointer group"
@@ -361,6 +371,28 @@ export default function MyReservationsPage() {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+
+        {totalPages > 1 && (
+          <div className="mt-8 flex justify-center gap-2">
+            <button
+              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+              className="px-4 py-2 border rounded-lg disabled:opacity-50"
+            >
+              Previous
+            </button>
+            <span className="px-4 py-2">
+              Page {currentPage} of {totalPages}
+            </span>
+            <button
+              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+              disabled={currentPage === totalPages}
+              className="px-4 py-2 border rounded-lg disabled:opacity-50"
+            >
+              Next
+            </button>
           </div>
         )}
       </div>

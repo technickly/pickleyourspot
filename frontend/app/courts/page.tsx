@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { toast } from 'react-hot-toast';
@@ -23,6 +23,7 @@ export default function CourtsPage() {
   const [selectedLocation, setSelectedLocation] = useState<string>('San Francisco, CA');
   const [locations, setLocations] = useState<string[]>(['San Francisco, CA']);
   const [showRequestModal, setShowRequestModal] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     if (!session && status !== 'loading') {
@@ -35,7 +36,15 @@ export default function CourtsPage() {
 
   const fetchCourts = async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/courts`);
+      const response = await fetch('/api/courts', {
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch courts');
+      }
       const data = await response.json();
       setCourts(data);
       
@@ -43,9 +52,39 @@ export default function CourtsPage() {
       const uniqueLocations = Array.from(new Set(data.map((court: Court) => court.location))) as string[];
       setLocations(uniqueLocations);
     } catch (error) {
-      toast.error('Failed to fetch courts');
+      console.error('Error fetching courts:', error);
+      toast.error('Failed to load courts');
+    } finally {
+      setIsLoading(false);
     }
   };
+
+  // Implement virtual scrolling for better performance with large lists
+  const [visibleCourts, setVisibleCourts] = useState<Court[]>([]);
+  const [page, setPage] = useState(1);
+  const courtsPerPage = 10;
+
+  useEffect(() => {
+    const start = (page - 1) * courtsPerPage;
+    const end = start + courtsPerPage;
+    setVisibleCourts(courts.slice(start, end));
+  }, [courts, page]);
+
+  const loadMore = () => {
+    setPage(prev => prev + 1);
+  };
+
+  // Add intersection observer for infinite scroll
+  const observerRef = useRef<IntersectionObserver | null>(null);
+  const lastCourtRef = useCallback((node: HTMLDivElement) => {
+    if (observerRef.current) observerRef.current.disconnect();
+    observerRef.current = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && visibleCourts.length < courts.length) {
+        loadMore();
+      }
+    });
+    if (node) observerRef.current.observe(node);
+  }, [visibleCourts.length, courts.length]);
 
   const handleRequestNewCourt = () => {
     setShowRequestModal(true);
@@ -67,64 +106,45 @@ export default function CourtsPage() {
   }
 
   return (
-    <main className="min-h-screen p-8">
-      <div className="max-w-6xl mx-auto">
-        <header className="mb-8">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-3xl font-bold">Available Courts</h1>
-              <p className="text-gray-600 mt-2">Select a court to make your reservation</p>
-            </div>
-            <button
-              onClick={handleRequestNewCourt}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              Request New Court
-            </button>
-          </div>
-          
-          <div className="mt-6">
-            <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-2">
-              Filter by Location
-            </label>
-            <select
-              id="location"
-              value={selectedLocation}
-              onChange={(e) => setSelectedLocation(e.target.value)}
-              className="w-full md:w-64 p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              {locations.map((location) => (
-                <option key={location} value={location}>
-                  {location}
-                </option>
-              ))}
-            </select>
-          </div>
-        </header>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredCourts.map((court) => (
-            <div
-              key={court.id}
-              className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
-              onClick={() => router.push(`/courts/${court.id}/reserve`)}
-            >
-              <div className="relative h-48">
-                <Image
-                  src={court.imageUrl}
-                  alt={court.name}
-                  fill
-                  style={{ objectFit: 'cover' }}
-                />
+    <main className="container mx-auto px-4 py-8">
+      <div className="max-w-7xl mx-auto">
+        <h1 className="text-3xl font-bold mb-8">Pickleball Courts</h1>
+        
+        {isLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="bg-white rounded-lg shadow-sm p-6 animate-pulse">
+                <div className="h-48 bg-gray-200 rounded-lg mb-4"></div>
+                <div className="h-6 bg-gray-200 rounded w-3/4 mb-2"></div>
+                <div className="h-4 bg-gray-200 rounded w-1/2"></div>
               </div>
-              <div className="p-4">
-                <h2 className="text-xl font-semibold mb-2">{court.name}</h2>
-                <p className="text-gray-600 text-sm mb-2">{court.location}</p>
-                <p className="text-gray-700 line-clamp-3">{court.description}</p>
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {visibleCourts.map((court, index) => (
+              <div
+                key={court.id}
+                ref={index === visibleCourts.length - 1 ? lastCourtRef : null}
+                className="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow"
+              >
+                <div className="relative h-48">
+                  <Image
+                    src={court.imageUrl}
+                    alt={court.name}
+                    fill
+                    style={{ objectFit: 'cover' }}
+                  />
+                </div>
+                <div className="p-4">
+                  <h2 className="text-xl font-semibold mb-2">{court.name}</h2>
+                  <p className="text-gray-600 text-sm mb-2">{court.location}</p>
+                  <p className="text-gray-700 line-clamp-3">{court.description}</p>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
 
         {showRequestModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">

@@ -48,22 +48,27 @@ export default function SharedReservationPage({ params }: { params: Promise<{ sh
   }, [resolvedParams.shortUrl]);
 
   useEffect(() => {
-    // When user signs in, automatically try to join the reservation
-    if (session?.user?.email && reservation && !isJoining) {
+    // Remove auto-join on sign in
+    if (session?.user?.email && reservation) {
       const isAlreadyParticipant = reservation.participants.some(
         p => p.email === session.user?.email
       );
       const isOwner = reservation.owner.email === session.user?.email;
 
-      if (!isAlreadyParticipant && !isOwner) {
-        handleJoinReservation();
+      if (isAlreadyParticipant || isOwner) {
+        router.push(`/reservations/${reservation.id}`);
       }
     }
   }, [session, reservation]);
 
   const fetchReservation = async () => {
     try {
-      const response = await fetch(`/api/reservations/shared/${resolvedParams.shortUrl}`);
+      const response = await fetch(`/api/reservations/shared/${resolvedParams.shortUrl}`, {
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      });
       if (!response.ok) {
         throw new Error('Failed to fetch reservation');
       }
@@ -90,12 +95,20 @@ export default function SharedReservationPage({ params }: { params: Promise<{ sh
 
     try {
       // First check if user is already a participant
-      const checkResponse = await fetch(`/api/reservations/${reservation.id}/participants`);
+      const checkResponse = await fetch(`/api/reservations/${reservation.id}/participants`, {
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      });
+      
       if (!checkResponse.ok) {
-        throw new Error('Failed to check participant status');
+        const errorData = await checkResponse.json();
+        throw new Error(errorData.error || 'Failed to check participant status');
       }
+      
       const participants = await checkResponse.json();
-      const isParticipant = participants.some((p: any) => p.user.email === session.user.email);
+      const isParticipant = participants.some((p: { user: { email: string } }) => p.user.email === session.user.email);
 
       if (isParticipant) {
         // If already a participant, just redirect to the reservation page

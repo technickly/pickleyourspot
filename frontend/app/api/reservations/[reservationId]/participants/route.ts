@@ -217,4 +217,54 @@ export async function DELETE(
       { status: 500 }
     );
   }
+}
+
+export async function GET(
+  request: Request,
+  { params }: { params: { reservationId: string } }
+) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const reservation = await prisma.reservation.findUnique({
+      where: { id: params.reservationId },
+      include: {
+        participants: {
+          include: {
+            user: {
+              select: {
+                name: true,
+                email: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!reservation) {
+      return NextResponse.json({ error: 'Reservation not found' }, { status: 404 });
+    }
+
+    // Check if user is authorized to view participants
+    const isOwner = reservation.ownerEmail === session.user.email;
+    const isParticipant = reservation.participants.some(
+      (p: { user: { email: string } }) => p.user.email === session.user.email
+    );
+
+    if (!isOwner && !isParticipant) {
+      return NextResponse.json({ error: 'Not authorized to view participants' }, { status: 403 });
+    }
+
+    return NextResponse.json(reservation.participants);
+  } catch (error) {
+    console.error('Error fetching participants:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch participants' },
+      { status: 500 }
+    );
+  }
 } 
