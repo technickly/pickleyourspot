@@ -17,8 +17,8 @@ export default function HomePage() {
       <div className="pt-4">
         <div className="max-w-3xl mx-auto px-4">
           <div className="bg-yellow-100 border border-yellow-200 rounded-lg shadow-sm">
-            <div className="py-3 px-4">
-              <p className="text-yellow-800 text-center font-medium">
+            <div className="py-2 px-4">
+              <p className="text-yellow-800 text-center font-medium whitespace-nowrap">
                 Note: Book your court through the facility's website first, then use this app to organize your group!
               </p>
             </div>

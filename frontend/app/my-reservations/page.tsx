@@ -221,7 +221,7 @@ export default function MyReservationsPage() {
               <div
                 key={`${reservation.id}-${index}`}
                 className="bg-white rounded-lg shadow-sm hover:shadow-md transition-all cursor-pointer group"
-                onClick={() => router.push(`/r/${reservation.shortUrl}`)}
+                onClick={() => router.push(`/reservations/${reservation.id}`)}
               >
                 <div className="p-6">
                   <div className="flex justify-between items-start mb-4">
