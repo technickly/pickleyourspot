@@ -130,12 +130,13 @@ export default function ReservationPage({ params }: PageProps) {
   const fetchMessages = async () => {
     try {
       const response = await fetch(`/api/reservations/${reservationId}/messages`);
+      const data = await response.json();
+      
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        console.error('Failed to fetch messages:', errorData);
+        console.error('Failed to fetch messages:', data);
         return; // Silently fail and keep existing messages
       }
-      const data = await response.json();
+      
       setMessages(data);
     } catch (error) {
       console.error('Failed to fetch messages:', error);
@@ -173,18 +174,21 @@ export default function ReservationPage({ params }: PageProps) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          content: newMessage,
+          content: newMessage.trim(),
         }),
       });
 
+      const data = await response.json();
+      
       if (!response.ok) {
-        throw new Error('Failed to send message');
+        throw new Error(data.error || 'Failed to send message');
       }
 
       setNewMessage('');
       await fetchMessages(); // Refresh messages immediately
     } catch (error) {
-      toast.error('Failed to send message');
+      console.error('Error sending message:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to send message');
     }
   };
 

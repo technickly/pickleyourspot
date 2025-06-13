@@ -287,45 +287,49 @@ export default function ParticipantList({
 
                 <div className="flex items-center space-x-2">
                   {/* Going/Not Going Toggle */}
-                  <button
-                    onClick={() => handleStatusUpdate(participant.userId, 'attendance', !participant.isGoing)}
-                    className={`inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                      participant.isGoing
-                        ? 'bg-green-100 text-green-800 hover:bg-green-200'
-                        : 'bg-red-100 text-red-800 hover:bg-red-200'
-                    }`}
-                  >
-                    {participant.isGoing ? (
-                      <>
-                        <span className="mr-1">✓</span> Going
-                      </>
-                    ) : (
-                      <>
-                        <span className="mr-1">✗</span> Not Going
-                      </>
-                    )}
-                  </button>
+                  <div className="flex flex-col space-y-2">
+                    <label className="inline-flex items-center">
+                      <input
+                        type="radio"
+                        checked={participant.isGoing}
+                        onChange={() => handleStatusUpdate(participant.userId, 'attendance', true)}
+                        className="form-radio text-primary"
+                      />
+                      <span className="ml-2">Going</span>
+                    </label>
+                    <label className="inline-flex items-center">
+                      <input
+                        type="radio"
+                        checked={!participant.isGoing}
+                        onChange={() => handleStatusUpdate(participant.userId, 'attendance', false)}
+                        className="form-radio text-primary"
+                      />
+                      <span className="ml-2">Not Going</span>
+                    </label>
+                  </div>
 
                   {/* Payment Status Toggle */}
                   {paymentRequired && (
-                    <button
-                      onClick={() => handleStatusUpdate(participant.userId, 'payment', !participant.hasPaid)}
-                      className={`inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                        participant.hasPaid
-                          ? 'bg-green-100 text-green-800 hover:bg-green-200'
-                          : 'bg-red-100 text-red-800 hover:bg-red-200'
-                      }`}
-                    >
-                      {participant.hasPaid ? (
-                        <>
-                          <span className="mr-1">✓</span> Paid
-                        </>
-                      ) : (
-                        <>
-                          <span className="mr-1">✗</span> Unpaid
-                        </>
-                      )}
-                    </button>
+                    <div className="flex flex-col space-y-2">
+                      <label className="inline-flex items-center">
+                        <input
+                          type="radio"
+                          checked={participant.hasPaid}
+                          onChange={() => handleStatusUpdate(participant.userId, 'payment', true)}
+                          className="form-radio text-primary"
+                        />
+                        <span className="ml-2">Paid</span>
+                      </label>
+                      <label className="inline-flex items-center">
+                        <input
+                          type="radio"
+                          checked={!participant.hasPaid}
+                          onChange={() => handleStatusUpdate(participant.userId, 'payment', false)}
+                          className="form-radio text-primary"
+                        />
+                        <span className="ml-2">Not Paid</span>
+                      </label>
+                    </div>
                   )}
 
                   {/* Remove Button */}
