@@ -27,7 +27,7 @@ export default function ReservationActions({ reservationId, isOwner }: Props) {
       }
 
       toast.success('Reservation deleted successfully');
-      router.push('/my-events');
+      router.push('/my-reservations');
     } catch (error) {
       toast.error('Failed to delete reservation');
     } finally {

@@ -123,12 +123,13 @@ export default function ReservePage() {
 
   // Auto-generate event name when date and time slots are selected
   useEffect(() => {
-    if (selectedDate && selectedTimeSlots.length > 0 && court) {
+    if (selectedDate && selectedTimeSlots.length > 0 && court && session?.user) {
       const dateStr = format(selectedDate, 'EEEE - MMMM d');
       const timeStr = formatInTimeZone(new Date(selectedTimeSlots[0].startTime), timeZone, 'h:mma');
-      setReservationName(`${court.name}, ${dateStr}, ${timeStr}`);
+      const userName = session.user.name || 'User';
+      setReservationName(`${userName}: ${court.name}, ${dateStr}, ${timeStr}`);
     }
-  }, [selectedDate, selectedTimeSlots, court]);
+  }, [selectedDate, selectedTimeSlots, court, session]);
 
   const fetchCourt = async () => {
     try {
@@ -229,7 +230,7 @@ export default function ReservePage() {
 
       if (response.ok) {
         toast.success('Reservation created successfully');
-        router.push('/my-events');
+        router.push('/my-reservations');
       } else {
         const data = await response.json();
         toast.error(data.error || 'Failed to create reservation');
