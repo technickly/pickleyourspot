@@ -91,12 +91,12 @@ export default function ReservePage() {
 
   // Auto-generate event name when date and time slots are selected
   useEffect(() => {
-    if (selectedDate && selectedTimeSlots.length > 0) {
-      const dateStr = selectedDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-      const timeStr = selectedTimeSlots[0].startTime;
-      setReservationName(`Pickleball ${dateStr} ${timeStr}`);
+    if (selectedDate && selectedTimeSlots.length > 0 && court) {
+      const dateStr = format(selectedDate, 'EEEE - MMMM d');
+      const timeStr = formatInTimeZone(new Date(selectedTimeSlots[0].startTime), timeZone, 'h:mma');
+      setReservationName(`${court.name}, ${dateStr}, ${timeStr}`);
     }
-  }, [selectedDate, selectedTimeSlots]);
+  }, [selectedDate, selectedTimeSlots, court]);
 
   const fetchCourt = async () => {
     try {
