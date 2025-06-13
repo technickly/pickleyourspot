@@ -71,7 +71,7 @@ export default function ReservationPage({ params }: PageProps) {
   const [newMessage, setNewMessage] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
   const [paymentStatuses, setPaymentStatuses] = useState<Record<string, boolean>>({});
-  const [isMessagesActive, setIsMessagesActive] = useState(false);
+  const [isMessagesActive, setIsMessagesActive] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [showUserSearch, setShowUserSearch] = useState(false);
   const { reservationId } = unwrappedParams;
@@ -148,7 +148,9 @@ export default function ReservationPage({ params }: PageProps) {
       }
       const data = await response.json();
       const statusMap = data.reduce((acc: Record<string, boolean>, status: any) => {
-        acc[status.user.email] = status.hasPaid;
+        if (status.user && status.user.email) {
+          acc[status.user.email] = status.hasPaid;
+        }
         return acc;
       }, {});
       setPaymentStatuses(statusMap);
@@ -337,6 +339,7 @@ export default function ReservationPage({ params }: PageProps) {
                   <ParticipantList
                     participants={reservation.participants}
                     reservationId={reservation.id}
+                    reservationName={reservation.name}
                     isOwner={isOwner}
                     ownerEmail={reservation.owner.email}
                     ownerName={reservation.owner.name}
