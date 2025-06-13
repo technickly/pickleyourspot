@@ -59,21 +59,21 @@ export default function HomePage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="text-center">
               <div className="bg-white p-6 rounded-2xl shadow-lg mb-4">
-                <div className="text-4xl font-bold text-primary mb-2">1</div>
+                <div className="text-4xl mb-2">✅</div>
                 <h3 className="text-xl font-semibold mb-2">Book Your Court</h3>
                 <p className="text-gray-600">First, book your court through your facility. Then, create an event here to manage your group.</p>
               </div>
             </div>
             <div className="text-center">
               <div className="bg-white p-6 rounded-2xl shadow-lg mb-4">
-                <div className="text-4xl font-bold text-primary mb-2">2</div>
+                <div className="text-4xl mb-2">👥</div>
                 <h3 className="text-xl font-semibold mb-2">Create Your Event</h3>
                 <p className="text-gray-600">Set up your event details, invite players, and manage everything in one place.</p>
               </div>
             </div>
             <div className="text-center">
               <div className="bg-white p-6 rounded-2xl shadow-lg mb-4">
-                <div className="text-4xl font-bold text-primary mb-2">3</div>
+                <div className="text-4xl mb-2">🎉</div>
                 <h3 className="text-xl font-semibold mb-2">Play & Enjoy!</h3>
                 <p className="text-gray-600">Show up and play! All the coordination is handled, so you can focus on the game.</p>
               </div>
@@ -91,9 +91,9 @@ export default function HomePage() {
               <div className="text-primary text-2xl mb-4">
                 <FaComments />
               </div>
-              <h3 className="text-xl font-semibold mb-2 text-gray-900">Group Coordination</h3>
+              <h3 className="text-xl font-semibold mb-2 text-gray-900">Group Chat</h3>
               <p className="text-gray-600">
-                Keep everyone informed with event details, updates, and group chat.
+                Chat with your group.
               </p>
             </div>
 
@@ -101,9 +101,9 @@ export default function HomePage() {
               <div className="text-primary text-2xl mb-4">
                 <FaDollarSign />
               </div>
-              <h3 className="text-xl font-semibold mb-2 text-gray-900">Payment Management</h3>
+              <h3 className="text-xl font-semibold mb-2 text-gray-900">Split Costs</h3>
               <p className="text-gray-600">
-                Track and split costs between players. Perfect for tournaments and group events.
+                Split payments easily.
               </p>
             </div>
 
@@ -111,9 +111,9 @@ export default function HomePage() {
               <div className="text-primary text-2xl mb-4">
                 <FaEnvelope />
               </div>
-              <h3 className="text-xl font-semibold mb-2 text-gray-900">Smart Notifications</h3>
+              <h3 className="text-xl font-semibold mb-2 text-gray-900">Notifications</h3>
               <p className="text-gray-600">
-                Automated reminders and updates keep everyone on the same page.
+                Stay updated always.
               </p>
             </div>
 
@@ -121,9 +121,9 @@ export default function HomePage() {
               <div className="text-primary text-2xl mb-4">
                 <FaShare />
               </div>
-              <h3 className="text-xl font-semibold mb-2 text-gray-900">Easy Sharing</h3>
+              <h3 className="text-xl font-semibold mb-2 text-gray-900">Quick Invite</h3>
               <p className="text-gray-600">
-                Share event details with one click. Perfect for tournaments and group play.
+                Invite friends instantly.
               </p>
             </div>
           </div>

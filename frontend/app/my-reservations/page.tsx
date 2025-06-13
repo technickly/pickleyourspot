@@ -162,6 +162,170 @@ export default function MyReservationsPage() {
         <div className="mb-6 flex gap-4">
           <button
             onClick={() => setFilter('all')}
+'use client';
+
+import { useSession } from 'next-auth/react';
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { toast } from 'react-hot-toast';
+import { formatInTimeZone } from 'date-fns-tz';
+import CopyButton from '@/app/components/CopyButton';
+import { useRouter } from 'next/navigation';
+
+interface Participant {
+  name: string | null;
+  email: string;
+  hasPaid: boolean;
+  isGoing: boolean;
+  userId: string;
+}
+
+interface Reservation {
+  id: string;
+  shortUrl: string;
+  courtName: string;
+  name: string;
+  startTime: string;
+  endTime: string;
+  isOwner: boolean;
+  description?: string | null;
+  paymentRequired: boolean;
+  paymentInfo?: string | null;
+  participants: Participant[];
+}
+
+const timeZone = 'America/Los_Angeles';
+
+export default function MyReservationsPage() {
+  const { data: session, status } = useSession();
+  const [reservations, setReservations] = useState<Reservation[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [filter, setFilter] = useState<'all' | 'active' | 'past'>('active');
+  const router = useRouter();
+
+  useEffect(() => {
+    if (session?.user?.email) {
+      fetchReservations();
+    }
+  }, [session]);
+
+  const fetchReservations = async () => {
+    try {
+      setIsLoading(true);
+      const response = await fetch(`/api/reservations/user?email=${encodeURIComponent(session?.user?.email || '')}`);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to fetch reservations');
+      }
+      const data = await response.json();
+      setReservations(data);
+    } catch (error) {
+      console.error('Error fetching reservations:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to fetch reservations');
+      setReservations([]); // Reset to empty array on error
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDeleteReservation = async (reservationId: string) => {
+    setIsDeleting(true);
+    try {
+      const response = await fetch(`/api/reservations/${reservationId}/delete`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete reservation');
+      }
+
+      toast.success('Reservation deleted successfully');
+      await fetchReservations(); // Refresh the list
+    } catch (error) {
+      toast.error('Failed to delete reservation');
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteConfirm(null);
+    }
+  };
+
+  const handleStatusUpdate = async (
+    reservationId: string,
+    userId: string,
+    type: 'payment' | 'attendance',
+    newValue: boolean
+  ) => {
+    try {
+      const response = await fetch(`/api/reservations/${reservationId}/participant-status`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId,
+          type,
+          value: newValue,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update status');
+      }
+
+      await fetchReservations(); // Refresh the list
+      toast.success(`${type === 'payment' ? 'Payment' : 'Attendance'} status updated`);
+    } catch (error) {
+      toast.error(`Failed to update ${type} status`);
+    }
+  };
+
+  const isPastEvent = (endTime: string) => {
+    return new Date(endTime) < new Date();
+  };
+
+  const filteredReservations = reservations.filter(reservation => {
+    if (filter === 'all') return true;
+    if (filter === 'active') return !isPastEvent(reservation.endTime);
+    if (filter === 'past') return isPastEvent(reservation.endTime);
+    return true;
+  });
+
+  if (status === 'loading' || isLoading) {
+    return <div className="flex justify-center items-center min-h-screen">Loading...</div>;
+  }
+
+  if (!session) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        <p className="text-xl mb-4">Please sign in to view your reservations</p>
+        <Link
+          href="/"
+          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+        >
+          Go to Home
+        </Link>
+      </div>
+    );
+  }
+
+  return (
+    <main className="min-h-screen p-8">
+      <div className="max-w-4xl mx-auto">
+        <header className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold">My Events</h1>
+          <Link
+            href="/courts"
+            className="button-primary hover-lift"
+          >
+            Make New Event
+          </Link>
+        </header>
+
+        <div className="mb-6 flex gap-4">
+          <button
+            onClick={() => setFilter('all')}
             className={`px-4 py-2 rounded-lg ${
               filter === 'all'
                 ? 'bg-blue-600 text-white'

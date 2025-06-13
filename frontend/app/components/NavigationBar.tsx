@@ -76,6 +76,14 @@ export default function NavigationBar() {
                     My Account
                   </Link>
                 )}
+                {!isCurrentPath('/my-reservations') && (
+                  <Link
+                    href="/my-reservations"
+                    className="button-primary"
+                  >
+                    My Events
+                  </Link>
+                )}
 
                 {session ? (
                   <button
@@ -127,6 +135,14 @@ export default function NavigationBar() {
                   className="button-primary"
                 >
                   My Account
+                </Link>
+              )}
+              {!isCurrentPath('/my-reservations') && (
+                <Link
+                  href="/my-reservations"
+                  className="button-primary"
+                >
+                  My Events
                 </Link>
               )}
 

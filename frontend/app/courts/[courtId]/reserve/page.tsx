@@ -214,6 +214,11 @@ export default function ReservePage() {
       return;
     }
 
+    if (requirePayment && !paymentDescription.trim()) {
+      toast.error('Please provide payment information');
+      return;
+    }
+
     try {
       const response = await fetch('/api/reservations', {
         method: 'POST',
@@ -227,8 +232,9 @@ export default function ReservePage() {
           endTime: getReservationEndTime(),
           participantIds: participants.map(p => p.email),
           description: description.trim() || null,
-          paymentRequired,
-          paymentInfo: paymentInfo.trim() || null,
+          paymentRequired: requirePayment,
+          paymentInfo: paymentDescription.trim() || null,
+          password: password.trim() || null,
           userId: session?.user?.id,
         }),
       });
