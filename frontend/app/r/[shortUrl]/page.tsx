@@ -40,6 +40,7 @@ export default function SharedReservationPage({ params }: { params: Promise<{ sh
   const [isGoing, setIsGoing] = useState(true);
   const [hasPaid, setHasPaid] = useState(false);
   const [showPasswordError, setShowPasswordError] = useState(false);
+  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
   const resolvedParams = React.use(params);
 
   useEffect(() => {
@@ -77,47 +78,89 @@ export default function SharedReservationPage({ params }: { params: Promise<{ sh
   };
 
   const handleJoinReservation = async () => {
-    if (!session?.user?.email || !reservation) return;
-
-    // Check if user is already a participant
-    if (reservation.participants.some(p => p.email === session.user?.email)) {
-      router.push(`/reservations/${reservation.id}`);
+    if (!session?.user?.email) {
+      toast.error('You must be logged in to join a reservation');
       return;
     }
 
-    setIsJoining(true);
+    if (!reservation) {
+      toast.error('Reservation not found');
+      return;
+    }
+
+    try {
+      // First check if user is already a participant
+      const checkResponse = await fetch(`/api/reservations/${reservation.id}/participants`);
+      if (!checkResponse.ok) {
+        throw new Error('Failed to check participant status');
+      }
+      const participants = await checkResponse.json();
+      const isParticipant = participants.some((p: any) => p.user.email === session.user.email);
+
+      if (isParticipant) {
+        // If already a participant, just redirect to the reservation page
+        router.push(`/reservations/${reservation.id}`);
+        return;
+      }
+
+      // If password is required, show password dialog
+      if (reservation.passwordRequired) {
+        setShowPasswordDialog(true);
+        return;
+      }
+
+      // If no password required, proceed with joining
+      const response = await fetch(`/api/reservations/${reservation.id}/participants`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email: session.user.email }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to join reservation');
+      }
+
+      toast.success('Successfully joined reservation!');
+      router.push(`/reservations/${reservation.id}`);
+    } catch (error) {
+      console.error('Error joining reservation:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to join reservation');
+    }
+  };
+
+  const handlePasswordSubmit = async (password: string) => {
+    if (!reservation) {
+      toast.error('Reservation not found');
+      return;
+    }
+
     try {
       const response = await fetch(`/api/reservations/${reservation.id}/join`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          password: eventPassword,
-          isGoing,
-          hasPaid,
+        body: JSON.stringify({ 
+          email: session?.user?.email,
+          password 
         }),
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        if (response.status === 401 && reservation.passwordRequired && eventPassword && !reservation.participants.some(p => p.email === session.user?.email)) {
-          setShowPasswordError(true);
-          toast.error(`Wrong password, reach out to ${reservation.owner.name || reservation.owner.email}`);
-        } else {
-          console.error('Failed to join reservation:', errorData);
-          toast.error(errorData.error || 'Failed to join reservation');
-        }
-      } else {
-        toast.success('Successfully joined the reservation!');
-        await fetchReservation(); // Refresh the reservation data
-        router.push(`/reservations/${reservation.id}`);
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to join reservation');
       }
+
+      toast.success('Successfully joined reservation!');
+      router.push(`/reservations/${reservation.id}`);
     } catch (error) {
       console.error('Error joining reservation:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to join the reservation');
+      toast.error(error instanceof Error ? error.message : 'Failed to join reservation');
     } finally {
-      setIsJoining(false);
+      setShowPasswordDialog(false);
     }
   };
 

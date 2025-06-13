@@ -75,26 +75,36 @@ export default function MessageSystem({ reservationId, initialMessages }: Messag
   useEffect(() => {
     if (!isExpanded) return;
 
+    let isMounted = true;
     const fetchMessages = async () => {
       try {
-        const response = await fetch(`/api/reservations/${reservationId}/messages`);
+        const response = await fetch(`/api/reservations/${reservationId}/messages`, {
+          headers: {
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache'
+          }
+        });
         const data = await response.json();
         
         if (!response.ok) {
           console.error('Failed to fetch messages:', data);
-          return; // Return silently to keep existing messages
+          return;
         }
         
-        setMessages(data);
+        if (isMounted) {
+          setMessages(data);
+        }
       } catch (error) {
         console.error('Failed to fetch messages:', error);
-        // Don't throw error, just log it to keep existing messages
       }
     };
 
     fetchMessages();
     const interval = setInterval(fetchMessages, 5000);
-    return () => clearInterval(interval);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
   }, [isExpanded, reservationId]);
 
   const handleSendMessage = async (e: React.FormEvent) => {

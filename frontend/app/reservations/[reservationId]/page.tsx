@@ -87,16 +87,67 @@ export default function ReservationPage({ params }: PageProps) {
       return;
     }
 
-    fetchReservation();
-    fetchMessages();
-    fetchPaymentStatuses();
+    let isMounted = true;
+
+    const fetchData = async () => {
+      try {
+        const [reservationRes, messagesRes, paymentRes] = await Promise.all([
+          fetch(`/api/reservations/${reservationId}`, {
+            headers: {
+              'Cache-Control': 'no-cache',
+              'Pragma': 'no-cache'
+            }
+          }),
+          fetch(`/api/reservations/${reservationId}/messages`, {
+            headers: {
+              'Cache-Control': 'no-cache',
+              'Pragma': 'no-cache'
+            }
+          }),
+          fetch(`/api/reservations/${reservationId}/payment`, {
+            headers: {
+              'Cache-Control': 'no-cache',
+              'Pragma': 'no-cache'
+            }
+          })
+        ]);
+
+        if (isMounted) {
+          if (reservationRes.ok) {
+            const reservationData = await reservationRes.json();
+            setReservation(reservationData);
+          }
+
+          if (messagesRes.ok) {
+            const messagesData = await messagesRes.json();
+            setMessages(messagesData);
+          }
+
+          if (paymentRes.ok) {
+            const paymentData = await paymentRes.json();
+            const statusMap = paymentData.reduce((acc: Record<string, boolean>, status: any) => {
+              if (status.user && status.user.email) {
+                acc[status.user.email] = status.hasPaid;
+              }
+              return acc;
+            }, {});
+            setPaymentStatuses(statusMap);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        toast.error('Failed to load reservation data');
+      }
+    };
+
+    fetchData();
 
     // Set up polling for new messages and payment statuses
-    const interval = setInterval(() => {
-      fetchMessages();
-      fetchPaymentStatuses();
-    }, 5000);
-    return () => clearInterval(interval);
+    const interval = setInterval(fetchData, 5000);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
   }, [session, status, router, reservationId]);
 
   useEffect(() => {
