@@ -8,7 +8,7 @@ interface ReservationWithParticipants extends Reservation {
   participants: (ParticipantStatus & {
     user: Pick<User, 'name' | 'email' | 'image'>;
   })[];
-  ownerEmail: string;
+  owner: Pick<User, 'name' | 'email' | 'image'>;
 }
 
 interface Court {
@@ -48,9 +48,18 @@ export async function GET() {
     // Get reservations where user is owner
     const ownedReservations = await prisma.reservation.findMany({
       where: {
-        ownerEmail: session.user.email,
+        owner: {
+          email: session.user.email
+        }
       },
       include: {
+        owner: {
+          select: {
+            name: true,
+            email: true,
+            image: true,
+          },
+        },
         participants: {
           include: {
             user: {
@@ -80,6 +89,13 @@ export async function GET() {
         },
       },
       include: {
+        owner: {
+          select: {
+            name: true,
+            email: true,
+            image: true,
+          },
+        },
         participants: {
           include: {
             user: {
@@ -104,7 +120,7 @@ export async function GET() {
         isOwner: true,
       })),
       ...participantReservations
-        .filter((r: ReservationWithParticipants) => r.ownerEmail !== session.user.email)
+        .filter((r: ReservationWithParticipants) => r.owner.email !== session.user.email)
         .map((r: ReservationWithParticipants) => ({
           ...r,
           isOwner: false,
