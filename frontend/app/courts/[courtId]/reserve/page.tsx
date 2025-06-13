@@ -63,6 +63,7 @@ export default function ReservePage() {
   const [requirePayment, setRequirePayment] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState('');
   const [paymentDescription, setPaymentDescription] = useState('');
+  const [password, setPassword] = useState('');
 
   useEffect(() => {
     if (!session && status !== 'loading') {
@@ -294,15 +295,66 @@ export default function ReservePage() {
           </div>
 
           <div>
+            <h2 className="text-xl font-semibold mb-4">Add Participants</h2>
+            <div className="space-y-4">
+              <UserSearch
+                onSelect={handleAddParticipant}
+                placeholder="Search for participants by name or email..."
+                className="mb-4"
+              />
+              {participants.length > 0 && (
+                <div className="space-y-2">
+                  <h3 className="font-medium text-gray-700">Added Participants:</h3>
+                  <div className="space-y-2">
+                    {participants.map((participant) => (
+                      <div
+                        key={participant.email}
+                        className="flex items-center justify-between bg-white p-3 rounded-lg border"
+                      >
+                        <div className="flex items-center space-x-3">
+                          {participant.image && (
+                            <Image
+                              src={participant.image}
+                              alt={participant.name || participant.email}
+                              width={32}
+                              height={32}
+                              className="rounded-full"
+                            />
+                          )}
+                          <div>
+                            {participant.name && (
+                              <div className="font-medium">{participant.name}</div>
+                            )}
+                            <div className="text-sm text-gray-600">{participant.email}</div>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => handleRemoveParticipant(participant.email)}
+                          className="text-red-600 hover:text-red-800"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div>
             <h2 className="text-xl font-semibold mb-4">Select Date</h2>
-            <DatePicker
-              selected={selectedDate}
-              onChange={(date) => setSelectedDate(date)}
-              minDate={new Date()}
-              className="w-full p-2 border rounded"
-              placeholderText="Select a date"
-              required
-            />
+            <select
+              value={selectedDate ? format(selectedDate, 'yyyy-MM-dd') : ''}
+              onChange={(e) => handleDateChange(e.target.value)}
+              className="w-full p-3 border rounded-lg"
+            >
+              {availableDates.map((date) => (
+                <option key={date.toISOString()} value={format(date, 'yyyy-MM-dd')}>
+                  {format(date, 'EEEE, MMMM d')}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div>
@@ -333,10 +385,6 @@ export default function ReservePage() {
 
           <div>
             <h2 className="text-xl font-semibold mb-4">Pick Your Time Slots</h2>
-            <p className="text-sm text-gray-600 mb-4">
-              Available time slots are shown in Pacific Time (PT). You can reserve up to 3 hours.
-              Operating hours: 8 AM - 6 PM daily.
-            </p>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
               {timeSlots.map((slot) => {
                 const isSelected = selectedTimeSlots.some(
@@ -403,55 +451,6 @@ export default function ReservePage() {
               </p>
             </div>
           )}
-
-          <div>
-            <h2 className="text-xl font-semibold mb-4">Add Participants</h2>
-            <div className="space-y-4">
-              <UserSearch
-                onSelect={handleAddParticipant}
-                placeholder="Search for participants by name or email..."
-                className="mb-4"
-              />
-              
-              {participants.length > 0 && (
-                <div className="space-y-2">
-                  <h3 className="font-medium text-gray-700">Added Participants:</h3>
-                  <div className="space-y-2">
-                    {participants.map((participant) => (
-                      <div
-                        key={participant.email}
-                        className="flex items-center justify-between bg-white p-3 rounded-lg border"
-                      >
-                        <div className="flex items-center space-x-3">
-                          {participant.image && (
-                            <Image
-                              src={participant.image}
-                              alt={participant.name || participant.email}
-                              width={32}
-                              height={32}
-                              className="rounded-full"
-                            />
-                          )}
-                          <div>
-                            {participant.name && (
-                              <div className="font-medium">{participant.name}</div>
-                            )}
-                            <div className="text-sm text-gray-600">{participant.email}</div>
-                          </div>
-                        </div>
-                        <button
-                          onClick={() => handleRemoveParticipant(participant.email)}
-                          className="text-red-600 hover:text-red-800"
-                        >
-                          Remove
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
 
           <div>
             <h2 className="text-xl font-semibold mb-4">Reservation Notes:</h2>
@@ -525,6 +524,28 @@ export default function ReservePage() {
                 />
               </div>
             )}
+          </div>
+
+          <div>
+            <h2 className="text-xl font-semibold mb-4">Payment Description</h2>
+            <input
+              type="text"
+              value={paymentDescription}
+              onChange={(e) => setPaymentDescription(e.target.value)}
+              placeholder="Example: Venmo $6.25 per person @nick"
+              className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-500"
+            />
+          </div>
+
+          <div>
+            <h2 className="text-xl font-semibold mb-4">Event Password</h2>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Enter a password for the event"
+              className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
           </div>
 
           <button
