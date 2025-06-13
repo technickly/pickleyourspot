@@ -12,6 +12,11 @@ interface TimeSlot {
   endTime: string;
 }
 
+interface Participant {
+  email: string;
+  name?: string;
+}
+
 export default function ReservePage() {
   const { courtId } = useParams();
   const router = useRouter();
@@ -20,6 +25,10 @@ export default function ReservePage() {
   const [selectedTimeSlots, setSelectedTimeSlots] = useState<TimeSlot[]>([]);
   const [name, setName] = useState('');
   const [notes, setNotes] = useState('');
+  const [password, setPassword] = useState('');
+  const [requirePassword, setRequirePassword] = useState(false);
+  const [participants, setParticipants] = useState<Participant[]>([]);
+  const [newParticipantEmail, setNewParticipantEmail] = useState('');
 
   const timeSlots: TimeSlot[] = [
     { startTime: '06:00', endTime: '07:00' },
@@ -51,6 +60,25 @@ export default function ReservePage() {
     });
   };
 
+  const handleAddParticipant = () => {
+    if (!newParticipantEmail) {
+      toast.error('Please enter an email address');
+      return;
+    }
+
+    if (participants.some(p => p.email === newParticipantEmail)) {
+      toast.error('This participant has already been added');
+      return;
+    }
+
+    setParticipants([...participants, { email: newParticipantEmail }]);
+    setNewParticipantEmail('');
+  };
+
+  const handleRemoveParticipant = (email: string) => {
+    setParticipants(participants.filter(p => p.email !== email));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -71,6 +99,8 @@ export default function ReservePage() {
           timeSlots: selectedTimeSlots,
           name,
           notes,
+          password: requirePassword ? password : null,
+          participants,
           userId: session?.user?.id,
         }),
       });
@@ -156,6 +186,85 @@ export default function ReservePage() {
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
               placeholder="Add any notes about the event"
             ></textarea>
+          </div>
+
+          <div className="space-y-4">
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                id="requirePassword"
+                checked={requirePassword}
+                onChange={(e) => setRequirePassword(e.target.checked)}
+                className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
+              />
+              <label htmlFor="requirePassword" className="ml-2 block text-sm text-gray-700">
+                Require password to join
+              </label>
+            </div>
+
+            {requirePassword && (
+              <div>
+                <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                  Password
+                </label>
+                <input
+                  type="password"
+                  id="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
+                  placeholder="Enter password for joining"
+                  required={requirePassword}
+                />
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Add Participants
+              </label>
+              <div className="flex gap-2">
+                <input
+                  type="email"
+                  value={newParticipantEmail}
+                  onChange={(e) => setNewParticipantEmail(e.target.value)}
+                  className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
+                  placeholder="Enter participant email"
+                />
+                <button
+                  type="button"
+                  onClick={handleAddParticipant}
+                  className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+                >
+                  Add
+                </button>
+              </div>
+            </div>
+
+            {participants.length > 0 && (
+              <div className="space-y-2">
+                <h3 className="text-sm font-medium text-gray-700">Added Participants</h3>
+                <div className="space-y-2">
+                  {participants.map((participant) => (
+                    <div
+                      key={participant.email}
+                      className="flex items-center justify-between p-2 bg-gray-50 rounded-md"
+                    >
+                      <span className="text-sm text-gray-700">{participant.email}</span>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveParticipant(participant.email)}
+                        className="text-red-600 hover:text-red-800"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           <button
