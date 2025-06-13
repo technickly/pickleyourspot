@@ -210,9 +210,9 @@ export default function MyReservationsPage() {
           </div>
         ) : (
           <div className="space-y-6">
-            {filteredReservations.map((reservation) => (
+            {filteredReservations.map((reservation, index) => (
               <div
-                key={reservation.id}
+                key={`${reservation.id}-${index}`}
                 className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow"
               >
                 <div className="flex justify-between items-start mb-4">
