@@ -423,7 +423,7 @@ export default function ReservePage() {
                     `}
                   >
                     <div className="font-medium">
-                      {formatInTimeZone(startTime, timeZone, 'h:mm a')}
+                      {startTime instanceof Date && !isNaN(startTime.getTime()) ? formatInTimeZone(startTime, timeZone, 'h:mm a') : 'Invalid Time'}
                     </div>
                     <div className="text-xs mt-1">
                       {slot.isAvailable
