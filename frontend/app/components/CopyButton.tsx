@@ -7,9 +7,10 @@ import { toast } from 'react-hot-toast';
 interface CopyButtonProps {
   text: string;
   label?: string;
+  className?: string;
 }
 
-export default function CopyButton({ text, label = 'Copy Link' }: CopyButtonProps) {
+export default function CopyButton({ text, label = 'Copy Link', className = '' }: CopyButtonProps) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
@@ -55,7 +56,7 @@ export default function CopyButton({ text, label = 'Copy Link' }: CopyButtonProp
   return (
     <button
       onClick={handleCopy}
-      className="inline-flex items-center gap-2 px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded transition-colors"
+      className={`inline-flex items-center gap-2 px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded transition-colors ${className}`}
     >
       {copied ? <FaCheck className="text-green-600" /> : <FaCopy className="text-gray-600" />}
       <span className="text-gray-700">{label}</span>

@@ -226,40 +226,45 @@ export default function MyReservationsPage() {
             </Link>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-6">
             {currentReservations.map((reservation, index) => (
               <div
                 key={`${reservation.id}-${index}`}
-                className="bg-white rounded-lg shadow-sm hover:shadow-md transition-all cursor-pointer group"
-                onClick={() => router.push(`/reservations/${reservation.id}`)}
+                className="bg-white rounded-lg shadow-sm hover:shadow-md transition-all"
               >
                 <div className="p-6">
                   <div className="flex justify-between items-start mb-4">
-                    <div>
-                      <div className="flex items-center gap-2 mb-2">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2">
                         <h2 className="text-xl font-semibold text-gray-900">{reservation.name}</h2>
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${
                           isPastEvent(reservation.endTime)
                             ? 'bg-gray-100 text-gray-600'
                             : 'bg-green-100 text-green-700'
                         }`}>
                           {isPastEvent(reservation.endTime) ? 'Past' : 'Active'}
                         </span>
+                        {reservation.isOwner && (
+                          <span className="px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-700">
+                            Owner
+                          </span>
+                        )}
                       </div>
                       <p className="text-gray-600">{reservation.courtName}</p>
                     </div>
                     <div className="flex items-center gap-2">
                       <CopyButton
                         text={`${window.location.origin}/r/${reservation.shortUrl}`}
-                        label="Share Event"
+                        label="Share"
+                        className="text-gray-600 hover:text-gray-800"
                       />
                       {reservation.isOwner && !isPastEvent(reservation.endTime) && (
                         <Link
                           href={`/reservations/${reservation.id}/edit`}
-                          className="button-secondary"
+                          className="text-blue-600 hover:text-blue-700"
                           onClick={(e) => e.stopPropagation()}
                         >
-                          Modify
+                          Edit
                         </Link>
                       )}
                       {reservation.isOwner && (
@@ -277,73 +282,148 @@ export default function MyReservationsPage() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                    <div>
-                      <p className="text-sm text-gray-500 mb-1">Date & Time</p>
-                      <p className="font-medium text-gray-900">
-                        {formatInTimeZone(
-                          new Date(reservation.startTime),
-                          timeZone,
-                          'EEEE, MMMM d, yyyy'
-                        )}
-                      </p>
-                      <p className="font-medium text-gray-900">
-                        {formatInTimeZone(
-                          new Date(reservation.startTime),
-                          timeZone,
-                          'h:mm a'
-                        )}{' '}
-                        -{' '}
-                        {formatInTimeZone(
-                          new Date(reservation.endTime),
-                          timeZone,
-                          'h:mm a'
-                        )}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500 mb-1">Participants</p>
-                      <div className="space-y-2">
-                        {reservation.participants.map((participant, idx) => (
-                          <div key={idx} className="flex items-center gap-2">
-                            <span className="text-gray-900">{participant.name || participant.email}</span>
-                            <div className="flex gap-1">
-                              <span className={`px-2 py-0.5 rounded text-xs ${
-                                participant.isGoing
-                                  ? 'bg-green-100 text-green-700'
-                                  : 'bg-gray-100 text-gray-600'
-                              }`}>
-                                {participant.isGoing ? 'Going' : 'Not Going'}
-                              </span>
-                              {reservation.paymentRequired && (
-                                <span className={`px-2 py-0.5 rounded text-xs ${
-                                  participant.hasPaid
-                                    ? 'bg-green-100 text-green-700'
-                                    : 'bg-red-100 text-red-700'
-                                }`}>
-                                  {participant.hasPaid ? 'Paid' : 'Unpaid'}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        ))}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
+                    <div className="space-y-4">
+                      <div>
+                        <p className="text-sm font-medium text-gray-500 mb-1">Date & Time</p>
+                        <p className="text-gray-900">
+                          {formatInTimeZone(
+                            new Date(reservation.startTime),
+                            timeZone,
+                            'EEEE, MMMM d, yyyy'
+                          )}
+                        </p>
+                        <p className="text-gray-900">
+                          {formatInTimeZone(
+                            new Date(reservation.startTime),
+                            timeZone,
+                            'h:mm a'
+                          )}{' '}
+                          -{' '}
+                          {formatInTimeZone(
+                            new Date(reservation.endTime),
+                            timeZone,
+                            'h:mm a'
+                          )}{' '}
+                          PT
+                        </p>
                       </div>
+
+                      {reservation.description && (
+                        <div>
+                          <p className="text-sm font-medium text-gray-500 mb-1">Description</p>
+                          <p className="text-gray-700">{reservation.description}</p>
+                        </div>
+                      )}
+
+                      {reservation.paymentRequired && reservation.paymentInfo && (
+                        <div>
+                          <p className="text-sm font-medium text-gray-500 mb-1">Payment Information</p>
+                          <p className="text-gray-700">{reservation.paymentInfo}</p>
+                        </div>
+                      )}
+                    </div>
+
+                    <div>
+                      <p className="text-sm font-medium text-gray-500 mb-2">Participants</p>
+                      <div className="flex gap-4 mb-3">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-gray-600">Going:</span>
+                          <span className="px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-700">
+                            {reservation.participants.filter(p => p.isGoing).length}
+                          </span>
+                          <span className="px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-600">
+                            {reservation.participants.filter(p => !p.isGoing).length}
+                          </span>
+                        </div>
+                        {reservation.paymentRequired && (
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm text-gray-600">Paid:</span>
+                            <span className="px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-700">
+                              {reservation.participants.filter(p => p.hasPaid).length}
+                            </span>
+                            <span className="px-2 py-1 rounded text-xs font-medium bg-red-100 text-red-700">
+                              {reservation.participants.filter(p => !p.hasPaid).length}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                      <details className="group">
+                        <summary className="flex items-center justify-between cursor-pointer text-sm text-gray-600 hover:text-gray-900">
+                          <span>View Participants</span>
+                          <svg
+                            className="w-4 h-4 transform group-open:rotate-180 transition-transform"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </summary>
+                        <div className="mt-2 space-y-4">
+                          {reservation.paymentRequired && (
+                            <>
+                              <div>
+                                <h4 className="text-sm font-medium text-green-700 mb-2">Paid Participants</h4>
+                                <div className="space-y-2">
+                                  {reservation.participants
+                                    .filter(p => p.hasPaid)
+                                    .map((participant, idx) => (
+                                      <div key={idx} className="flex items-center justify-between bg-green-50 p-2 rounded">
+                                        <span className="text-gray-900">{participant.name || participant.email}</span>
+                                        <span className="px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-700">
+                                          {participant.isGoing ? 'Going' : 'Not Going'}
+                                        </span>
+                                      </div>
+                                    ))}
+                                </div>
+                              </div>
+                              <div>
+                                <h4 className="text-sm font-medium text-red-700 mb-2">Unpaid Participants</h4>
+                                <div className="space-y-2">
+                                  {reservation.participants
+                                    .filter(p => !p.hasPaid)
+                                    .map((participant, idx) => (
+                                      <div key={idx} className="flex items-center justify-between bg-red-50 p-2 rounded">
+                                        <span className="text-gray-900">{participant.name || participant.email}</span>
+                                        <span className="px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-600">
+                                          {participant.isGoing ? 'Going' : 'Not Going'}
+                                        </span>
+                                      </div>
+                                    ))}
+                                </div>
+                              </div>
+                            </>
+                          )}
+                          {!reservation.paymentRequired && (
+                            <div className="space-y-2">
+                              {reservation.participants.map((participant, idx) => (
+                                <div key={idx} className="flex items-center justify-between bg-gray-50 p-2 rounded">
+                                  <span className="text-gray-900">{participant.name || participant.email}</span>
+                                  <span className={`px-2 py-1 rounded text-xs font-medium ${
+                                    participant.isGoing
+                                      ? 'bg-green-100 text-green-700'
+                                      : 'bg-gray-100 text-gray-600'
+                                  }`}>
+                                    {participant.isGoing ? 'Going' : 'Not Going'}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </details>
                     </div>
                   </div>
 
-                  {reservation.description && (
-                    <div className="mb-4">
-                      <p className="text-sm text-gray-500 mb-1">Description</p>
-                      <p className="text-gray-700">{reservation.description}</p>
-                    </div>
-                  )}
-
-                  {reservation.paymentRequired && reservation.paymentInfo && (
-                    <div className="mb-4">
-                      <p className="text-sm text-gray-500 mb-1">Payment Information</p>
-                      <p className="text-gray-700">{reservation.paymentInfo}</p>
-                    </div>
-                  )}
+                  <div className="flex justify-end">
+                    <button
+                      onClick={() => router.push(`/reservations/${reservation.id}`)}
+                      className="text-blue-600 hover:text-blue-700 font-medium"
+                    >
+                      View Details →
+                    </button>
+                  </div>
 
                   {showDeleteConfirm === reservation.id && (
                     <div 
