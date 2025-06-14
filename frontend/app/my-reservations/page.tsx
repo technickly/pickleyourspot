@@ -326,31 +326,47 @@ export default function MyReservationsPage() {
 
                     <div>
                       <p className="text-sm font-medium text-gray-500 mb-2">Participants</p>
-                      <div className="flex gap-4 mb-3">
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm text-gray-600">Going:</span>
-                          <span className="px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-700">
-                            {reservation.participants.filter(p => p.isGoing).length}
-                          </span>
-                          <span className="px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-600">
-                            {reservation.participants.filter(p => !p.isGoing).length}
-                          </span>
+                      <div className="flex flex-col gap-3 mb-3">
+                        <div>
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-sm text-gray-600">Going:</span>
+                            <span className="px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-700">
+                              {reservation.participants.filter(p => p.isGoing).length}
+                            </span>
+                            <span className="px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-600">
+                              {reservation.participants.filter(p => !p.isGoing).length}
+                            </span>
+                          </div>
+                          <div className="text-sm text-gray-600 ml-2">
+                            {reservation.participants
+                              .filter(p => p.isGoing)
+                              .map(p => p.name || p.email)
+                              .join(', ')}
+                          </div>
                         </div>
                         {reservation.paymentRequired && (
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm text-gray-600">Paid:</span>
-                            <span className="px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-700">
-                              {reservation.participants.filter(p => p.hasPaid).length}
-                            </span>
-                            <span className="px-2 py-1 rounded text-xs font-medium bg-red-100 text-red-700">
-                              {reservation.participants.filter(p => !p.hasPaid).length}
-                            </span>
+                          <div>
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="text-sm text-gray-600">Paid:</span>
+                              <span className="px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-700">
+                                {reservation.participants.filter(p => p.hasPaid).length}
+                              </span>
+                              <span className="px-2 py-1 rounded text-xs font-medium bg-red-100 text-red-700">
+                                {reservation.participants.filter(p => !p.hasPaid).length}
+                              </span>
+                            </div>
+                            <div className="text-sm text-gray-600 ml-2">
+                              {reservation.participants
+                                .filter(p => p.hasPaid)
+                                .map(p => p.name || p.email)
+                                .join(', ')}
+                            </div>
                           </div>
                         )}
                       </div>
                       <details className="group">
                         <summary className="flex items-center justify-between cursor-pointer text-sm text-gray-600 hover:text-gray-900">
-                          <span>View Participants</span>
+                          <span>View All Participants</span>
                           <svg
                             className="w-4 h-4 transform group-open:rotate-180 transition-transform"
                             fill="none"
@@ -370,8 +386,8 @@ export default function MyReservationsPage() {
                                     .filter(p => p.hasPaid)
                                     .map((participant, idx) => (
                                       <div key={idx} className="flex items-center justify-between bg-green-50 p-2 rounded">
-                                        <span className="text-gray-900">{participant.name || participant.email}</span>
-                                        <span className="px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-700">
+                                        <span className="text-gray-900 flex-1">{participant.name || participant.email}</span>
+                                        <span className="px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-700 ml-2">
                                           {participant.isGoing ? 'Going' : 'Not Going'}
                                         </span>
                                       </div>
@@ -385,8 +401,8 @@ export default function MyReservationsPage() {
                                     .filter(p => !p.hasPaid)
                                     .map((participant, idx) => (
                                       <div key={idx} className="flex items-center justify-between bg-red-50 p-2 rounded">
-                                        <span className="text-gray-900">{participant.name || participant.email}</span>
-                                        <span className="px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-600">
+                                        <span className="text-gray-900 flex-1">{participant.name || participant.email}</span>
+                                        <span className="px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-600 ml-2">
                                           {participant.isGoing ? 'Going' : 'Not Going'}
                                         </span>
                                       </div>
