@@ -326,113 +326,80 @@ export default function MyReservationsPage() {
 
                     <div>
                       <p className="text-sm font-medium text-gray-500 mb-2">Participants</p>
-                      <div className="flex flex-col gap-3 mb-3">
+                      <div className="space-y-4">
                         <div>
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="text-sm text-gray-600">Going:</span>
-                            <span className="px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-700">
-                              {reservation.participants.filter(p => p.isGoing).length}
-                            </span>
-                            <span className="px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-600">
-                              {reservation.participants.filter(p => !p.isGoing).length}
-                            </span>
-                          </div>
-                          <div className="text-sm text-gray-600 ml-2">
+                          <h4 className="text-sm font-medium text-green-700 mb-2">Going ({reservation.participants.filter(p => p.isGoing).length})</h4>
+                          <div className="space-y-2">
                             {reservation.participants
                               .filter(p => p.isGoing)
-                              .map(p => p.name || p.email)
-                              .join(', ')}
-                          </div>
-                        </div>
-                        {reservation.paymentRequired && (
-                          <div>
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="text-sm text-gray-600">Paid:</span>
-                              <span className="px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-700">
-                                {reservation.participants.filter(p => p.hasPaid).length}
-                              </span>
-                              <span className="px-2 py-1 rounded text-xs font-medium bg-red-100 text-red-700">
-                                {reservation.participants.filter(p => !p.hasPaid).length}
-                              </span>
-                            </div>
-                            <div className="text-sm text-gray-600 ml-2">
-                              {reservation.participants
-                                .filter(p => p.hasPaid)
-                                .map(p => p.name || p.email)
-                                .join(', ')}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                      <details className="group">
-                        <summary className="flex items-center justify-between cursor-pointer text-sm text-gray-600 hover:text-gray-900">
-                          <span>View All Participants</span>
-                          <svg
-                            className="w-4 h-4 transform group-open:rotate-180 transition-transform"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                          </svg>
-                        </summary>
-                        <div className="mt-2 space-y-4">
-                          {reservation.paymentRequired && (
-                            <>
-                              <div>
-                                <h4 className="text-sm font-medium text-green-700 mb-2">Paid Participants</h4>
-                                <div className="space-y-2">
-                                  {reservation.participants
-                                    .filter(p => p.hasPaid)
-                                    .map((participant, idx) => (
-                                      <div key={idx} className="flex items-center justify-between bg-green-50 p-2 rounded">
-                                        <span className="text-gray-900 flex-1">{participant.name || participant.email}</span>
-                                        <span className="px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-700 ml-2">
-                                          {participant.isGoing ? 'Going' : 'Not Going'}
-                                        </span>
-                                      </div>
-                                    ))}
-                                </div>
-                              </div>
-                              <div>
-                                <h4 className="text-sm font-medium text-red-700 mb-2">Unpaid Participants</h4>
-                                <div className="space-y-2">
-                                  {reservation.participants
-                                    .filter(p => !p.hasPaid)
-                                    .map((participant, idx) => (
-                                      <div key={idx} className="flex items-center justify-between bg-red-50 p-2 rounded">
-                                        <span className="text-gray-900 flex-1">{participant.name || participant.email}</span>
-                                        <span className="px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-600 ml-2">
-                                          {participant.isGoing ? 'Going' : 'Not Going'}
-                                        </span>
-                                      </div>
-                                    ))}
-                                </div>
-                              </div>
-                            </>
-                          )}
-                          {!reservation.paymentRequired && (
-                            <div className="space-y-2">
-                              {reservation.participants.map((participant, idx) => (
-                                <div key={idx} className="flex items-center justify-between bg-gray-50 p-2 rounded">
+                              .map((participant, idx) => (
+                                <div key={idx} className="flex items-center justify-between bg-green-50 p-2 rounded">
                                   <span className="text-gray-900">{participant.name || participant.email}</span>
-                                  <span className={`px-2 py-1 rounded text-xs font-medium ${
-                                    participant.isGoing
-                                      ? 'bg-green-100 text-green-700'
-                                      : 'bg-gray-100 text-gray-600'
-                                  }`}>
-                                    {participant.isGoing ? 'Going' : 'Not Going'}
-                                  </span>
+                                  {reservation.paymentRequired && (
+                                    <span className={`px-2 py-1 rounded text-xs font-medium ${
+                                      participant.hasPaid
+                                        ? 'bg-green-100 text-green-700'
+                                        : 'bg-red-100 text-red-700'
+                                    }`}>
+                                      {participant.hasPaid ? 'Paid' : 'Not Paid'}
+                                    </span>
+                                  )}
                                 </div>
                               ))}
-                            </div>
-                          )}
+                          </div>
                         </div>
-                      </details>
+                        <div>
+                          <h4 className="text-sm font-medium text-gray-600 mb-2">Not Going ({reservation.participants.filter(p => !p.isGoing).length})</h4>
+                          <div className="space-y-2">
+                            {reservation.participants
+                              .filter(p => !p.isGoing)
+                              .map((participant, idx) => (
+                                <div key={idx} className="flex items-center justify-between bg-gray-50 p-2 rounded">
+                                  <span className="text-gray-900">{participant.name || participant.email}</span>
+                                  {reservation.paymentRequired && (
+                                    <span className={`px-2 py-1 rounded text-xs font-medium ${
+                                      participant.hasPaid
+                                        ? 'bg-green-100 text-green-700'
+                                        : 'bg-red-100 text-red-700'
+                                    }`}>
+                                      {participant.hasPaid ? 'Paid' : 'Not Paid'}
+                                    </span>
+                                  )}
+                                </div>
+                              ))}
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
 
-                  <div className="flex justify-end">
+                  <div className="flex justify-end gap-4 mt-4">
+                    <CopyButton
+                      text={`${window.location.origin}/r/${reservation.shortUrl}`}
+                      label="Share"
+                      className="text-gray-600 hover:text-gray-800"
+                    />
+                    {reservation.isOwner && !isPastEvent(reservation.endTime) && (
+                      <Link
+                        href={`/reservations/${reservation.id}/edit`}
+                        className="text-blue-600 hover:text-blue-700"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        Edit
+                      </Link>
+                    )}
+                    {reservation.isOwner && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowDeleteConfirm(reservation.id);
+                        }}
+                        className="text-red-600 hover:text-red-700"
+                        disabled={isDeleting}
+                      >
+                        Delete
+                      </button>
+                    )}
                     <button
                       onClick={() => router.push(`/reservations/${reservation.id}`)}
                       className="text-blue-600 hover:text-blue-700 font-medium"
