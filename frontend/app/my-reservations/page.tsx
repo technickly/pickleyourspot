@@ -7,13 +7,18 @@ import { toast } from 'react-hot-toast';
 import { formatInTimeZone } from 'date-fns-tz';
 import CopyButton from '@/app/components/CopyButton';
 import { useRouter } from 'next/navigation';
+import { FaShare, FaEdit, FaTrash, FaEye, FaCheck, FaTimes } from 'react-icons/fa';
 
 interface Participant {
-  name: string | null;
+  id: string;
   email: string;
-  hasPaid: boolean;
   isGoing: boolean;
-  userId: string;
+  hasPaid: boolean;
+  user?: {
+    name: string;
+    email: string;
+    image: string;
+  };
 }
 
 interface Reservation {
@@ -254,9 +259,14 @@ export default function MyReservationsPage() {
                     </div>
                     <div className="flex items-center gap-2">
                       <CopyButton
-                        text={`${window.location.origin}/r/${reservation.shortUrl}`}
-                        label="Share"
-                        className="text-gray-600 hover:text-gray-800"
+                        text={`${window.location.origin}/reservations/${reservation.id}`}
+                        label={
+                          <span className="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900">
+                            <FaShare className="w-4 h-4" />
+                            Share
+                          </span>
+                        }
+                        className="hover:bg-gray-100 p-2 rounded"
                       />
                       {reservation.isOwner && !isPastEvent(reservation.endTime) && (
                         <Link
@@ -332,18 +342,28 @@ export default function MyReservationsPage() {
                           <div className="space-y-2">
                             {reservation.participants
                               .filter(p => p.isGoing)
-                              .map((participant, idx) => (
-                                <div key={idx} className="flex items-center justify-between bg-green-50 p-2 rounded">
-                                  <span className="text-gray-900">{participant.name || participant.email}</span>
-                                  {reservation.paymentRequired && (
-                                    <span className={`px-2 py-1 rounded text-xs font-medium ${
-                                      participant.hasPaid
-                                        ? 'bg-green-100 text-green-700'
-                                        : 'bg-red-100 text-red-700'
-                                    }`}>
-                                      {participant.hasPaid ? 'Paid' : 'Not Paid'}
-                                    </span>
-                                  )}
+                              .map((participant) => (
+                                <div key={participant.id} className="flex items-center justify-between">
+                                  <span className="flex-1 text-sm">
+                                    {participant.user?.name || participant.user?.email || participant.email}
+                                  </span>
+                                  <span className={`ml-2 px-2 py-0.5 text-xs rounded-full ${
+                                    participant.hasPaid 
+                                      ? 'bg-green-100 text-green-800' 
+                                      : 'bg-yellow-100 text-yellow-800'
+                                  }`}>
+                                    {participant.hasPaid ? (
+                                      <span className="flex items-center gap-1">
+                                        <FaCheck className="w-3 h-3" />
+                                        Paid
+                                      </span>
+                                    ) : (
+                                      <span className="flex items-center gap-1">
+                                        <FaTimes className="w-3 h-3" />
+                                        Unpaid
+                                      </span>
+                                    )}
+                                  </span>
                                 </div>
                               ))}
                           </div>
@@ -353,18 +373,28 @@ export default function MyReservationsPage() {
                           <div className="space-y-2">
                             {reservation.participants
                               .filter(p => !p.isGoing)
-                              .map((participant, idx) => (
-                                <div key={idx} className="flex items-center justify-between bg-gray-50 p-2 rounded">
-                                  <span className="text-gray-900">{participant.name || participant.email}</span>
-                                  {reservation.paymentRequired && (
-                                    <span className={`px-2 py-1 rounded text-xs font-medium ${
-                                      participant.hasPaid
-                                        ? 'bg-green-100 text-green-700'
-                                        : 'bg-red-100 text-red-700'
-                                    }`}>
-                                      {participant.hasPaid ? 'Paid' : 'Not Paid'}
-                                    </span>
-                                  )}
+                              .map((participant) => (
+                                <div key={participant.id} className="flex items-center justify-between">
+                                  <span className="flex-1 text-sm">
+                                    {participant.user?.name || participant.user?.email || participant.email}
+                                  </span>
+                                  <span className={`ml-2 px-2 py-0.5 text-xs rounded-full ${
+                                    participant.hasPaid 
+                                      ? 'bg-green-100 text-green-800' 
+                                      : 'bg-yellow-100 text-yellow-800'
+                                  }`}>
+                                    {participant.hasPaid ? (
+                                      <span className="flex items-center gap-1">
+                                        <FaCheck className="w-3 h-3" />
+                                        Paid
+                                      </span>
+                                    ) : (
+                                      <span className="flex items-center gap-1">
+                                        <FaTimes className="w-3 h-3" />
+                                        Unpaid
+                                      </span>
+                                    )}
+                                  </span>
                                 </div>
                               ))}
                           </div>
@@ -375,16 +405,22 @@ export default function MyReservationsPage() {
 
                   <div className="flex justify-end gap-4 mt-4">
                     <CopyButton
-                      text={`${window.location.origin}/r/${reservation.shortUrl}`}
-                      label="Share"
-                      className="text-gray-600 hover:text-gray-800"
+                      text={`${window.location.origin}/reservations/${reservation.id}`}
+                      label={
+                        <span className="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900">
+                          <FaShare className="w-4 h-4" />
+                          Share
+                        </span>
+                      }
+                      className="hover:bg-gray-100 p-2 rounded"
                     />
                     {reservation.isOwner && !isPastEvent(reservation.endTime) && (
                       <Link
                         href={`/reservations/${reservation.id}/edit`}
-                        className="text-blue-600 hover:text-blue-700"
+                        className="flex items-center gap-1 text-blue-600 hover:text-blue-700"
                         onClick={(e) => e.stopPropagation()}
                       >
+                        <FaEdit className="w-4 h-4" />
                         Edit
                       </Link>
                     )}
@@ -394,17 +430,19 @@ export default function MyReservationsPage() {
                           e.stopPropagation();
                           setShowDeleteConfirm(reservation.id);
                         }}
-                        className="text-red-600 hover:text-red-700"
+                        className="flex items-center gap-1 text-red-600 hover:text-red-700"
                         disabled={isDeleting}
                       >
+                        <FaTrash className="w-4 h-4" />
                         Delete
                       </button>
                     )}
                     <button
                       onClick={() => router.push(`/reservations/${reservation.id}`)}
-                      className="text-blue-600 hover:text-blue-700 font-medium"
+                      className="flex items-center gap-1 text-blue-600 hover:text-blue-700 font-medium"
                     >
-                      View Details →
+                      <FaEye className="w-4 h-4" />
+                      View Details
                     </button>
                   </div>
 
