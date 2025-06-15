@@ -108,7 +108,24 @@ export default function CourtsPage() {
   return (
     <main className="container mx-auto px-4 py-8">
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-3xl font-bold mb-8">Pickleball Courts</h1>
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold">Pickleball Courts</h1>
+          <div className="flex items-center space-x-4">
+            <label htmlFor="location" className="text-gray-700 font-medium">Filter by Location:</label>
+            <select
+              id="location"
+              value={selectedLocation}
+              onChange={(e) => setSelectedLocation(e.target.value)}
+              className="border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              {locations.map((location) => (
+                <option key={location} value={location}>
+                  {location}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
         
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -122,31 +139,30 @@ export default function CourtsPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {visibleCourts.map((court, index) => (
+            {filteredCourts.map((court, index) => (
               <div
                 key={court.id}
-                ref={index === visibleCourts.length - 1 ? lastCourtRef : null}
-                className="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
+                ref={index === filteredCourts.length - 1 ? lastCourtRef : null}
+                className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 cursor-pointer"
                 onClick={() => router.push(`/courts/${court.id}/reserve`)}
               >
                 <div className="relative h-48">
                   <Image
-                    src={court.imageUrl}
+                    src={court.imageUrl || '/images/default-court.jpg'}
                     alt={court.name}
                     fill
-                    style={{ objectFit: 'cover' }}
+                    className="object-cover"
                   />
                 </div>
-                <div className="p-4">
-                  <h2 className="text-xl font-semibold mb-2">{court.name}</h2>
-                  <p className="text-gray-600 text-sm mb-2">{court.location}</p>
-                  <p className="text-gray-700 line-clamp-3 mb-4">{court.description}</p>
+                <div className="p-4 flex flex-col h-[200px]">
+                  <h3 className="text-xl font-semibold mb-2">{court.name}</h3>
+                  <p className="text-gray-600 mb-4 flex-grow">{court.description}</p>
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
                       router.push(`/courts/${court.id}/reserve`);
                     }}
-                    className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
+                    className="w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 transition-colors duration-300"
                   >
                     Choose Court
                   </button>
