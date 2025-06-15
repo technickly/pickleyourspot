@@ -26,6 +26,7 @@ export async function POST(
     }
 
     const { reservationId } = await context.params;
+    const { password } = await request.json();
 
     // Find the user
     const user = await prisma.user.findUnique({
@@ -71,6 +72,23 @@ export async function POST(
         { error: 'Already a participant' },
         { status: 400 }
       );
+    }
+
+    // Verify password if required
+    if (reservation.passwordRequired) {
+      if (!password) {
+        return NextResponse.json(
+          { error: 'Password is required' },
+          { status: 400 }
+        );
+      }
+
+      if (password !== reservation.password) {
+        return NextResponse.json(
+          { error: 'Invalid password' },
+          { status: 401 }
+        );
+      }
     }
 
     // Add user as a participant

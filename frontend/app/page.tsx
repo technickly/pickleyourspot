@@ -19,7 +19,7 @@ export default function HomePage() {
           <div className="bg-yellow-100 border border-yellow-200 rounded-lg shadow-sm">
             <div className="py-2 px-4">
               <p className="text-yellow-800 text-center font-medium whitespace-nowrap">
-                Note: Book your court through the facility's website first, then use this app to organize your group!
+                Note: Book your court through the facility's website first, then organize your event and group here!
               </p>
             </div>
           </div>

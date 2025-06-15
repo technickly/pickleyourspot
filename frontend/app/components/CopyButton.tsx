@@ -27,10 +27,20 @@ export default function CopyButton({ text, label, className = '' }: CopyButtonPr
   return (
     <button
       onClick={handleCopy}
-      className={`flex items-center gap-1 ${className}`}
+      className={`flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-300 font-medium text-lg shadow-md hover:shadow-lg ${className}`}
       title="Copy to clipboard"
     >
-      {label}
+      {isCopied ? (
+        <>
+          <FaCheck className="text-xl" />
+          Copied!
+        </>
+      ) : (
+        <>
+          <FaCopy className="text-xl" />
+          {label}
+        </>
+      )}
     </button>
   );
 } 

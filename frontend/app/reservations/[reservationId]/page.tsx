@@ -13,6 +13,7 @@ import MessageSystem from '@/app/components/MessageSystem';
 import ParticipantList from '@/app/components/ParticipantList';
 import ReservationTitle from '@/app/components/ReservationTitle';
 import ReservationActions from '@/app/components/ReservationActions';
+import Link from 'next/link';
 
 interface User {
   name: string | null;
@@ -334,6 +335,7 @@ export default function ReservationPage({ params }: PageProps) {
                 endTime={reservation.endTime}
                 ownerName={reservation.owner.name}
                 ownerEmail={reservation.owner.email}
+                shortUrl={reservation.shortUrl}
               />
               <div className="flex flex-col items-end gap-2">
                 <span
@@ -344,6 +346,12 @@ export default function ReservationPage({ params }: PageProps) {
                   {isOwner ? 'Owner' : 'Participant'}
                 </span>
                 {isOwner && <ReservationActions reservationId={reservationId} isOwner={isOwner} />}
+                <Link
+                  href="/my-reservations"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  My Events
+                </Link>
               </div>
             </div>
           </header>

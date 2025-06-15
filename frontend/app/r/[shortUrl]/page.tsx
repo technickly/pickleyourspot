@@ -146,6 +146,10 @@ export default function SharedReservationPage({ params }: { params: Promise<{ sh
 
       if (!response.ok) {
         const data = await response.json();
+        if (data.error === 'Invalid password') {
+          setShowPasswordError(true);
+          return;
+        }
         throw new Error(data.error || 'Failed to join reservation');
       }
 
@@ -331,19 +335,61 @@ export default function SharedReservationPage({ params }: { params: Promise<{ sh
                       </label>
                     </div>
                   )}
-                  <button
-                    onClick={handleJoinReservation}
-                    className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors"
-                    disabled={isJoining}
-                  >
-                    {isJoining ? 'Joining...' : 'Join Event'}
-                  </button>
+                  <div className="mt-8">
+                    <button
+                      onClick={handleJoinReservation}
+                      className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                      Join Reservation
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
           </div>
         </div>
       </div>
+
+      {/* Password Dialog */}
+      {showPasswordDialog && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full">
+            <h2 className="text-xl font-bold mb-4">Enter Password</h2>
+            <p className="text-gray-600 mb-4">This reservation requires a password to join.</p>
+            <input
+              type="password"
+              value={eventPassword}
+              onChange={(e) => {
+                setEventPassword(e.target.value);
+                setShowPasswordError(false);
+              }}
+              className="w-full px-4 py-2 border rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Enter password"
+            />
+            {showPasswordError && (
+              <p className="text-red-500 mb-4">Invalid password. Please try again.</p>
+            )}
+            <div className="flex justify-end gap-4">
+              <button
+                onClick={() => {
+                  setShowPasswordDialog(false);
+                  setEventPassword('');
+                  setShowPasswordError(false);
+                }}
+                className="px-4 py-2 text-gray-600 hover:text-gray-800"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handlePasswordSubmit(eventPassword)}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                Join
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 } 
