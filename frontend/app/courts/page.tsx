@@ -16,6 +16,12 @@ interface Court {
   location: string;
 }
 
+// Add helper function to convert URLs to clickable links
+const convertUrlsToLinks = (text: string) => {
+  const urlRegex = /(https?:\/\/[^\s]+)/g;
+  return text.replace(urlRegex, url => `<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 underline">${url}</a>`);
+};
+
 export default function CourtsPage() {
   const router = useRouter();
   const { data: session, status } = useSession();
@@ -143,8 +149,7 @@ export default function CourtsPage() {
               <div
                 key={court.id}
                 ref={index === filteredCourts.length - 1 ? lastCourtRef : null}
-                className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 cursor-pointer"
-                onClick={() => router.push(`/courts/${court.id}/reserve`)}
+                className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300"
               >
                 <div className="relative h-48">
                   <Image
@@ -156,13 +161,13 @@ export default function CourtsPage() {
                 </div>
                 <div className="p-4 flex flex-col h-[200px]">
                   <h3 className="text-xl font-semibold mb-2">{court.name}</h3>
-                  <p className="text-gray-600 mb-4 flex-grow">{court.description}</p>
+                  <p 
+                    className="text-gray-600 mb-4 flex-grow"
+                    dangerouslySetInnerHTML={{ __html: convertUrlsToLinks(court.description) }}
+                  />
                   <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      router.push(`/courts/${court.id}/reserve`);
-                    }}
-                    className="w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 transition-colors duration-300"
+                    onClick={() => router.push(`/courts/${court.id}/reserve`)}
+                    className="w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 transition-colors duration-300 cursor-pointer"
                   >
                     Choose Court
                   </button>
