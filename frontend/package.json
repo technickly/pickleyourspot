@@ -16,12 +16,14 @@
   },
   "dependencies": {
     "@prisma/client": "^6.9.0",
+    "@types/cheerio": "^0.22.35",
     "@types/lodash": "^4.17.17",
     "@types/react": "^18.3.23",
     "@types/react-datepicker": "^6.2.0",
     "@types/react-dom": "^18.3.7",
     "autoprefixer": "^10.4.21",
-    "axios": "^1.6.2",
+    "axios": "^1.10.0",
+    "cheerio": "^1.1.0",
     "date-fns": "^4.1.0",
     "date-fns-tz": "^3.2.0",
     "lodash": "^4.17.21",
@@ -38,7 +40,7 @@
     "zod": "^3.25.56"
   },
   "devDependencies": {
-    "@types/node": "^22.15.29",
+    "@types/node": "^22.15.31",
     "@typescript-eslint/eslint-plugin": "^6.13.2",
     "@typescript-eslint/parser": "^6.13.2",
     "eslint": "^8.55.0",

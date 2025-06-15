@@ -126,7 +126,7 @@ export default function CourtsPage() {
               <div
                 key={court.id}
                 ref={index === visibleCourts.length - 1 ? lastCourtRef : null}
-                className="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow"
+                className="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
               >
                 <div className="relative h-48">
                   <Image
@@ -139,12 +139,33 @@ export default function CourtsPage() {
                 <div className="p-4">
                   <h2 className="text-xl font-semibold mb-2">{court.name}</h2>
                   <p className="text-gray-600 text-sm mb-2">{court.location}</p>
-                  <p className="text-gray-700 line-clamp-3">{court.description}</p>
+                  <p className="text-gray-700 line-clamp-3 mb-4">{court.description}</p>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      router.push(`/courts/${court.id}/reserve`);
+                    }}
+                    className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    Choose Court
+                  </button>
                 </div>
               </div>
             ))}
           </div>
         )}
+
+        <div className="mt-8 text-center">
+          <button
+            onClick={() => toast.success('Please email technickly@gmail.com with the court name, description, available times, etc.', {
+              duration: 5000,
+              position: 'bottom-center',
+            })}
+            className="bg-gray-100 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-200 transition-colors border border-gray-300"
+          >
+            Request Court Addition
+          </button>
+        </div>
 
         {showRequestModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
