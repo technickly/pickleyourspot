@@ -127,6 +127,7 @@ export default function CourtsPage() {
                 key={court.id}
                 ref={index === visibleCourts.length - 1 ? lastCourtRef : null}
                 className="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
+                onClick={() => router.push(`/courts/${court.id}/reserve`)}
               >
                 <div className="relative h-48">
                   <Image
