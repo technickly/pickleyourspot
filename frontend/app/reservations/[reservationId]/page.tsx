@@ -346,12 +346,6 @@ export default function ReservationPage({ params }: PageProps) {
                   {isOwner ? 'Owner' : 'Participant'}
                 </span>
                 {isOwner && <ReservationActions reservationId={reservationId} isOwner={isOwner} />}
-                <Link
-                  href="/my-reservations"
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                  My Events
-                </Link>
               </div>
             </div>
           </header>
@@ -390,16 +384,6 @@ export default function ReservationPage({ params }: PageProps) {
                     </div>
                   </div>
                 )}
-
-                <div>
-                  <h3 className="font-medium text-gray-700">Share Reservation</h3>
-                  <div className="mt-2">
-                    <CopyButton 
-                      text={`${window.location.origin}/r/${reservation.shortUrl}`}
-                      label="Copy Link"
-                    />
-                  </div>
-                </div>
 
                 <div className="mt-6">
                   <ParticipantList

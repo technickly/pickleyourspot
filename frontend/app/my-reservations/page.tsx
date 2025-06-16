@@ -392,29 +392,6 @@ export default function MyReservationsPage() {
                   </div>
 
                   <div className="flex justify-end gap-4 mt-4">
-                    {reservation.isOwner && !isPastEvent(reservation.endTime) && (
-                      <Link
-                        href={`/reservations/${reservation.id}/edit`}
-                        className="flex items-center gap-1 text-blue-600 hover:text-blue-700"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <FaEdit className="w-4 h-4" />
-                        Edit
-                      </Link>
-                    )}
-                    {reservation.isOwner && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setShowDeleteConfirm(reservation.id);
-                        }}
-                        className="flex items-center gap-1 text-red-600 hover:text-red-700"
-                        disabled={isDeleting}
-                      >
-                        <FaTrash className="w-4 h-4" />
-                        Delete
-                      </button>
-                    )}
                     <div className="flex gap-2">
                       {reservation.isOwner && !isPastEvent(reservation.endTime) && (
                         <Link
@@ -426,7 +403,7 @@ export default function MyReservationsPage() {
                           }}
                         >
                           <FaEdit className="w-4 h-4" />
-                          Modify
+                          Edit
                         </Link>
                       )}
                       <button
@@ -440,6 +417,19 @@ export default function MyReservationsPage() {
                         View
                       </button>
                     </div>
+                    {reservation.isOwner && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowDeleteConfirm(reservation.id);
+                        }}
+                        className="flex items-center gap-1 text-red-600 hover:text-red-700"
+                        disabled={isDeleting}
+                      >
+                        <FaTrash className="w-4 h-4" />
+                        Delete
+                      </button>
+                    )}
                   </div>
 
                   {showDeleteConfirm === reservation.id && (

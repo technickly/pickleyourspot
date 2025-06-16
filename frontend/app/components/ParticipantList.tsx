@@ -256,7 +256,9 @@ export default function ParticipantList({
               className={`bg-white rounded-lg shadow-sm border p-4 transition-all ${
                 participant.email === ownerEmail
                   ? 'border-indigo-200 bg-indigo-50'
-                  : 'border-gray-200 hover:border-gray-300'
+                  : participant.isGoing
+                  ? 'border-green-200 bg-green-50'
+                  : 'border-red-200 bg-red-50'
               }`}
             >
               <div className="flex items-center justify-between">
@@ -280,63 +282,51 @@ export default function ParticipantList({
                           Owner
                         </span>
                       )}
+                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                        participant.isGoing
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-red-100 text-red-800'
+                      }`}>
+                        {participant.isGoing ? 'Going' : 'Not Going'}
+                      </span>
+                      {paymentRequired && (
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                          participant.hasPaid
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-yellow-100 text-yellow-800'
+                        }`}>
+                          {participant.hasPaid ? 'Paid' : 'Unpaid'}
+                        </span>
+                      )}
                     </div>
                     <span className="text-sm text-gray-500">{participant.email}</span>
                   </div>
                 </div>
-
                 <div className="flex items-center space-x-2">
-                  {/* Going/Not Going Toggle */}
-                  <div className="flex flex-col space-y-2 min-w-[120px]">
+                  {userEmail === participant.email && (
                     <button
-                      onClick={() => handleStatusUpdate(participant.userId, 'attendance', true)}
-                      className={`w-full px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                      onClick={() => handleStatusUpdate(participant.userId, 'attendance', !participant.isGoing)}
+                      className={`px-3 py-1 rounded-full text-sm font-medium ${
                         participant.isGoing
-                          ? 'bg-green-100 text-green-800 border-2 border-green-500'
-                          : 'bg-gray-100 text-gray-600 hover:bg-green-50 hover:text-green-700'
+                          ? 'bg-red-100 text-red-800 hover:bg-red-200'
+                          : 'bg-green-100 text-green-800 hover:bg-green-200'
                       }`}
                     >
-                      Going
+                      {participant.isGoing ? 'Not Going' : 'Going'}
                     </button>
-                    <button
-                      onClick={() => handleStatusUpdate(participant.userId, 'attendance', false)}
-                      className={`w-full px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                        !participant.isGoing
-                          ? 'bg-red-100 text-red-800 border-2 border-red-500'
-                          : 'bg-gray-100 text-gray-600 hover:bg-red-50 hover:text-red-700'
-                      }`}
-                    >
-                      Not Going
-                    </button>
-                  </div>
-
-                  {/* Payment Status Toggle */}
-                  {paymentRequired && (
-                    <div className="flex flex-col space-y-2 min-w-[120px]">
-                      <button
-                        onClick={() => handleStatusUpdate(participant.userId, 'payment', true)}
-                        className={`w-full px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                          participant.hasPaid
-                            ? 'bg-green-100 text-green-800 border-2 border-green-500'
-                            : 'bg-gray-100 text-gray-600 hover:bg-green-50 hover:text-green-700'
-                        }`}
-                      >
-                        Paid
-                      </button>
-                      <button
-                        onClick={() => handleStatusUpdate(participant.userId, 'payment', false)}
-                        className={`w-full px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                          !participant.hasPaid
-                            ? 'bg-red-100 text-red-800 border-2 border-red-500'
-                            : 'bg-gray-100 text-gray-600 hover:bg-red-50 hover:text-red-700'
-                        }`}
-                      >
-                        Not Paid
-                      </button>
-                    </div>
                   )}
-
-                  {/* Remove Button */}
+                  {paymentRequired && userEmail === participant.email && (
+                    <button
+                      onClick={() => handleStatusUpdate(participant.userId, 'payment', !participant.hasPaid)}
+                      className={`px-3 py-1 rounded-full text-sm font-medium ${
+                        participant.hasPaid
+                          ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
+                          : 'bg-green-100 text-green-800 hover:bg-green-200'
+                      }`}
+                    >
+                      {participant.hasPaid ? 'Mark Unpaid' : 'Mark Paid'}
+                    </button>
+                  )}
                   {isOwner && participant.email !== ownerEmail && (
                     <button
                       onClick={() => onRemoveParticipant(participant.email)}
