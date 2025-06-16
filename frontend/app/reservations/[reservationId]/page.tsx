@@ -14,6 +14,7 @@ import ParticipantList from '@/app/components/ParticipantList';
 import ReservationTitle from '@/app/components/ReservationTitle';
 import ReservationActions from '@/app/components/ReservationActions';
 import Link from 'next/link';
+import { FaShare, FaEdit, FaSpinner, FaEye, FaTrash } from 'react-icons/fa';
 
 interface User {
   name: string | null;
@@ -54,6 +55,7 @@ interface Reservation {
   owner: User;
   participants: Participant[];
   messages: Message[];
+  isOwner: boolean;
 }
 
 interface PageProps {
@@ -76,6 +78,8 @@ export default function ReservationPage({ params }: PageProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [showUserSearch, setShowUserSearch] = useState(false);
   const { reservationId } = unwrappedParams;
+  const [isNavigating, setIsNavigating] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Scroll to bottom of messages
   const scrollToBottom = () => {
@@ -316,6 +320,10 @@ export default function ReservationPage({ params }: PageProps) {
     }
   };
 
+  const isPastEvent = (endTime: Date) => {
+    return new Date(endTime) < new Date();
+  };
+
   if (status === 'loading' || !reservation) {
     return <div className="flex justify-center items-center min-h-screen">Loading...</div>;
   }
@@ -410,6 +418,66 @@ export default function ReservationPage({ params }: PageProps) {
                   initialMessages={messages}
                 />
               </div>
+            </div>
+          </div>
+
+          <div className="mt-8">
+            <div className="flex items-center gap-2">
+              <CopyButton
+                text={`${window.location.origin}/reservations/${reservation.id}`}
+                label={
+                  <span className="flex items-center gap-1 bg-gray-600 text-white px-3 py-1.5 rounded hover:bg-gray-700 transition-colors">
+                    <FaShare className="w-4 h-4" />
+                    Share
+                  </span>
+                }
+                className="hover:bg-gray-700"
+              />
+              {reservation.isOwner && !isPastEvent(reservation.endTime) && (
+                <Link
+                  href={`/reservations/${reservation.id}/modify`}
+                  className="flex items-center gap-1 bg-blue-600 text-white px-3 py-1.5 rounded hover:bg-blue-700 transition-colors"
+                  onClick={() => setIsNavigating(true)}
+                >
+                  {isNavigating ? (
+                    <FaSpinner className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <FaEdit className="w-4 h-4" />
+                  )}
+                  Modify
+                </Link>
+              )}
+              <button
+                onClick={() => {
+                  setIsNavigating(true);
+                  router.push(`/reservations/${reservation.id}`);
+                }}
+                className="flex items-center gap-1 bg-gray-600 text-white px-3 py-1.5 rounded hover:bg-gray-700 transition-colors"
+              >
+                {isNavigating ? (
+                  <FaSpinner className="w-4 h-4 animate-spin" />
+                ) : (
+                  <FaEye className="w-4 h-4" />
+                )}
+                View
+              </button>
+              {reservation.isOwner && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsDeleting(true);
+                  }}
+                  className="flex items-center gap-1 text-red-600 hover:text-red-700"
+                  disabled={isDeleting}
+                >
+                  {isDeleting ? (
+                    <FaSpinner className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <FaTrash className="w-4 h-4" />
+                  )}
+                  Delete
+                </button>
+              )}
             </div>
           </div>
         </div>

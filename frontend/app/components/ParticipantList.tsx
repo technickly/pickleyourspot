@@ -262,83 +262,23 @@ export default function ParticipantList({
               }`}
             >
               <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  {participant.image && (
-                    <Image
-                      src={participant.image}
-                      alt={participant.name || participant.email}
-                      width={40}
-                      height={40}
-                      className="rounded-full"
-                    />
-                  )}
-                  <div>
-                    <div className="flex items-center space-x-2">
-                      <span className="font-medium text-gray-900">
-                        {participant.name || participant.email}
-                      </span>
-                      {participant.email === ownerEmail && (
-                        <span className="bg-indigo-100 text-indigo-800 text-xs px-2 py-0.5 rounded-full font-medium">
-                          Owner
-                        </span>
-                      )}
-                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                        participant.isGoing
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-red-100 text-red-800'
-                      }`}>
-                        {participant.isGoing ? 'Going' : 'Not Going'}
-                      </span>
-                      {paymentRequired && (
-                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                          participant.hasPaid
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-yellow-100 text-yellow-800'
-                        }`}>
-                          {participant.hasPaid ? 'Paid' : 'Unpaid'}
-                        </span>
-                      )}
-                    </div>
-                    <span className="text-sm text-gray-500">{participant.email}</span>
-                  </div>
+                <div className="flex items-center gap-2">
+                  <span className="font-medium">{participant.name || participant.email}</span>
+                  <span className={`px-2 py-0.5 rounded-full text-xs ${
+                    participant.isGoing ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                  }`}>
+                    {participant.isGoing ? 'Going' : 'Not Going'}
+                  </span>
                 </div>
-                <div className="flex items-center space-x-2">
-                  {userEmail === participant.email && (
-                    <button
-                      onClick={() => handleStatusUpdate(participant.userId, 'attendance', !participant.isGoing)}
-                      className={`px-3 py-1 rounded-full text-sm font-medium ${
-                        participant.isGoing
-                          ? 'bg-red-100 text-red-800 hover:bg-red-200'
-                          : 'bg-green-100 text-green-800 hover:bg-green-200'
-                      }`}
-                    >
-                      {participant.isGoing ? 'Not Going' : 'Going'}
-                    </button>
-                  )}
-                  {paymentRequired && userEmail === participant.email && (
-                    <button
-                      onClick={() => handleStatusUpdate(participant.userId, 'payment', !participant.hasPaid)}
-                      className={`px-3 py-1 rounded-full text-sm font-medium ${
-                        participant.hasPaid
-                          ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
-                          : 'bg-green-100 text-green-800 hover:bg-green-200'
-                      }`}
-                    >
-                      {participant.hasPaid ? 'Mark Unpaid' : 'Mark Paid'}
-                    </button>
-                  )}
-                  {isOwner && participant.email !== ownerEmail && (
-                    <button
-                      onClick={() => onRemoveParticipant(participant.email)}
-                      className="text-red-600 hover:text-red-700 transition-colors"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                      </svg>
-                    </button>
-                  )}
-                </div>
+                {paymentRequired && (
+                  <span className={`px-2 py-0.5 rounded-full text-xs ${
+                    participant.hasPaid ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                  }`}>
+                    {participant.hasPaid ? 'Paid' : 'Unpaid'}
+                  </span>
+                )}
               </div>
+              <span className="text-sm text-gray-500">{participant.email}</span>
             </div>
           ))}
         </div>
