@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import prisma from '@/lib/prisma';
-import { authOptions } from '@/app/api/auth/[...nextauth]/auth';
+import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 
 interface ParticipantStatus {
   id: string;
@@ -16,11 +16,11 @@ interface ParticipantStatus {
 
 export async function POST(
   request: Request,
-  context: { params: { reservationId: string } }
+  context: { params: Promise<{ reservationId: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
-    const { reservationId } = context.params;
+    const { reservationId } = await context.params;
     
     if (!session?.user?.email) {
       return NextResponse.json(
@@ -38,19 +38,6 @@ export async function POST(
       );
     }
 
-    // Get the user and check if they have access to this reservation
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-    });
-
-    if (!user) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      );
-    }
-
-    // Check if user is owner or participant
     const reservation = await prisma.reservation.findUnique({
       where: { id: reservationId },
       include: {
@@ -66,24 +53,24 @@ export async function POST(
       );
     }
 
+    // Check if user is owner or participant
     const isOwner = reservation.owner.email === session.user.email;
     const isParticipant = reservation.participants.some(
-      (p: any) => p.user?.email === session.user.email
+      (p) => p.email === session.user.email
     );
 
     if (!isOwner && !isParticipant) {
       return NextResponse.json(
-        { error: 'Not authorized to message in this reservation' },
-        { status: 403 }
+        { error: 'Unauthorized' },
+        { status: 401 }
       );
     }
 
-    // Create the message
     const message = await prisma.message.create({
       data: {
-        content,
-        userId: user.id,
-        reservationId: reservationId,
+        content: content.trim(),
+        reservationId,
+        userEmail: session.user.email,
       },
       include: {
         user: {
@@ -97,7 +84,7 @@ export async function POST(
 
     return NextResponse.json(message);
   } catch (error) {
-    console.error('Failed to create message:', error);
+    console.error('Error creating message:', error);
     return NextResponse.json(
       { error: 'Failed to create message' },
       { status: 500 }
@@ -107,11 +94,11 @@ export async function POST(
 
 export async function GET(
   request: Request,
-  context: { params: { reservationId: string } }
+  context: { params: Promise<{ reservationId: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
-    const { reservationId } = context.params;
+    const { reservationId } = await context.params;
     
     if (!session?.user?.email) {
       return NextResponse.json(
@@ -120,28 +107,11 @@ export async function GET(
       );
     }
 
-    // Check if user has access to this reservation
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-    });
-
-    if (!user) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      );
-    }
-
-    // Check if user is owner or participant
     const reservation = await prisma.reservation.findUnique({
       where: { id: reservationId },
       include: {
         owner: true,
-        participants: {
-          include: {
-            user: true
-          }
-        },
+        participants: true,
       },
     });
 
@@ -152,22 +122,22 @@ export async function GET(
       );
     }
 
+    // Check if user is owner or participant
     const isOwner = reservation.owner.email === session.user.email;
     const isParticipant = reservation.participants.some(
-      (p: any) => p.user?.email === session.user.email
+      (p) => p.email === session.user.email
     );
 
     if (!isOwner && !isParticipant) {
       return NextResponse.json(
-        { error: 'Not authorized to view messages in this reservation' },
-        { status: 403 }
+        { error: 'Unauthorized' },
+        { status: 401 }
       );
     }
 
-    // Get all messages for this reservation
     const messages = await prisma.message.findMany({
       where: {
-        reservationId: reservationId,
+        reservationId,
       },
       include: {
         user: {
@@ -184,7 +154,7 @@ export async function GET(
 
     return NextResponse.json(messages);
   } catch (error) {
-    console.error('Failed to fetch messages:', error);
+    console.error('Error fetching messages:', error);
     return NextResponse.json(
       { error: 'Failed to fetch messages' },
       { status: 500 }

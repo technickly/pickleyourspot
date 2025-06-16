@@ -19,15 +19,19 @@ interface ParticipantStatus {
 
 export async function GET(
   request: Request,
-  { params }: { params: { reservationId: string } }
+  context: { params: Promise<{ reservationId: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
+    const { reservationId } = await context.params;
+
     if (!session?.user?.email) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
     }
 
-    const { reservationId } = params;
     const reservation = await prisma.reservation.findUnique({
       where: { id: reservationId },
       include: {
@@ -35,24 +39,12 @@ export async function GET(
         owner: true,
         participants: {
           include: {
-            user: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-                image: true,
-              },
-            },
+            user: true,
           },
         },
         messages: {
           include: {
-            user: {
-              select: {
-                name: true,
-                email: true,
-              },
-            },
+            user: true,
           },
           orderBy: {
             createdAt: 'asc',
@@ -62,26 +54,32 @@ export async function GET(
     });
 
     if (!reservation) {
-      return NextResponse.json({ error: 'Reservation not found' }, { status: 404 });
+      return NextResponse.json(
+        { error: 'Reservation not found' },
+        { status: 404 }
+      );
     }
 
-    const isOwner = session.user.email === reservation.owner.email;
+    // Check if user is owner or participant
+    const isOwner = reservation.owner.email === session.user.email;
+    const isParticipant = reservation.participants.some(
+      (p) => p.email === session.user.email
+    );
 
-    // Transform the data to match the expected format
-    const transformedReservation = {
+    if (!isOwner && !isParticipant) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    // Add isOwner flag to the response
+    const response = {
       ...reservation,
       isOwner,
-      participants: reservation.participants.map((participant: ParticipantStatus) => ({
-        userId: participant.user.id,
-        name: participant.user.name,
-        email: participant.user.email,
-        image: participant.user.image,
-        hasPaid: participant.hasPaid,
-        isGoing: participant.isGoing,
-      })),
     };
 
-    return NextResponse.json(transformedReservation);
+    return NextResponse.json(response);
   } catch (error) {
     console.error('Error fetching reservation:', error);
     return NextResponse.json(

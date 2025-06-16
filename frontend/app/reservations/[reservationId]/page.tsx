@@ -424,7 +424,7 @@ export default function ReservationPage({ params }: PageProps) {
           <div className="mt-8">
             <div className="flex items-center gap-2">
               <CopyButton
-                text={`${window.location.origin}/reservations/${reservation.id}`}
+                text={`${window.location.origin}/r/${reservation.shortUrl}`}
                 label={
                   <span className="flex items-center gap-1 bg-gray-600 text-white px-2 py-1 rounded text-sm hover:bg-gray-700 transition-colors">
                     <FaShare className="w-3 h-3" />
@@ -432,7 +432,6 @@ export default function ReservationPage({ params }: PageProps) {
                   </span>
                 }
                 className="hover:bg-gray-700"
-                previewText="Join Pickle Invite"
               />
             </div>
           </div>
