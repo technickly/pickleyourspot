@@ -33,6 +33,7 @@ interface Reservation {
   paymentRequired: boolean;
   paymentInfo?: string | null;
   participants: Participant[];
+  password?: boolean;
 }
 
 const timeZone = 'America/Los_Angeles';
@@ -278,6 +279,11 @@ export default function MyReservationsPage() {
                             Owner
                           </span>
                         )}
+                        {reservation.password && (
+                          <span className="px-2 py-0.5 rounded-full text-xs bg-purple-100 text-purple-800">
+                            Password Protected
+                          </span>
+                        )}
                       </div>
                       <p className="text-gray-600">{reservation.courtName}</p>
                     </div>
@@ -285,12 +291,12 @@ export default function MyReservationsPage() {
                       <CopyButton
                         text={`${window.location.origin}/reservations/${reservation.id}`}
                         label={
-                          <span className="flex items-center gap-1 text-sm bg-blue-600 text-white px-3 py-1.5 rounded hover:bg-blue-700 transition-colors">
-                            <FaShare className="w-4 h-4" />
+                          <span className="flex items-center gap-1 bg-gray-600 text-white px-2 py-1 rounded text-sm hover:bg-gray-700 transition-colors">
+                            <FaShare className="w-3 h-3" />
                             Share
                           </span>
                         }
-                        className="hover:bg-blue-700"
+                        className="hover:bg-gray-700"
                       />
                     </div>
                   </div>
