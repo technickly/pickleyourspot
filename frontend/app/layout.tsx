@@ -5,6 +5,8 @@ import AuthProvider from './providers/AuthProvider';
 import { Toaster } from 'react-hot-toast';
 import NavigationBar from './components/NavigationBar';
 import type { Metadata } from 'next';
+import { SessionProvider } from 'next-auth/react';
+import LoadingOverlay from './components/LoadingOverlay';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -38,11 +40,14 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.className} modern-theme`} suppressHydrationWarning>
-        <AuthProvider>
-          <NavigationBar />
-          {children}
-          <Toaster />
-        </AuthProvider>
+        <SessionProvider>
+          <AuthProvider>
+            <NavigationBar />
+            {children}
+            <Toaster />
+            <LoadingOverlay />
+          </AuthProvider>
+        </SessionProvider>
       </body>
     </html>
   );

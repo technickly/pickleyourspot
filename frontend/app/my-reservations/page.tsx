@@ -420,14 +420,20 @@ export default function MyReservationsPage() {
                         <Link
                           href={`/reservations/${reservation.id}/modify`}
                           className="flex items-center gap-1 bg-blue-600 text-white px-3 py-1.5 rounded hover:bg-blue-700 transition-colors"
-                          onClick={(e) => e.stopPropagation()}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            window.dispatchEvent(new Event('beforeunload'));
+                          }}
                         >
                           <FaEdit className="w-4 h-4" />
                           Modify
                         </Link>
                       )}
                       <button
-                        onClick={() => router.push(`/reservations/${reservation.id}`)}
+                        onClick={() => {
+                          window.dispatchEvent(new Event('beforeunload'));
+                          router.push(`/reservations/${reservation.id}`);
+                        }}
                         className="flex items-center gap-1 bg-gray-600 text-white px-3 py-1.5 rounded hover:bg-gray-700 transition-colors"
                       >
                         <FaEye className="w-4 h-4" />
