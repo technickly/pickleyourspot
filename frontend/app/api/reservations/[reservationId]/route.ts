@@ -47,10 +47,21 @@ export async function GET(
     // Check if user is owner
     const isOwner = reservation.owner.email === session.user.email;
 
-    return NextResponse.json({
+    // Transform the reservation data to include properly formatted participants
+    const transformedReservation = {
       ...reservation,
       isOwner,
-    });
+      participants: reservation.participants.map((participant: ParticipantStatus) => ({
+        userId: participant.userId,
+        name: participant.user.name,
+        email: participant.user.email,
+        image: participant.user.image,
+        hasPaid: participant.hasPaid,
+        isGoing: participant.isGoing
+      }))
+    };
+
+    return NextResponse.json(transformedReservation);
   } catch (error) {
     console.error('Error fetching reservation:', error);
     return NextResponse.json(
