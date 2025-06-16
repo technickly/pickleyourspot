@@ -32,14 +32,38 @@ const authOptions = {
     signIn: async ({ user, account, profile }: { user: User; account: Account | null; profile?: Profile }) => {
       if (!account || !profile) return false;
       
-      const existingUser = await prisma.user.findUnique({
-        where: { email: user.email! },
-        include: { accounts: true },
-      });
+      try {
+        const existingUser = await prisma.user.findUnique({
+          where: { email: user.email! },
+          include: { accounts: true },
+        });
 
-      if (!existingUser) return true;
+        if (!existingUser) return true;
 
-      return existingUser.accounts.some((acc: Account) => acc.provider === 'google');
+        // If user exists but doesn't have a Google account, allow linking
+        if (!existingUser.accounts.some((acc: Account) => acc.provider === 'google')) {
+          await prisma.account.create({
+            data: {
+              userId: existingUser.id,
+              type: account.type,
+              provider: account.provider,
+              providerAccountId: account.providerAccountId,
+              access_token: account.access_token,
+              token_type: account.token_type,
+              scope: account.scope,
+              id_token: account.id_token,
+              expires_at: account.expires_at,
+            },
+          });
+          return true;
+        }
+
+        // If user exists and has a Google account, allow sign in
+        return existingUser.accounts.some((acc: Account) => acc.provider === 'google');
+      } catch (error) {
+        console.error('Error in signIn callback:', error);
+        return false;
+      }
     },
     session: async ({ session, token }: { session: Session; token: JWT }) => {
       if (session?.user) {
