@@ -179,37 +179,46 @@ export default function CourtsPage() {
 
         <div className="mt-8 text-center">
           <button
-            onClick={() => toast.success('Please email technickly@gmail.com with the court name, description, available times, etc.', {
-              duration: 5000,
-              position: 'bottom-center',
-            })}
-            className="bg-gray-100 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-200 transition-colors border border-gray-300"
+            onClick={handleRequestNewCourt}
+            className="bg-blue-600 text-white px-8 py-4 rounded-lg hover:bg-blue-700 transition-colors text-lg font-medium shadow-lg hover:shadow-xl"
           >
-            Request Court Addition
+            Request Additional Court
           </button>
         </div>
 
         {showRequestModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-lg p-6 max-w-lg w-full">
-              <h2 className="text-2xl font-bold mb-4">Request New Court</h2>
-              <p className="text-gray-600 mb-4">
-                Please enter the court details below and we will look into adding it to our system.
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-xl p-8 max-w-2xl w-full relative shadow-2xl">
+              <button
+                onClick={handleCloseModal}
+                className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 transition-colors"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+              <h2 className="text-3xl font-bold mb-6 text-center">Request New Court</h2>
+              <p className="text-gray-600 mb-6 text-center text-lg">
+                Please provide the details of the court you'd like to add to our system.
               </p>
               <textarea
-                className="w-full p-3 border rounded-lg mb-4 h-32"
-                placeholder="Please enter Court, Court Description, Available times, City and State in this box and we will look into adding it, thanks!"
+                className="w-full p-4 border-2 border-gray-200 rounded-lg mb-6 h-40 text-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-colors"
+                placeholder="Please include:
+• Court name
+• Location (address)
+• Available times
+• Any additional details"
               />
-              <div className="flex justify-end gap-4">
+              <div className="flex justify-center gap-4">
                 <button
                   onClick={handleCloseModal}
-                  className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                  className="px-6 py-3 text-gray-600 hover:text-gray-800 font-medium"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleSubmitRequest}
-                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+                  className="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 font-medium shadow-md hover:shadow-lg transition-all"
                 >
                   Submit Request
                 </button>

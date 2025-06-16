@@ -18,7 +18,7 @@ export default function HomePage() {
         <div className="max-w-3xl mx-auto px-4">
           <div className="bg-yellow-100 border border-yellow-200 rounded-lg shadow-sm">
             <div className="py-2 px-4">
-              <p className="text-yellow-800 text-center font-medium whitespace-nowrap">
+              <p className="text-yellow-800 text-center font-medium">
                 Note: Book your court through the facility's website first, then organize your event and group here!
               </p>
             </div>
@@ -100,7 +100,7 @@ export default function HomePage() {
         <div className="max-w-5xl mx-auto">
           <h2 className="text-3xl font-bold text-center mb-12">Features at a Glance</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="glass-card p-6 rounded-2xl shadow-lg hover:shadow-xl transition-shadow">
+            <div className="glass-card p-6 rounded-2xl shadow-lg hover:shadow-xl transition-shadow text-center">
               <div className="text-primary text-2xl mb-4">
                 <FaComments />
               </div>
@@ -110,7 +110,7 @@ export default function HomePage() {
               </p>
             </div>
 
-            <div className="glass-card p-6 rounded-2xl shadow-lg hover:shadow-xl transition-shadow">
+            <div className="glass-card p-6 rounded-2xl shadow-lg hover:shadow-xl transition-shadow text-center">
               <div className="text-primary text-2xl mb-4">
                 <FaDollarSign />
               </div>
@@ -120,7 +120,7 @@ export default function HomePage() {
               </p>
             </div>
 
-            <div className="glass-card p-6 rounded-2xl shadow-lg hover:shadow-xl transition-shadow">
+            <div className="glass-card p-6 rounded-2xl shadow-lg hover:shadow-xl transition-shadow text-center">
               <div className="text-primary text-2xl mb-4">
                 <FaEnvelope />
               </div>
@@ -130,7 +130,7 @@ export default function HomePage() {
               </p>
             </div>
 
-            <div className="glass-card p-6 rounded-2xl shadow-lg hover:shadow-xl transition-shadow">
+            <div className="glass-card p-6 rounded-2xl shadow-lg hover:shadow-xl transition-shadow text-center">
               <div className="text-primary text-2xl mb-4">
                 <FaShare />
               </div>
