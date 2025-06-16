@@ -1,6 +1,7 @@
 import { AuthOptions, DefaultSession, Account } from 'next-auth';
 import GoogleProvider from 'next-auth/providers/google';
 import prisma from '@/lib/prisma';
+import { JWT } from 'next-auth/jwt';
 
 declare module 'next-auth' {
   interface Session {
@@ -58,13 +59,13 @@ export const authOptions: AuthOptions = {
         return false;
       }
     },
-    async jwt({ token, account }: { token: any; account: Account | null }) {
+    async jwt({ token, account }: { token: JWT; account: Account | null }) {
       if (account?.access_token) {
-        token.accessToken = account.access_token as string;
+        token.accessToken = account.access_token;
       }
       return token;
     },
-    async session({ session, token }) {
+    async session({ session, token }: { session: any; token: JWT }) {
       if (session.user) {
         session.user.accessToken = token.accessToken;
         
