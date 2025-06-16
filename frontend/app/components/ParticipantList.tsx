@@ -252,7 +252,7 @@ export default function ParticipantList({
         <div className="space-y-3">
           {participants.map((participant) => (
             <div
-              key={participant.email}
+              key={participant.userId}
               className={`bg-white rounded-lg shadow-sm border p-4 transition-all ${
                 participant.email === ownerEmail
                   ? 'border-indigo-200 bg-indigo-50'
