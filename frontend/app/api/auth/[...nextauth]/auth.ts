@@ -1,23 +1,10 @@
-import { AuthOptions, DefaultSession, Account } from 'next-auth';
+import { AuthOptions } from 'next-auth';
+import { PrismaAdapter } from '@next-auth/prisma-adapter';
 import GoogleProvider from 'next-auth/providers/google';
 import prisma from '@/lib/prisma';
-import { JWT } from 'next-auth/jwt';
-
-declare module 'next-auth' {
-  interface Session {
-    user: {
-      id?: string;
-      accessToken?: string;
-    } & DefaultSession['user'];
-  }
-
-  interface Token {
-    accessToken?: string;
-  }
-}
 
 export const authOptions: AuthOptions = {
-  debug: true,
+  adapter: PrismaAdapter(prisma),
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
@@ -31,55 +18,17 @@ export const authOptions: AuthOptions = {
       }
     }),
   ],
-  pages: {
-    signIn: '/',
-    error: '/',
-  },
   callbacks: {
-    async signIn({ user, account, profile }) {
-      if (!user.email) return false;
-
-      try {
-        // Create or update user in database
-        await prisma.user.upsert({
-          where: { email: user.email },
-          update: {
-            name: user.name,
-            image: user.image,
-          },
-          create: {
-            email: user.email,
-            name: user.name,
-            image: user.image,
-          },
-        });
-        return true;
-      } catch (error) {
-        console.error('Error saving user to database:', error);
-        return false;
-      }
-    },
-    async jwt({ token, account }: { token: JWT; account: Account | null }) {
-      if (account?.access_token) {
-        token.accessToken = account.access_token;
-      }
-      return token;
-    },
-    async session({ session, token }: { session: any; token: JWT }) {
-      if (session.user) {
-        session.user.accessToken = token.accessToken;
-        
-        // Add user ID to session
-        const dbUser = await prisma.user.findUnique({
-          where: { email: session.user.email! },
-          select: { id: true },
-        });
-        
-        if (dbUser) {
-          session.user.id = dbUser.id;
-        }
+    async session({ session, user }) {
+      if (session?.user) {
+        session.user.id = user.id;
       }
       return session;
     },
   },
+  pages: {
+    signIn: '/',
+    error: '/',
+  },
+  debug: process.env.NODE_ENV === 'development',
 }; 
