@@ -8,6 +8,10 @@ import type { JWT } from 'next-auth/jwt';
 import type { SessionStrategy } from 'next-auth';
 import type { Account, Profile, User } from 'next-auth';
 
+if (!process.env.NEXTAUTH_SECRET) {
+  throw new Error('NEXTAUTH_SECRET is not set in environment variables');
+}
+
 const authOptions = {
   adapter: PrismaAdapter(prisma),
   providers: [
@@ -22,6 +26,7 @@ const authOptions = {
   },
   jwt: {
     secret: process.env.NEXTAUTH_SECRET,
+    maxAge: 30 * 24 * 60 * 60, // 30 days
   },
   callbacks: {
     signIn: async ({ user, account, profile }: { user: User; account: Account | null; profile?: Profile }) => {
