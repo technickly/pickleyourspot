@@ -18,12 +18,14 @@ const nextConfig = {
       },
     ],
     unoptimized: true,
+    domains: ['lh3.googleusercontent.com', 'images.unsplash.com'],
   },
   experimental: {
     serverActions: {
       allowedOrigins: ['localhost:3000', 'pickleyourspot.com'],
     },
   },
+  allowedDevOrigins: ['pickleyourspot.com', 'www.pickleyourspot.com'],
 }
 
 module.exports = nextConfig 
