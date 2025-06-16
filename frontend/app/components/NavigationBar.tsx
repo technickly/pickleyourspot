@@ -84,6 +84,14 @@ export default function NavigationBar() {
                     My Events
                   </Link>
                 )}
+                {session?.user?.role === 'ADMIN' && !isCurrentPath('/admin') && (
+                  <Link
+                    href="/admin"
+                    className="button-primary"
+                  >
+                    Admin
+                  </Link>
+                )}
 
                 {session ? (
                   <button
@@ -143,6 +151,14 @@ export default function NavigationBar() {
                   className="button-primary"
                 >
                   My Events
+                </Link>
+              )}
+              {session?.user?.role === 'ADMIN' && !isCurrentPath('/admin') && (
+                <Link
+                  href="/admin"
+                  className="button-primary"
+                >
+                  Admin
                 </Link>
               )}
 
