@@ -5,7 +5,6 @@ import prisma from '@/lib/prisma';
 import { Session } from 'next-auth';
 import type { AdapterUser } from 'next-auth/adapters';
 import type { Account, Profile } from 'next-auth';
-import type { User } from '@prisma/client';
 
 const authOptions = {
   adapter: PrismaAdapter(prisma),
@@ -16,11 +15,7 @@ const authOptions = {
     }),
   ],
   callbacks: {
-    signIn: async ({ user, account, profile }: { 
-      user: User | AdapterUser; 
-      account: Account | null; 
-      profile?: Profile 
-    }) => {
+    signIn: async ({ user, account, profile }) => {
       if (!user.email) return false;
       
       // Check if user exists
@@ -31,6 +26,20 @@ const authOptions = {
 
       // If user exists but doesn't have a Google account, allow linking
       if (existingUser && !existingUser.accounts.some((acc: Account) => acc.provider === 'google')) {
+        // Link the Google account to the existing user
+        await prisma.account.create({
+          data: {
+            userId: existingUser.id,
+            type: account?.type || 'oauth',
+            provider: account?.provider || 'google',
+            providerAccountId: account?.providerAccountId || '',
+            access_token: account?.access_token,
+            token_type: account?.token_type,
+            scope: account?.scope,
+            id_token: account?.id_token,
+            expires_at: account?.expires_at,
+          },
+        });
         return true;
       }
 
@@ -53,6 +62,7 @@ const authOptions = {
     signIn: '/',
     error: '/auth/error',
   },
+  debug: process.env.NODE_ENV === 'development',
 };
 
 const handler = NextAuth(authOptions);
