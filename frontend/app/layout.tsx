@@ -1,12 +1,8 @@
 import './globals.css';
 import './modern-theme.css';
 import { Inter } from 'next/font/google';
-import AuthProvider from './providers/AuthProvider';
-import { Toaster } from 'react-hot-toast';
-import NavigationBar from './components/NavigationBar';
 import type { Metadata } from 'next';
-import { SessionProvider } from 'next-auth/react';
-import LoadingOverlay from './components/LoadingOverlay';
+import ClientProviders from './providers/ClientProviders';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -40,14 +36,9 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.className} modern-theme`} suppressHydrationWarning>
-        <SessionProvider>
-          <AuthProvider>
-            <NavigationBar />
-            {children}
-            <Toaster />
-            <LoadingOverlay />
-          </AuthProvider>
-        </SessionProvider>
+        <ClientProviders>
+          {children}
+        </ClientProviders>
       </body>
     </html>
   );
