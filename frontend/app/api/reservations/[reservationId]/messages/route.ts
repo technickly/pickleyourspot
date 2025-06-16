@@ -16,11 +16,11 @@ interface ParticipantStatus {
 
 export async function POST(
   request: Request,
-  context: { params: Promise<{ reservationId: string }> }
+  context: { params: { reservationId: string } }
 ) {
   try {
     const session = await getServerSession(authOptions);
-    const { reservationId } = await context.params;
+    const { reservationId } = context.params;
     
     if (!session?.user?.email) {
       return NextResponse.json(
@@ -107,11 +107,11 @@ export async function POST(
 
 export async function GET(
   request: Request,
-  context: { params: Promise<{ reservationId: string }> }
+  context: { params: { reservationId: string } }
 ) {
   try {
     const session = await getServerSession(authOptions);
-    const { reservationId } = await context.params;
+    const { reservationId } = context.params;
     
     if (!session?.user?.email) {
       return NextResponse.json(
