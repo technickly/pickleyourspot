@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
+import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import prisma from '@/lib/prisma';
-import { authOptions } from '@/app/api/auth/[...nextauth]/auth';
 
 interface User {
   id: string;
@@ -22,19 +22,40 @@ export async function GET(
   { params }: { params: { reservationId: string } }
 ) {
   try {
-    const session = await getServerSession();
+    const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const { reservationId } = params;
     const reservation = await prisma.reservation.findUnique({
-      where: { id: params.reservationId },
+      where: { id: reservationId },
       include: {
         court: true,
         owner: true,
         participants: {
           include: {
-            user: true,
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                image: true,
+              },
+            },
+          },
+        },
+        messages: {
+          include: {
+            user: {
+              select: {
+                name: true,
+                email: true,
+              },
+            },
+          },
+          orderBy: {
+            createdAt: 'asc',
           },
         },
       },
@@ -44,21 +65,20 @@ export async function GET(
       return NextResponse.json({ error: 'Reservation not found' }, { status: 404 });
     }
 
-    // Check if user is owner
-    const isOwner = reservation.owner.email === session.user.email;
+    const isOwner = session.user.email === reservation.owner.email;
 
-    // Transform the reservation data to include properly formatted participants
+    // Transform the data to match the expected format
     const transformedReservation = {
       ...reservation,
       isOwner,
       participants: reservation.participants.map((participant: ParticipantStatus) => ({
-        userId: participant.userId,
+        userId: participant.user.id,
         name: participant.user.name,
         email: participant.user.email,
         image: participant.user.image,
         hasPaid: participant.hasPaid,
-        isGoing: participant.isGoing
-      }))
+        isGoing: participant.isGoing,
+      })),
     };
 
     return NextResponse.json(transformedReservation);
