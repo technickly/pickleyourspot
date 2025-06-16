@@ -7,7 +7,7 @@ import { toast } from 'react-hot-toast';
 import { formatInTimeZone } from 'date-fns-tz';
 import CopyButton from '@/app/components/CopyButton';
 import { useRouter } from 'next/navigation';
-import { FaShare, FaEdit, FaTrash, FaEye, FaCheck, FaTimes } from 'react-icons/fa';
+import { FaShare, FaEdit, FaTrash, FaEye, FaCheck, FaTimes, FaSpinner } from 'react-icons/fa';
 
 interface Participant {
   id: string;
@@ -46,6 +46,7 @@ export default function MyReservationsPage() {
   const [filter, setFilter] = useState<'all' | 'active' | 'past'>('active');
   const router = useRouter();
   const [currentPage, setCurrentPage] = useState(1);
+  const [isNavigating, setIsNavigating] = useState(false);
 
   const fetchReservations = async () => {
     try {
@@ -73,6 +74,23 @@ export default function MyReservationsPage() {
       fetchReservations();
     }
   }, [session]);
+
+  useEffect(() => {
+    const handleStart = () => setIsNavigating(true);
+    const handleComplete = () => setIsNavigating(false);
+
+    window.addEventListener('beforeunload', handleStart);
+    router.events?.on('routeChangeStart', handleStart);
+    router.events?.on('routeChangeComplete', handleComplete);
+    router.events?.on('routeChangeError', handleComplete);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleStart);
+      router.events?.off('routeChangeStart', handleStart);
+      router.events?.off('routeChangeComplete', handleComplete);
+      router.events?.off('routeChangeError', handleComplete);
+    };
+  }, [router]);
 
   const handleDeleteReservation = async (reservationId: string) => {
     setIsDeleting(true);
@@ -170,6 +188,14 @@ export default function MyReservationsPage() {
 
   return (
     <div className="min-h-screen p-8 bg-gray-50">
+      {isNavigating && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-4 rounded-lg shadow-lg flex items-center gap-3">
+            <FaSpinner className="w-6 h-6 animate-spin text-blue-600" />
+            <span className="text-gray-700">Loading...</span>
+          </div>
+        </div>
+      )}
       <div className="max-w-4xl mx-auto">
         <header className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900">My Events</h1>
@@ -397,23 +423,28 @@ export default function MyReservationsPage() {
                         <Link
                           href={`/reservations/${reservation.id}/modify`}
                           className="flex items-center gap-1 bg-blue-600 text-white px-3 py-1.5 rounded hover:bg-blue-700 transition-colors"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            window.dispatchEvent(new Event('beforeunload'));
-                          }}
+                          onClick={() => setIsNavigating(true)}
                         >
-                          <FaEdit className="w-4 h-4" />
+                          {isNavigating ? (
+                            <FaSpinner className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <FaEdit className="w-4 h-4" />
+                          )}
                           Edit
                         </Link>
                       )}
                       <button
                         onClick={() => {
-                          window.dispatchEvent(new Event('beforeunload'));
+                          setIsNavigating(true);
                           router.push(`/reservations/${reservation.id}`);
                         }}
                         className="flex items-center gap-1 bg-gray-600 text-white px-3 py-1.5 rounded hover:bg-gray-700 transition-colors"
                       >
-                        <FaEye className="w-4 h-4" />
+                        {isNavigating ? (
+                          <FaSpinner className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <FaEye className="w-4 h-4" />
+                        )}
                         View
                       </button>
                     </div>
@@ -426,7 +457,11 @@ export default function MyReservationsPage() {
                         className="flex items-center gap-1 text-red-600 hover:text-red-700"
                         disabled={isDeleting}
                       >
-                        <FaTrash className="w-4 h-4" />
+                        {isDeleting ? (
+                          <FaSpinner className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <FaTrash className="w-4 h-4" />
+                        )}
                         Delete
                       </button>
                     )}
