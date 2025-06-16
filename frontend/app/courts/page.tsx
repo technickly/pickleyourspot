@@ -30,6 +30,7 @@ export default function CourtsPage() {
   const [locations, setLocations] = useState<string[]>(['San Francisco, CA']);
   const [showRequestModal, setShowRequestModal] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isNavigating, setIsNavigating] = useState(false);
 
   useEffect(() => {
     if (!session && status !== 'loading') {
@@ -105,6 +106,11 @@ export default function CourtsPage() {
     setShowRequestModal(false);
   };
 
+  const handleCourtSelect = (courtId: string) => {
+    setIsNavigating(true);
+    router.push(`/courts/${courtId}/reserve`);
+  };
+
   const filteredCourts = courts.filter(court => court.location === selectedLocation);
 
   if (status === 'loading') {
@@ -113,6 +119,14 @@ export default function CourtsPage() {
 
   return (
     <main className="container mx-auto px-4 py-8">
+      {isNavigating && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-4 rounded-lg shadow-lg flex items-center gap-3">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <span className="text-gray-700">Loading court details...</span>
+          </div>
+        </div>
+      )}
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold">Pickleball Courts</h1>
@@ -166,7 +180,7 @@ export default function CourtsPage() {
                     dangerouslySetInnerHTML={{ __html: convertUrlsToLinks(court.description) }}
                   />
                   <button
-                    onClick={() => router.push(`/courts/${court.id}/reserve`)}
+                    onClick={() => handleCourtSelect(court.id)}
                     className="w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 transition-colors duration-300 cursor-pointer"
                   >
                     Choose Court
