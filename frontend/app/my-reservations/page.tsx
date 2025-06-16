@@ -80,15 +80,13 @@ export default function MyReservationsPage() {
     const handleComplete = () => setIsNavigating(false);
 
     window.addEventListener('beforeunload', handleStart);
-    router.events?.on('routeChangeStart', handleStart);
-    router.events?.on('routeChangeComplete', handleComplete);
-    router.events?.on('routeChangeError', handleComplete);
+    
+    // Use the new App Router navigation events
+    router.prefetch = () => setIsNavigating(true);
+    router.refresh = () => setIsNavigating(false);
 
     return () => {
       window.removeEventListener('beforeunload', handleStart);
-      router.events?.off('routeChangeStart', handleStart);
-      router.events?.off('routeChangeComplete', handleComplete);
-      router.events?.off('routeChangeError', handleComplete);
     };
   }, [router]);
 
@@ -294,15 +292,6 @@ export default function MyReservationsPage() {
                         }
                         className="hover:bg-blue-700"
                       />
-                      {reservation.isOwner && !isPastEvent(reservation.endTime) && (
-                        <Link
-                          href={`/reservations/${reservation.id}/edit`}
-                          className="text-blue-600 hover:text-blue-700"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          Edit
-                        </Link>
-                      )}
                     </div>
                   </div>
 
@@ -419,20 +408,6 @@ export default function MyReservationsPage() {
 
                   <div className="flex justify-end gap-4 mt-4">
                     <div className="flex gap-2">
-                      {reservation.isOwner && !isPastEvent(reservation.endTime) && (
-                        <Link
-                          href={`/reservations/${reservation.id}/modify`}
-                          className="flex items-center gap-1 bg-blue-600 text-white px-3 py-1.5 rounded hover:bg-blue-700 transition-colors"
-                          onClick={() => setIsNavigating(true)}
-                        >
-                          {isNavigating ? (
-                            <FaSpinner className="w-4 h-4 animate-spin" />
-                          ) : (
-                            <FaEdit className="w-4 h-4" />
-                          )}
-                          Edit
-                        </Link>
-                      )}
                       <button
                         onClick={() => {
                           setIsNavigating(true);
@@ -447,24 +422,38 @@ export default function MyReservationsPage() {
                         )}
                         View
                       </button>
+                      {reservation.isOwner && !isPastEvent(reservation.endTime) && (
+                        <Link
+                          href={`/reservations/${reservation.id}/modify`}
+                          className="flex items-center gap-1 bg-blue-600 text-white px-3 py-1.5 rounded hover:bg-blue-700 transition-colors"
+                          onClick={() => setIsNavigating(true)}
+                        >
+                          {isNavigating ? (
+                            <FaSpinner className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <FaEdit className="w-4 h-4" />
+                          )}
+                          Modify
+                        </Link>
+                      )}
+                      {reservation.isOwner && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowDeleteConfirm(reservation.id);
+                          }}
+                          className="flex items-center gap-1 text-red-600 hover:text-red-700"
+                          disabled={isDeleting}
+                        >
+                          {isDeleting ? (
+                            <FaSpinner className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <FaTrash className="w-4 h-4" />
+                          )}
+                          Delete
+                        </button>
+                      )}
                     </div>
-                    {reservation.isOwner && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setShowDeleteConfirm(reservation.id);
-                        }}
-                        className="flex items-center gap-1 text-red-600 hover:text-red-700"
-                        disabled={isDeleting}
-                      >
-                        {isDeleting ? (
-                          <FaSpinner className="w-4 h-4 animate-spin" />
-                        ) : (
-                          <FaTrash className="w-4 h-4" />
-                        )}
-                        Delete
-                      </button>
-                    )}
                   </div>
 
                   {showDeleteConfirm === reservation.id && (
