@@ -420,66 +420,6 @@ export default function ReservationPage({ params }: PageProps) {
               </div>
             </div>
           </div>
-
-          <div className="mt-8">
-            <div className="flex items-center gap-2">
-              <CopyButton
-                text={`${window.location.origin}/reservations/${reservation.id}`}
-                label={
-                  <span className="flex items-center gap-1 bg-gray-600 text-white px-3 py-1.5 rounded hover:bg-gray-700 transition-colors">
-                    <FaShare className="w-4 h-4" />
-                    Share
-                  </span>
-                }
-                className="hover:bg-gray-700"
-              />
-              {reservation.isOwner && !isPastEvent(reservation.endTime) && (
-                <Link
-                  href={`/reservations/${reservation.id}/modify`}
-                  className="flex items-center gap-1 bg-blue-600 text-white px-3 py-1.5 rounded hover:bg-blue-700 transition-colors"
-                  onClick={() => setIsNavigating(true)}
-                >
-                  {isNavigating ? (
-                    <FaSpinner className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <FaEdit className="w-4 h-4" />
-                  )}
-                  Modify
-                </Link>
-              )}
-              <button
-                onClick={() => {
-                  setIsNavigating(true);
-                  router.push(`/reservations/${reservation.id}`);
-                }}
-                className="flex items-center gap-1 bg-gray-600 text-white px-3 py-1.5 rounded hover:bg-gray-700 transition-colors"
-              >
-                {isNavigating ? (
-                  <FaSpinner className="w-4 h-4 animate-spin" />
-                ) : (
-                  <FaEye className="w-4 h-4" />
-                )}
-                View
-              </button>
-              {reservation.isOwner && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setIsDeleting(true);
-                  }}
-                  className="flex items-center gap-1 text-red-600 hover:text-red-700"
-                  disabled={isDeleting}
-                >
-                  {isDeleting ? (
-                    <FaSpinner className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <FaTrash className="w-4 h-4" />
-                  )}
-                  Delete
-                </button>
-              )}
-            </div>
-          </div>
         </div>
       </div>
     </main>
