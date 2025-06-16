@@ -261,12 +261,12 @@ export default function MyReservationsPage() {
                       <CopyButton
                         text={`${window.location.origin}/reservations/${reservation.id}`}
                         label={
-                          <span className="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900">
+                          <span className="flex items-center gap-1 text-sm bg-blue-600 text-white px-3 py-1.5 rounded hover:bg-blue-700 transition-colors">
                             <FaShare className="w-4 h-4" />
                             Share
                           </span>
                         }
-                        className="hover:bg-gray-100 p-2 rounded"
+                        className="hover:bg-blue-700"
                       />
                       {reservation.isOwner && !isPastEvent(reservation.endTime) && (
                         <Link
@@ -276,18 +276,6 @@ export default function MyReservationsPage() {
                         >
                           Edit
                         </Link>
-                      )}
-                      {reservation.isOwner && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setShowDeleteConfirm(reservation.id);
-                          }}
-                          className="text-red-600 hover:text-red-700"
-                          disabled={isDeleting}
-                        >
-                          Delete
-                        </button>
                       )}
                     </div>
                   </div>
@@ -404,16 +392,6 @@ export default function MyReservationsPage() {
                   </div>
 
                   <div className="flex justify-end gap-4 mt-4">
-                    <CopyButton
-                      text={`${window.location.origin}/reservations/${reservation.id}`}
-                      label={
-                        <span className="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900">
-                          <FaShare className="w-4 h-4" />
-                          Share
-                        </span>
-                      }
-                      className="hover:bg-gray-100 p-2 rounded"
-                    />
                     {reservation.isOwner && !isPastEvent(reservation.endTime) && (
                       <Link
                         href={`/reservations/${reservation.id}/edit`}
