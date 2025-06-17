@@ -96,6 +96,10 @@ export default function SharedReservationPage({ params }: { params: Promise<{ sh
     try {
       // If password is required, show password dialog
       if (reservation.passwordRequired) {
+        if (!eventPassword.trim()) {
+          toast.error('Please enter the event password');
+          return;
+        }
         setShowPasswordDialog(true);
         return;
       }
@@ -140,7 +144,9 @@ export default function SharedReservationPage({ params }: { params: Promise<{ sh
         },
         body: JSON.stringify({ 
           email: session?.user?.email,
-          password 
+          password,
+          isGoing: true,
+          hasPaid: false
         }),
       });
 
@@ -236,8 +242,24 @@ export default function SharedReservationPage({ params }: { params: Promise<{ sh
 
               {reservation.description && (
                 <div>
-                  <h2 className="text-lg font-semibold mb-2">Court Description:</h2>
-                  <p className="text-gray-700 bg-gray-50 p-3 rounded-lg">{reservation.description}</p>
+                  <h2 className="text-lg font-semibold mb-2">Description</h2>
+                  <div className="text-gray-700 prose prose-sm max-w-none bg-gray-50 p-3 rounded-lg">
+                    {reservation.description.split('\n').map((line, i) => {
+                      // Check if the line is an image URL
+                      if (line.match(/^https?:\/\/.*\.(jpg|jpeg|png|gif|webp)$/i)) {
+                        return (
+                          <div key={i} className="my-4">
+                            <img 
+                              src={line} 
+                              alt="Reservation image" 
+                              className="rounded-lg max-w-full h-auto"
+                            />
+                          </div>
+                        );
+                      }
+                      return <p key={i}>{line}</p>;
+                    })}
+                  </div>
                 </div>
               )}
 
