@@ -4,11 +4,12 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { toast } from 'react-hot-toast';
-import { FaSpinner, FaShare, FaEdit, FaTrash, FaCheck, FaTimes } from 'react-icons/fa';
+import { FaSpinner, FaShare, FaEdit, FaTrash, FaCheck, FaTimes, FaUserPlus } from 'react-icons/fa';
 import { formatInTimeZone } from 'date-fns-tz';
 import Link from 'next/link';
 import CopyButton from '@/app/components/CopyButton';
 import { use } from 'react';
+import UserSearch from '@/app/components/UserSearch';
 
 interface Participant {
   id: string;
@@ -59,6 +60,9 @@ export default function ReservationPage({ params }: { params: Promise<{ reservat
   const [isSendingMessage, setIsSendingMessage] = useState(false);
   const [isNavigating, setIsNavigating] = useState(false);
   const { reservationId } = use(params);
+  const [showAddParticipant, setShowAddParticipant] = useState(false);
+  const [selectedParticipants, setSelectedParticipants] = useState<{ email: string; name: string | null }[]>([]);
+  const [isAddingParticipants, setIsAddingParticipants] = useState(false);
 
   useEffect(() => {
     if (!session && status !== 'loading') {
@@ -97,7 +101,7 @@ export default function ReservationPage({ params }: { params: Promise<{ reservat
 
   const isParticipant = () => {
     if (!session?.user?.email || !reservation) return false;
-    return reservation.participants.some(p => p.email === session.user.email);
+    return reservation.participants.some(p => p.email === session.user.email) || reservation.isOwner;
   };
 
   const handleSendMessage = async (e: React.FormEvent) => {
@@ -176,18 +180,18 @@ export default function ReservationPage({ params }: { params: Promise<{ reservat
     }
   };
 
-  const handleParticipantStatusUpdate = async (type: 'going' | 'payment', newValue: boolean) => {
+  const handleParticipantStatusUpdate = async (type: 'going' | 'payment', value: boolean) => {
     if (!session?.user?.email) return;
 
     try {
-      const response = await fetch(`/api/reservations/${reservationId}/participant-status`, {
+      const response = await fetch(`/api/reservations/${reservationId}/participants/status`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          type,
-          value: newValue,
+          email: session.user.email,
+          [type]: value,
         }),
       });
 
@@ -195,22 +199,44 @@ export default function ReservationPage({ params }: { params: Promise<{ reservat
         throw new Error('Failed to update status');
       }
 
-      setReservation(prev => {
-        if (!prev) return null;
-        return {
-          ...prev,
-          participants: prev.participants.map(p => 
-            p.email === session.user.email
-              ? { ...p, [type === 'going' ? 'isGoing' : 'hasPaid']: newValue }
-              : p
-          )
-        };
-      });
-
-      toast.success(`${type === 'going' ? 'Attendance' : 'Payment'} status updated`);
+      const updatedReservation = await response.json();
+      setReservation(updatedReservation);
+      toast.success('Status updated successfully');
     } catch (error) {
       console.error('Error updating status:', error);
-      toast.error(`Failed to update ${type} status`);
+      toast.error('Failed to update status');
+    }
+  };
+
+  const handleAddParticipants = async () => {
+    if (selectedParticipants.length === 0) return;
+
+    setIsAddingParticipants(true);
+    try {
+      const response = await fetch(`/api/reservations/${reservationId}/participants`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          participants: selectedParticipants.map(p => p.email),
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to add participants');
+      }
+
+      const updatedReservation = await response.json();
+      setReservation(updatedReservation);
+      setShowAddParticipant(false);
+      setSelectedParticipants([]);
+      toast.success('Participants added successfully');
+    } catch (error) {
+      console.error('Error adding participants:', error);
+      toast.error('Failed to add participants');
+    } finally {
+      setIsAddingParticipants(false);
     }
   };
 
@@ -346,7 +372,18 @@ export default function ReservationPage({ params }: { params: Promise<{ reservat
             </div>
 
             <div>
-              <h2 className="text-xl font-semibold mb-4">Participants</h2>
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-semibold">Participants</h2>
+                {reservation.isOwner && (
+                  <button
+                    onClick={() => setShowAddParticipant(true)}
+                    className="flex items-center gap-1 bg-blue-600 text-white px-3 py-1.5 rounded text-sm hover:bg-blue-700 transition-colors"
+                  >
+                    <FaUserPlus className="w-3 h-3" />
+                    Add Participants
+                  </button>
+                )}
+              </div>
               <div className="space-y-4">
                 <div>
                   <h3 className="text-sm font-medium text-green-700 mb-2">
@@ -551,6 +588,71 @@ export default function ReservationPage({ params }: { params: Promise<{ reservat
                   )}
                 </button>
               </form>
+            </div>
+          )}
+
+          {/* Add Participant Dialog */}
+          {showAddParticipant && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+              <div className="bg-white rounded-lg p-6 max-w-md w-full">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-semibold">Add Participants</h3>
+                  <button
+                    onClick={() => {
+                      setShowAddParticipant(false);
+                      setSelectedParticipants([]);
+                    }}
+                    className="text-gray-500 hover:text-gray-700"
+                  >
+                    <FaTimes className="w-5 h-5" />
+                  </button>
+                </div>
+                <div className="mb-4">
+                  <UserSearch
+                    onSelect={(user) => {
+                      if (!selectedParticipants.some(p => p.email === user.email)) {
+                        setSelectedParticipants([...selectedParticipants, user]);
+                      }
+                    }}
+                  />
+                </div>
+                {selectedParticipants.length > 0 && (
+                  <div className="mb-4">
+                    <h4 className="text-sm font-medium text-gray-700 mb-2">Selected Participants</h4>
+                    <div className="space-y-2">
+                      {selectedParticipants.map((participant) => (
+                        <div key={participant.email} className="flex items-center justify-between bg-gray-50 p-2 rounded">
+                          <span>{participant.name || participant.email}</span>
+                          <button
+                            onClick={() => setSelectedParticipants(selectedParticipants.filter(p => p.email !== participant.email))}
+                            className="text-red-500 hover:text-red-700"
+                          >
+                            <FaTimes className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                <div className="flex justify-end gap-4">
+                  <button
+                    onClick={() => {
+                      setShowAddParticipant(false);
+                      setSelectedParticipants([]);
+                    }}
+                    className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleAddParticipants}
+                    disabled={isAddingParticipants || selectedParticipants.length === 0}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-blue-300"
+                  >
+                    {isAddingParticipants ? 'Adding...' : 'Add Participants'}
+                  </button>
+                </div>
+              </div>
             </div>
           )}
         </div>
