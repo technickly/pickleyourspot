@@ -44,6 +44,7 @@ interface Reservation {
   isOwner: boolean;
   participants: Participant[];
   messages: Message[];
+  shortUrl: string;
 }
 
 const timeZone = 'America/Los_Angeles';
@@ -168,6 +169,44 @@ export default function ReservationPage({ params }: { params: { reservationId: s
     }
   };
 
+  const handleParticipantStatusUpdate = async (type: 'going' | 'payment', newValue: boolean) => {
+    if (!session?.user?.email) return;
+
+    try {
+      const response = await fetch(`/api/reservations/${params.reservationId}/participant-status`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          type,
+          value: newValue,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update status');
+      }
+
+      setReservation(prev => {
+        if (!prev) return null;
+        return {
+          ...prev,
+          participants: prev.participants.map(p => 
+            p.email === session.user.email
+              ? { ...p, [type === 'going' ? 'isGoing' : 'hasPaid']: newValue }
+              : p
+          )
+        };
+      });
+
+      toast.success(`${type === 'going' ? 'Attendance' : 'Payment'} status updated`);
+    } catch (error) {
+      console.error('Error updating status:', error);
+      toast.error(`Failed to update ${type} status`);
+    }
+  };
+
   if (status === 'loading' || isLoading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
@@ -215,9 +254,9 @@ export default function ReservationPage({ params }: { params: { reservationId: s
             <h1 className="text-2xl font-bold text-gray-900">{reservation.name}</h1>
             <div className="flex items-center gap-2">
               <CopyButton
-                text={`${window.location.origin}/reservations/${reservation.id}`}
+                text={`${window.location.origin}/r/${reservation.shortUrl}`}
                 label={
-                  <span className="flex items-center gap-1 bg-gray-600 text-white px-2 py-1 rounded text-sm hover:bg-gray-700 transition-colors">
+                  <span className="flex items-center gap-1 bg-gray-600 text-white px-3 py-1.5 rounded text-sm hover:bg-gray-700 transition-colors">
                     <FaShare className="w-3 h-3" />
                     Share
                   </span>
@@ -227,7 +266,7 @@ export default function ReservationPage({ params }: { params: { reservationId: s
               {reservation.isOwner && (
                 <Link
                   href={`/reservations/${reservation.id}/modify`}
-                  className="flex items-center gap-1 bg-blue-600 text-white px-2 py-1 rounded text-sm hover:bg-blue-700 transition-colors"
+                  className="flex items-center gap-1 bg-blue-600 text-white px-3 py-1.5 rounded text-sm hover:bg-blue-700 transition-colors"
                   onClick={() => setIsNavigating(true)}
                 >
                   {isNavigating ? (
@@ -235,7 +274,7 @@ export default function ReservationPage({ params }: { params: { reservationId: s
                   ) : (
                     <FaEdit className="w-3 h-3" />
                   )}
-                  Edit
+                  Modify
                 </Link>
               )}
             </div>
@@ -311,46 +350,51 @@ export default function ReservationPage({ params }: { params: { reservationId: s
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
-                            {reservation.isOwner && (
-                              <button
-                                onClick={() => handleStatusUpdate(participant.id, 'payment', !participant.hasPaid)}
-                                className={`px-2 py-1 text-xs rounded-full ${
-                                  participant.hasPaid 
-                                    ? 'bg-green-100 text-green-800 hover:bg-green-200' 
-                                    : 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
-                                }`}
-                              >
-                                {participant.hasPaid ? (
-                                  <span className="flex items-center gap-1">
-                                    <FaCheck className="w-3 h-3" />
-                                    Paid
-                                  </span>
-                                ) : (
-                                  <span className="flex items-center gap-1">
-                                    <FaTimes className="w-3 h-3" />
-                                    Unpaid
+                            {participant.email === session?.user?.email ? (
+                              <>
+                                <button
+                                  onClick={() => handleParticipantStatusUpdate('going', false)}
+                                  className="px-3 py-1.5 text-sm rounded-full bg-red-100 text-red-800 hover:bg-red-200 transition-colors"
+                                >
+                                  Not Going
+                                </button>
+                                {reservation.paymentRequired && (
+                                  <button
+                                    onClick={() => handleParticipantStatusUpdate('payment', !participant.hasPaid)}
+                                    className={`px-3 py-1.5 text-sm rounded-full transition-colors ${
+                                      participant.hasPaid 
+                                        ? 'bg-green-100 text-green-800 hover:bg-green-200' 
+                                        : 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
+                                    }`}
+                                  >
+                                    {participant.hasPaid ? 'Paid' : 'Mark as Paid'}
+                                  </button>
+                                )}
+                              </>
+                            ) : (
+                              <>
+                                {reservation.isOwner && (
+                                  <button
+                                    onClick={() => handleStatusUpdate(participant.id, 'payment', !participant.hasPaid)}
+                                    className={`px-3 py-1.5 text-sm rounded-full transition-colors ${
+                                      participant.hasPaid 
+                                        ? 'bg-green-100 text-green-800 hover:bg-green-200' 
+                                        : 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
+                                    }`}
+                                  >
+                                    {participant.hasPaid ? 'Paid' : 'Mark as Paid'}
+                                  </button>
+                                )}
+                                {!reservation.isOwner && reservation.paymentRequired && (
+                                  <span className={`px-3 py-1.5 text-sm rounded-full ${
+                                    participant.hasPaid 
+                                      ? 'bg-green-100 text-green-800' 
+                                      : 'bg-yellow-100 text-yellow-800'
+                                  }`}>
+                                    {participant.hasPaid ? 'Paid' : 'Unpaid'}
                                   </span>
                                 )}
-                              </button>
-                            )}
-                            {!reservation.isOwner && (
-                              <span className={`px-2 py-1 text-xs rounded-full ${
-                                participant.hasPaid 
-                                  ? 'bg-green-100 text-green-800' 
-                                  : 'bg-yellow-100 text-yellow-800'
-                              }`}>
-                                {participant.hasPaid ? (
-                                  <span className="flex items-center gap-1">
-                                    <FaCheck className="w-3 h-3" />
-                                    Paid
-                                  </span>
-                                ) : (
-                                  <span className="flex items-center gap-1">
-                                    <FaTimes className="w-3 h-3" />
-                                    Unpaid
-                                  </span>
-                                )}
-                              </span>
+                              </>
                             )}
                           </div>
                         </div>
@@ -383,46 +427,51 @@ export default function ReservationPage({ params }: { params: { reservationId: s
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
-                            {reservation.isOwner && (
-                              <button
-                                onClick={() => handleStatusUpdate(participant.id, 'payment', !participant.hasPaid)}
-                                className={`px-2 py-1 text-xs rounded-full ${
-                                  participant.hasPaid 
-                                    ? 'bg-green-100 text-green-800 hover:bg-green-200' 
-                                    : 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
-                                }`}
-                              >
-                                {participant.hasPaid ? (
-                                  <span className="flex items-center gap-1">
-                                    <FaCheck className="w-3 h-3" />
-                                    Paid
-                                  </span>
-                                ) : (
-                                  <span className="flex items-center gap-1">
-                                    <FaTimes className="w-3 h-3" />
-                                    Unpaid
+                            {participant.email === session?.user?.email ? (
+                              <>
+                                <button
+                                  onClick={() => handleParticipantStatusUpdate('going', true)}
+                                  className="px-3 py-1.5 text-sm rounded-full bg-green-100 text-green-800 hover:bg-green-200 transition-colors"
+                                >
+                                  Going
+                                </button>
+                                {reservation.paymentRequired && (
+                                  <button
+                                    onClick={() => handleParticipantStatusUpdate('payment', !participant.hasPaid)}
+                                    className={`px-3 py-1.5 text-sm rounded-full transition-colors ${
+                                      participant.hasPaid 
+                                        ? 'bg-green-100 text-green-800 hover:bg-green-200' 
+                                        : 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
+                                    }`}
+                                  >
+                                    {participant.hasPaid ? 'Paid' : 'Mark as Paid'}
+                                  </button>
+                                )}
+                              </>
+                            ) : (
+                              <>
+                                {reservation.isOwner && (
+                                  <button
+                                    onClick={() => handleStatusUpdate(participant.id, 'payment', !participant.hasPaid)}
+                                    className={`px-3 py-1.5 text-sm rounded-full transition-colors ${
+                                      participant.hasPaid 
+                                        ? 'bg-green-100 text-green-800 hover:bg-green-200' 
+                                        : 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
+                                    }`}
+                                  >
+                                    {participant.hasPaid ? 'Paid' : 'Mark as Paid'}
+                                  </button>
+                                )}
+                                {!reservation.isOwner && reservation.paymentRequired && (
+                                  <span className={`px-3 py-1.5 text-sm rounded-full ${
+                                    participant.hasPaid 
+                                      ? 'bg-green-100 text-green-800' 
+                                      : 'bg-yellow-100 text-yellow-800'
+                                  }`}>
+                                    {participant.hasPaid ? 'Paid' : 'Unpaid'}
                                   </span>
                                 )}
-                              </button>
-                            )}
-                            {!reservation.isOwner && (
-                              <span className={`px-2 py-1 text-xs rounded-full ${
-                                participant.hasPaid 
-                                  ? 'bg-green-100 text-green-800' 
-                                  : 'bg-yellow-100 text-yellow-800'
-                              }`}>
-                                {participant.hasPaid ? (
-                                  <span className="flex items-center gap-1">
-                                    <FaCheck className="w-3 h-3" />
-                                    Paid
-                                  </span>
-                                ) : (
-                                  <span className="flex items-center gap-1">
-                                    <FaTimes className="w-3 h-3" />
-                                    Unpaid
-                                  </span>
-                                )}
-                              </span>
+                              </>
                             )}
                           </div>
                         </div>
