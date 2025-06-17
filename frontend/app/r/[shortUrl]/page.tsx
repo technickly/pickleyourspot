@@ -7,7 +7,7 @@ import { toast } from 'react-hot-toast';
 import { formatInTimeZone } from 'date-fns-tz';
 import React from 'react';
 import { use } from 'react';
-import { FaSpinner } from 'react-icons/fa';
+import { FaSpinner, FaUser } from 'react-icons/fa';
 
 interface Reservation {
   id: string;
@@ -22,6 +22,12 @@ interface Reservation {
     name: string | null;
     email: string;
     userId: string;
+    user?: {
+      image?: string;
+      name?: string;
+    };
+    isGoing: boolean;
+    hasPaid: boolean;
   }[];
   owner: {
     name: string | null;
@@ -91,7 +97,7 @@ export default function ShortUrlPage({ params }: { params: Promise<{ shortUrl: s
       return;
     }
 
-    if (reservation?.passwordProtected && !password) {
+    if (reservation?.passwordRequired && !password) {
       setShowPasswordInput(true);
       return;
     }
@@ -105,7 +111,7 @@ export default function ShortUrlPage({ params }: { params: Promise<{ shortUrl: s
         },
         body: JSON.stringify({
           email: session.user.email,
-          password: reservation?.passwordProtected ? password : undefined,
+          password: reservation?.passwordRequired ? password : undefined,
           isGoing: selectedStatus === 'going',
           hasPaid: selectedPayment,
         }),
@@ -251,10 +257,46 @@ export default function ShortUrlPage({ params }: { params: Promise<{ shortUrl: s
                     <div className="grid gap-2">
                       {reservation.participants.map((participant) => (
                         <div
-                          key={participant.userId}
+                          key={`${participant.userId}-${participant.email}`}
                           className="flex items-center justify-between bg-gray-50 p-2 rounded"
                         >
-                          <span>{participant.name || participant.email}</span>
+                          <div className="flex items-center gap-2">
+                            {participant.user?.image ? (
+                              <img
+                                src={participant.user.image}
+                                alt={participant.user.name || participant.email}
+                                className="w-8 h-8 rounded-full"
+                              />
+                            ) : (
+                              <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
+                                <FaUser className="w-4 h-4 text-gray-500" />
+                              </div>
+                            )}
+                            <div>
+                              <p className="font-medium">
+                                {participant.user?.name || participant.email}
+                              </p>
+                              <p className="text-sm text-gray-500">{participant.email}</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className={`px-2 py-1 rounded-full text-sm ${
+                              participant.isGoing
+                                ? 'bg-green-100 text-green-800'
+                                : 'bg-red-100 text-red-800'
+                            }`}>
+                              {participant.isGoing ? 'Going' : 'Not Going'}
+                            </span>
+                            {reservation.paymentRequired && (
+                              <span className={`px-2 py-1 rounded-full text-sm ${
+                                participant.hasPaid
+                                  ? 'bg-green-100 text-green-800'
+                                  : 'bg-yellow-100 text-yellow-800'
+                              }`}>
+                                {participant.hasPaid ? 'Paid' : 'Unpaid'}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -304,7 +346,7 @@ export default function ShortUrlPage({ params }: { params: Promise<{ shortUrl: s
                     )}
                   </div>
 
-                  {showPasswordInput && (
+                  {reservation.passwordRequired && (
                     <div className="mt-4">
                       <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
                         Password
@@ -328,7 +370,7 @@ export default function ShortUrlPage({ params }: { params: Promise<{ shortUrl: s
 
                   <button
                     onClick={handleJoin}
-                    disabled={isJoining || (reservation?.passwordProtected && !password)}
+                    disabled={isJoining || (reservation?.passwordRequired && !password)}
                     className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
                     {isJoining ? (

@@ -59,21 +59,24 @@ interface Reservation {
 
 const timeZone = 'America/Los_Angeles';
 
-const formatDate = (date: string, time: string, format: string) => {
+const formatDate = (dateTime: string, format: string) => {
   try {
-    // Ensure we have valid date and time strings
-    if (!date || !time) return 'Date not available';
+    // Ensure we have a valid date string
+    if (!dateTime) {
+      console.log('Missing date:', dateTime);
+      return 'Date not available';
+    }
     
-    // Create a date object from the combined date and time
-    const dateTime = new Date(`${date}T${time}`);
+    // Create a date object from the ISO string
+    const date = new Date(dateTime);
     
     // Check if the date is valid
-    if (isNaN(dateTime.getTime())) {
-      console.error('Invalid date:', date, time);
+    if (isNaN(date.getTime())) {
+      console.error('Invalid date:', dateTime);
       return 'Invalid date';
     }
     
-    return formatInTimeZone(dateTime, timeZone, format);
+    return formatInTimeZone(date, timeZone, format);
   } catch (error) {
     console.error('Error formatting date:', error);
     return 'Date formatting error';
@@ -101,20 +104,15 @@ export default function ReservationPage({ params }: { params: Promise<{ reservat
     }
 
     const fetchReservation = async () => {
-      try {
-        setIsLoading(true);
-        const response = await fetch(`/api/reservations/${reservationId}`, {
-          headers: {
-            'Cache-Control': 'no-cache',
-            'Pragma': 'no-cache'
-          }
-        });
+      if (!session?.user?.email) return;
 
+      try {
+        const response = await fetch(`/api/reservations/${reservationId}`);
         if (!response.ok) {
           throw new Error('Failed to fetch reservation');
         }
-
         const data = await response.json();
+        console.log('Fetched reservation data:', data); // Debug log
         setReservation(data);
       } catch (error) {
         console.error('Error fetching reservation:', error);
@@ -124,10 +122,8 @@ export default function ReservationPage({ params }: { params: Promise<{ reservat
       }
     };
 
-    if (session?.user?.email) {
-      fetchReservation();
-    }
-  }, [session, status, router, reservationId]);
+    fetchReservation();
+  }, [reservationId, session?.user?.email]);
 
   const isParticipant = () => {
     if (!session?.user?.email || !reservation) return false;
@@ -328,10 +324,10 @@ export default function ReservationPage({ params }: { params: Promise<{ reservat
               <div>
                 <p className="text-sm font-medium text-gray-500 mb-1">Date & Time</p>
                 <p className="text-gray-900">
-                  {formatDate(reservation.date, reservation.startTime, 'EEEE, MMMM d, yyyy')}
+                  {formatDate(reservation.startTime, 'EEEE, MMMM d, yyyy')}
                 </p>
                 <p className="text-gray-900">
-                  {formatDate(reservation.date, reservation.startTime, 'h:mm a')} - {formatDate(reservation.date, reservation.endTime, 'h:mm a')}
+                  {formatDate(reservation.startTime, 'h:mm a')} - {formatDate(reservation.endTime, 'h:mm a')}
                 </p>
               </div>
 
@@ -564,30 +560,39 @@ export default function ReservationPage({ params }: { params: Promise<{ reservat
             </div>
           </div>
 
+          {/* Messages Section */}
           {isParticipant() && (
             <div className="mt-8">
               <h2 className="text-xl font-semibold mb-4">Messages</h2>
               <div className="space-y-4 mb-4">
-                {reservation.messages.map((message) => (
-                  <div key={message.id} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
-                    {message.user.image && (
-                      <img
-                        src={message.user.image}
-                        alt={message.user.name || message.user.email}
-                        className="w-8 h-8 rounded-full"
-                      />
-                    )}
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <p className="font-medium">{message.user.name || message.user.email}</p>
-                        <p className="text-sm text-gray-500">
-                          {formatInTimeZone(new Date(message.createdAt), timeZone, 'MMM d, h:mm a')}
-                        </p>
+                {reservation.messages && reservation.messages.length > 0 ? (
+                  reservation.messages.map((message) => (
+                    <div key={message.id} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+                      {message.user?.image ? (
+                        <img
+                          src={message.user.image}
+                          alt={message.user.name || message.user.email}
+                          className="w-8 h-8 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
+                          <FaUser className="w-4 h-4 text-gray-500" />
+                        </div>
+                      )}
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <p className="font-medium">{message.user?.name || message.user?.email}</p>
+                          <p className="text-sm text-gray-500">
+                            {formatInTimeZone(new Date(message.createdAt), timeZone, 'MMM d, h:mm a')}
+                          </p>
+                        </div>
+                        <p className="text-gray-700">{message.content}</p>
                       </div>
-                      <p className="text-gray-700">{message.content}</p>
                     </div>
-                  </div>
-                ))}
+                  ))
+                ) : (
+                  <p className="text-gray-500 text-center py-4">No messages yet. Start the conversation!</p>
+                )}
               </div>
 
               <form onSubmit={handleSendMessage} className="flex gap-2">
