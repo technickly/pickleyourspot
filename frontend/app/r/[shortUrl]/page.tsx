@@ -7,7 +7,7 @@ import { toast } from 'react-hot-toast';
 import { formatInTimeZone } from 'date-fns-tz';
 import React from 'react';
 import { use } from 'react';
-import { FaSpinner, FaUser } from 'react-icons/fa';
+import { FaSpinner, FaUser, FaCheck, FaTimes } from 'react-icons/fa';
 
 interface Reservation {
   id: string;
@@ -49,7 +49,8 @@ export default function ShortUrlPage({ params }: { params: Promise<{ shortUrl: s
   const [showPasswordInput, setShowPasswordInput] = useState(false);
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [selectedStatus, setSelectedStatus] = useState<'going' | 'not-going'>('going');
-  const [selectedPayment, setSelectedPayment] = useState(false);
+  const [selectedPayment, setSelectedPayment] = useState<'paid' | 'not-paid'>('not-paid');
+  const [showConfirmation, setShowConfirmation] = useState(false);
   const resolvedParams = React.use(params);
 
   useEffect(() => {
@@ -98,10 +99,14 @@ export default function ShortUrlPage({ params }: { params: Promise<{ shortUrl: s
     }
 
     if (reservation?.passwordRequired && !password) {
-      setShowPasswordInput(true);
+      toast.error('Please enter the password to join');
       return;
     }
 
+    setShowConfirmation(true);
+  };
+
+  const handleConfirmJoin = async () => {
     setIsJoining(true);
     try {
       const response = await fetch(`/api/reservations/${reservation?.id}/join`, {
@@ -110,10 +115,10 @@ export default function ShortUrlPage({ params }: { params: Promise<{ shortUrl: s
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          email: session.user.email,
+          email: session?.user?.email,
           password: reservation?.passwordRequired ? password : undefined,
           isGoing: selectedStatus === 'going',
-          hasPaid: selectedPayment,
+          hasPaid: selectedPayment === 'paid',
         }),
       });
 
@@ -129,9 +134,10 @@ export default function ShortUrlPage({ params }: { params: Promise<{ shortUrl: s
       const updatedReservation = await response.json();
       setReservation(updatedReservation);
       toast.success('Successfully joined the reservation!');
-      setShowPasswordInput(false);
       setPassword('');
       setPasswordError(null);
+      setShowConfirmation(false);
+      router.push(`/reservations/${reservation?.id}`);
     } catch (error) {
       console.error('Error joining reservation:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to join reservation');
@@ -307,41 +313,57 @@ export default function ShortUrlPage({ params }: { params: Promise<{ shortUrl: s
               {!isParticipant && (
                 <div className="mt-6 space-y-4">
                   <div className="flex flex-col gap-4">
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => setSelectedStatus('going')}
-                        className={`flex-1 py-2 px-4 rounded-lg border transition-colors ${
-                          selectedStatus === 'going'
-                            ? 'bg-green-100 border-green-500 text-green-700'
-                            : 'bg-white border-gray-300 hover:bg-gray-50'
-                        }`}
-                      >
-                        Going
-                      </button>
-                      <button
-                        onClick={() => setSelectedStatus('not-going')}
-                        className={`flex-1 py-2 px-4 rounded-lg border transition-colors ${
-                          selectedStatus === 'not-going'
-                            ? 'bg-red-100 border-red-500 text-red-700'
-                            : 'bg-white border-gray-300 hover:bg-gray-50'
-                        }`}
-                      >
-                        Not Going
-                      </button>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Are you going?</label>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => setSelectedStatus('going')}
+                          className={`flex-1 py-2 px-4 rounded-lg border transition-colors ${
+                            selectedStatus === 'going'
+                              ? 'bg-green-100 border-green-500 text-green-700'
+                              : 'bg-white border-gray-300 hover:bg-gray-50'
+                          }`}
+                        >
+                          Going
+                        </button>
+                        <button
+                          onClick={() => setSelectedStatus('not-going')}
+                          className={`flex-1 py-2 px-4 rounded-lg border transition-colors ${
+                            selectedStatus === 'not-going'
+                              ? 'bg-red-100 border-red-500 text-red-700'
+                              : 'bg-white border-gray-300 hover:bg-gray-50'
+                          }`}
+                        >
+                          Not Going
+                        </button>
+                      </div>
                     </div>
 
                     {reservation.paymentRequired && (
-                      <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
-                        <input
-                          type="checkbox"
-                          id="payment"
-                          checked={selectedPayment}
-                          onChange={(e) => setSelectedPayment(e.target.checked)}
-                          className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
-                        />
-                        <label htmlFor="payment" className="text-sm text-gray-700">
-                          I have paid
-                        </label>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Payment Status</label>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => setSelectedPayment('paid')}
+                            className={`flex-1 py-2 px-4 rounded-lg border transition-colors ${
+                              selectedPayment === 'paid'
+                                ? 'bg-green-100 border-green-500 text-green-700'
+                                : 'bg-white border-gray-300 hover:bg-gray-50'
+                            }`}
+                          >
+                            Paid
+                          </button>
+                          <button
+                            onClick={() => setSelectedPayment('not-paid')}
+                            className={`flex-1 py-2 px-4 rounded-lg border transition-colors ${
+                              selectedPayment === 'not-paid'
+                                ? 'bg-red-100 border-red-500 text-red-700'
+                                : 'bg-white border-gray-300 hover:bg-gray-50'
+                            }`}
+                          >
+                            Not Paid
+                          </button>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -382,6 +404,71 @@ export default function ShortUrlPage({ params }: { params: Promise<{ shortUrl: s
                       'Join Reservation'
                     )}
                   </button>
+                </div>
+              )}
+
+              {showConfirmation && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                  <div className="bg-white rounded-lg p-6 max-w-md w-full">
+                    <h3 className="text-xl font-semibold mb-4">Confirm Your Details</h3>
+                    <div className="space-y-4">
+                      <div>
+                        <p className="text-sm text-gray-600">Name</p>
+                        <p className="font-medium">{session?.user?.name || session?.user?.email}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-600">Attendance</p>
+                        <div className="flex items-center gap-2">
+                          {selectedStatus === 'going' ? (
+                            <FaCheck className="text-green-500" />
+                          ) : (
+                            <FaTimes className="text-red-500" />
+                          )}
+                          <p className="font-medium">{selectedStatus === 'going' ? 'Going' : 'Not Going'}</p>
+                        </div>
+                      </div>
+                      {reservation.paymentRequired && (
+                        <div>
+                          <p className="text-sm text-gray-600">Payment Status</p>
+                          <div className="flex items-center gap-2">
+                            {selectedPayment === 'paid' ? (
+                              <FaCheck className="text-green-500" />
+                            ) : (
+                              <FaTimes className="text-red-500" />
+                            )}
+                            <p className="font-medium">{selectedPayment === 'paid' ? 'Paid' : 'Not Paid'}</p>
+                          </div>
+                        </div>
+                      )}
+                      <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+                        <p className="text-sm text-blue-700">
+                          You can view this event later under "My Events". Redirecting you to the event details now.
+                        </p>
+                      </div>
+                    </div>
+                    <div className="mt-6 flex gap-3">
+                      <button
+                        onClick={() => setShowConfirmation(false)}
+                        className="flex-1 py-2 px-4 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={handleConfirmJoin}
+                        disabled={isJoining}
+                        className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        {isJoining ? (
+                          <div className="flex items-center justify-center gap-2">
+                            <FaSpinner className="w-4 h-4 animate-spin" />
+                            Joining...
+                          </div>
+                        ) : (
+                          'Confirm & Join'
+                        )}
+                      </button>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
