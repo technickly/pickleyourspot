@@ -11,41 +11,49 @@ import CopyButton from '@/app/components/CopyButton';
 import { use } from 'react';
 import UserSearch from '@/app/components/UserSearch';
 
-interface Participant {
-  id: string;
-  email: string;
-  isGoing: boolean;
-  hasPaid: boolean;
-  user?: {
-    name: string;
-    email: string;
-    image: string;
-  };
-}
-
 interface Message {
   id: string;
   content: string;
   createdAt: string;
   user: {
-    name: string;
+    name: string | null;
     email: string;
-    image: string;
+    image: string | null;
+  };
+}
+
+interface Participant {
+  id: string;
+  email: string;
+  isGoing: boolean;
+  hasPaid: boolean;
+  user: {
+    name: string | null;
+    email: string;
+    image: string | null;
   };
 }
 
 interface Reservation {
   id: string;
-  name: string;
-  courtName: string;
+  court: {
+    name: string;
+    address: string;
+  };
+  date: string;
   startTime: string;
   endTime: string;
-  description?: string;
-  paymentRequired: boolean;
-  paymentInfo?: string;
-  isOwner: boolean;
+  owner: {
+    name: string | null;
+    email: string;
+    image: string | null;
+  };
   participants: Participant[];
   messages: Message[];
+  isOwner: boolean;
+  paymentRequired: boolean;
+  paymentAmount: number | null;
+  paymentDetails: string | null;
   shortUrl: string;
 }
 
@@ -63,6 +71,7 @@ export default function ReservationPage({ params }: { params: Promise<{ reservat
   const [showAddParticipant, setShowAddParticipant] = useState(false);
   const [selectedParticipants, setSelectedParticipants] = useState<{ email: string; name: string | null }[]>([]);
   const [isAddingParticipants, setIsAddingParticipants] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!session && status !== 'loading') {
@@ -88,7 +97,7 @@ export default function ReservationPage({ params }: { params: Promise<{ reservat
         setReservation(data);
       } catch (error) {
         console.error('Error fetching reservation:', error);
-        toast.error('Failed to load reservation');
+        setError('Failed to load reservation');
       } finally {
         setIsLoading(false);
       }
@@ -106,7 +115,7 @@ export default function ReservationPage({ params }: { params: Promise<{ reservat
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newMessage.trim() || !session?.user?.email || !isParticipant()) return;
+    if (!session?.user?.email || !newMessage.trim() || isSendingMessage) return;
 
     setIsSendingMessage(true);
     try {
@@ -124,13 +133,9 @@ export default function ReservationPage({ params }: { params: Promise<{ reservat
         throw new Error('Failed to send message');
       }
 
-      const message = await response.json();
-      setReservation(prev => prev ? {
-        ...prev,
-        messages: [...prev.messages, message]
-      } : null);
+      const updatedReservation = await response.json();
+      setReservation(updatedReservation);
       setNewMessage('');
-      toast.success('Message sent successfully');
     } catch (error) {
       console.error('Error sending message:', error);
       toast.error('Failed to send message');
@@ -268,7 +273,7 @@ export default function ReservationPage({ params }: { params: Promise<{ reservat
       <div className="max-w-4xl mx-auto">
         <div className="bg-white rounded-lg shadow-sm p-6">
           <div className="flex justify-between items-start mb-6">
-            <h1 className="text-2xl font-bold text-gray-900">{reservation.name}</h1>
+            <h1 className="text-2xl font-bold text-gray-900">{reservation.court.name}</h1>
             <div className="flex items-center gap-2">
               <CopyButton
                 text={`${window.location.origin}/r/${reservation.shortUrl}`}
@@ -303,7 +308,7 @@ export default function ReservationPage({ params }: { params: Promise<{ reservat
                 <p className="text-sm font-medium text-gray-500 mb-1">Date & Time</p>
                 <p className="text-gray-900">
                   {formatInTimeZone(
-                    new Date(reservation.startTime),
+                    new Date(reservation.date),
                     timeZone,
                     'EEEE, MMMM d, yyyy'
                   )}
@@ -324,33 +329,10 @@ export default function ReservationPage({ params }: { params: Promise<{ reservat
                 </p>
               </div>
 
-              {reservation.description && (
-                <div>
-                  <h2 className="text-lg font-semibold mb-2">Description</h2>
-                  <div className="text-gray-700 prose prose-sm max-w-none bg-gray-50 p-3 rounded-lg">
-                    {reservation.description.split('\n').map((line, i) => {
-                      // Check if the line is an image URL
-                      if (line.trim().match(/^https?:\/\/.*\.(jpg|jpeg|png|gif|webp)$/i)) {
-                        return (
-                          <div key={i} className="my-4">
-                            <img 
-                              src={line.trim()} 
-                              alt="Reservation image" 
-                              className="rounded-lg max-w-full h-auto"
-                            />
-                          </div>
-                        );
-                      }
-                      return <p key={i}>{line}</p>;
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {reservation.paymentRequired && reservation.paymentInfo && (
+              {reservation.paymentDetails && (
                 <div>
                   <p className="text-sm font-medium text-gray-500 mb-1">Payment Information</p>
-                  <p className="text-gray-700">{reservation.paymentInfo}</p>
+                  <p className="text-gray-700">{reservation.paymentDetails}</p>
                 </div>
               )}
             </div>
@@ -379,7 +361,7 @@ export default function ReservationPage({ params }: { params: Promise<{ reservat
                       .map((participant) => (
                         <div key={participant.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                           <div className="flex items-center gap-3">
-                            {participant.user?.image ? (
+                            {participant.user.image ? (
                               <img
                                 src={participant.user.image}
                                 alt={participant.user.name || participant.email}
@@ -392,7 +374,7 @@ export default function ReservationPage({ params }: { params: Promise<{ reservat
                             )}
                             <div>
                               <p className="font-medium">
-                                {participant.user?.name || 'Anonymous User'}
+                                {participant.user.name || 'Anonymous User'}
                               </p>
                               <p className="text-sm text-gray-500">{participant.email}</p>
                             </div>
@@ -468,7 +450,7 @@ export default function ReservationPage({ params }: { params: Promise<{ reservat
                       .map((participant) => (
                         <div key={participant.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                           <div className="flex items-center gap-3">
-                            {participant.user?.image ? (
+                            {participant.user.image ? (
                               <img
                                 src={participant.user.image}
                                 alt={participant.user.name || participant.email}
