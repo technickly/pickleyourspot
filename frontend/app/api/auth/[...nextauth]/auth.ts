@@ -22,13 +22,37 @@ export const authOptions: AuthOptions = {
     async session({ session, user }) {
       if (session?.user) {
         session.user.id = user.id;
+        session.user.email = user.email;
+        session.user.name = user.name;
       }
       return session;
     },
+    async jwt({ token, user }) {
+      if (user) {
+        token.id = user.id;
+      }
+      return token;
+    }
   },
   pages: {
     signIn: '/',
     error: '/',
   },
-  debug: process.env.NODE_ENV === 'development',
+  session: {
+    strategy: 'jwt',
+    maxAge: 30 * 24 * 60 * 60, // 30 days
+  },
+  cookies: {
+    sessionToken: {
+      name: `__Secure-next-auth.session-token`,
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: true,
+        domain: process.env.NODE_ENV === 'production' ? '.pickleyourspot.com' : undefined
+      }
+    }
+  },
+  debug: true, // Enable debug in production temporarily
 }; 
