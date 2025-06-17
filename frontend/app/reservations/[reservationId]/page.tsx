@@ -8,6 +8,7 @@ import { FaSpinner, FaShare, FaEdit, FaTrash, FaCheck, FaTimes } from 'react-ico
 import { formatInTimeZone } from 'date-fns-tz';
 import Link from 'next/link';
 import CopyButton from '@/app/components/CopyButton';
+import { use } from 'react';
 
 interface Participant {
   id: string;
@@ -49,7 +50,7 @@ interface Reservation {
 
 const timeZone = 'America/Los_Angeles';
 
-export default function ReservationPage({ params }: { params: { reservationId: string } }) {
+export default function ReservationPage({ params }: { params: Promise<{ reservationId: string }> }) {
   const router = useRouter();
   const { data: session, status } = useSession();
   const [reservation, setReservation] = useState<Reservation | null>(null);
@@ -57,6 +58,7 @@ export default function ReservationPage({ params }: { params: { reservationId: s
   const [newMessage, setNewMessage] = useState('');
   const [isSendingMessage, setIsSendingMessage] = useState(false);
   const [isNavigating, setIsNavigating] = useState(false);
+  const { reservationId } = use(params);
 
   useEffect(() => {
     if (!session && status !== 'loading') {
@@ -67,7 +69,7 @@ export default function ReservationPage({ params }: { params: { reservationId: s
     const fetchReservation = async () => {
       try {
         setIsLoading(true);
-        const response = await fetch(`/api/reservations/${params.reservationId}`, {
+        const response = await fetch(`/api/reservations/${reservationId}`, {
           headers: {
             'Cache-Control': 'no-cache',
             'Pragma': 'no-cache'
@@ -91,7 +93,7 @@ export default function ReservationPage({ params }: { params: { reservationId: s
     if (session?.user?.email) {
       fetchReservation();
     }
-  }, [session, status, router, params.reservationId]);
+  }, [session, status, router, reservationId]);
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -99,7 +101,7 @@ export default function ReservationPage({ params }: { params: { reservationId: s
 
     setIsSendingMessage(true);
     try {
-      const response = await fetch(`/api/reservations/${params.reservationId}/messages`, {
+      const response = await fetch(`/api/reservations/${reservationId}/messages`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -134,7 +136,7 @@ export default function ReservationPage({ params }: { params: { reservationId: s
     newValue: boolean
   ) => {
     try {
-      const response = await fetch(`/api/reservations/${params.reservationId}/participant-status`, {
+      const response = await fetch(`/api/reservations/${reservationId}/participant-status`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -173,7 +175,7 @@ export default function ReservationPage({ params }: { params: { reservationId: s
     if (!session?.user?.email) return;
 
     try {
-      const response = await fetch(`/api/reservations/${params.reservationId}/participant-status`, {
+      const response = await fetch(`/api/reservations/${reservationId}/participant-status`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
