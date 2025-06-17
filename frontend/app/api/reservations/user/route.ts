@@ -57,6 +57,16 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Get the user's ID first
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email },
+      select: { id: true }
+    });
+
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
     // Get reservations where user is owner
     const ownedReservations = await prisma.reservation.findMany({
       where: {
@@ -95,9 +105,9 @@ export async function GET() {
       where: {
         participants: {
           some: {
-            userEmail: session.user.email,
-          },
-        },
+            userId: user.id
+          }
+        }
       },
       include: {
         court: true,
