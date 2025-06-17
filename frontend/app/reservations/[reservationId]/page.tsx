@@ -95,9 +95,14 @@ export default function ReservationPage({ params }: { params: Promise<{ reservat
     }
   }, [session, status, router, reservationId]);
 
+  const isParticipant = () => {
+    if (!session?.user?.email || !reservation) return false;
+    return reservation.participants.some(p => p.email === session.user.email);
+  };
+
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newMessage.trim() || !session?.user?.email) return;
+    if (!newMessage.trim() || !session?.user?.email || !isParticipant()) return;
 
     setIsSendingMessage(true);
     try {
@@ -312,7 +317,23 @@ export default function ReservationPage({ params }: { params: Promise<{ reservat
               {reservation.description && (
                 <div>
                   <p className="text-sm font-medium text-gray-500 mb-1">Description</p>
-                  <p className="text-gray-700">{reservation.description}</p>
+                  <div className="text-gray-700 prose prose-sm max-w-none">
+                    {reservation.description.split('\n').map((line, i) => {
+                      // Check if the line is an image URL
+                      if (line.match(/^https?:\/\/.*\.(jpg|jpeg|png|gif|webp)$/i)) {
+                        return (
+                          <div key={i} className="my-4">
+                            <img 
+                              src={line} 
+                              alt="Reservation image" 
+                              className="rounded-lg max-w-full h-auto"
+                            />
+                          </div>
+                        );
+                      }
+                      return <p key={i}>{line}</p>;
+                    })}
+                  </div>
                 </div>
               )}
 
@@ -484,52 +505,54 @@ export default function ReservationPage({ params }: { params: Promise<{ reservat
             </div>
           </div>
 
-          <div className="mt-8">
-            <h2 className="text-xl font-semibold mb-4">Messages</h2>
-            <div className="space-y-4 mb-4">
-              {reservation.messages.map((message) => (
-                <div key={message.id} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
-                  {message.user.image && (
-                    <img
-                      src={message.user.image}
-                      alt={message.user.name || message.user.email}
-                      className="w-8 h-8 rounded-full"
-                    />
-                  )}
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <p className="font-medium">{message.user.name || message.user.email}</p>
-                      <p className="text-sm text-gray-500">
-                        {formatInTimeZone(new Date(message.createdAt), timeZone, 'MMM d, h:mm a')}
-                      </p>
+          {isParticipant() && (
+            <div className="mt-8">
+              <h2 className="text-xl font-semibold mb-4">Messages</h2>
+              <div className="space-y-4 mb-4">
+                {reservation.messages.map((message) => (
+                  <div key={message.id} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+                    {message.user.image && (
+                      <img
+                        src={message.user.image}
+                        alt={message.user.name || message.user.email}
+                        className="w-8 h-8 rounded-full"
+                      />
+                    )}
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <p className="font-medium">{message.user.name || message.user.email}</p>
+                        <p className="text-sm text-gray-500">
+                          {formatInTimeZone(new Date(message.createdAt), timeZone, 'MMM d, h:mm a')}
+                        </p>
+                      </div>
+                      <p className="text-gray-700">{message.content}</p>
                     </div>
-                    <p className="text-gray-700">{message.content}</p>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
 
-            <form onSubmit={handleSendMessage} className="flex gap-2">
-              <input
-                type="text"
-                value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
-                placeholder="Type a message..."
-                className="flex-1 p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              <button
-                type="submit"
-                disabled={isSendingMessage || !newMessage.trim()}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isSendingMessage ? (
-                  <FaSpinner className="w-4 h-4 animate-spin" />
-                ) : (
-                  'Send'
-                )}
-              </button>
-            </form>
-          </div>
+              <form onSubmit={handleSendMessage} className="flex gap-2">
+                <input
+                  type="text"
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  placeholder="Type a message..."
+                  className="flex-1 p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <button
+                  type="submit"
+                  disabled={isSendingMessage || !newMessage.trim()}
+                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isSendingMessage ? (
+                    <FaSpinner className="w-4 h-4 animate-spin" />
+                  ) : (
+                    'Send'
+                  )}
+                </button>
+              </form>
+            </div>
+          )}
         </div>
       </div>
     </main>
