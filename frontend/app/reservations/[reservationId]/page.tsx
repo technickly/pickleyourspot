@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { toast } from 'react-hot-toast';
-import { FaSpinner, FaShare, FaEdit, FaTrash, FaCheck, FaTimes, FaUserPlus } from 'react-icons/fa';
+import { FaSpinner, FaShare, FaEdit, FaTrash, FaCheck, FaTimes, FaUserPlus, FaUser } from 'react-icons/fa';
 import { formatInTimeZone } from 'date-fns-tz';
 import Link from 'next/link';
 import CopyButton from '@/app/components/CopyButton';
@@ -101,7 +101,7 @@ export default function ReservationPage({ params }: { params: Promise<{ reservat
 
   const isParticipant = () => {
     if (!session?.user?.email || !reservation) return false;
-    return reservation.participants.some(p => p.email === session.user.email) || reservation.isOwner;
+    return reservation.participants.some(p => p.email === session.user.email);
   };
 
   const handleSendMessage = async (e: React.FormEvent) => {
@@ -379,16 +379,20 @@ export default function ReservationPage({ params }: { params: Promise<{ reservat
                       .map((participant) => (
                         <div key={participant.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                           <div className="flex items-center gap-3">
-                            {participant.user?.image && (
+                            {participant.user?.image ? (
                               <img
                                 src={participant.user.image}
                                 alt={participant.user.name || participant.email}
-                                className="w-8 h-8 rounded-full"
+                                className="w-10 h-10 rounded-full object-cover"
                               />
+                            ) : (
+                              <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
+                                <FaUser className="w-5 h-5 text-gray-500" />
+                              </div>
                             )}
                             <div>
                               <p className="font-medium">
-                                {participant.user?.name || participant.email}
+                                {participant.user?.name || 'Anonymous User'}
                               </p>
                               <p className="text-sm text-gray-500">{participant.email}</p>
                             </div>
@@ -464,16 +468,20 @@ export default function ReservationPage({ params }: { params: Promise<{ reservat
                       .map((participant) => (
                         <div key={participant.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                           <div className="flex items-center gap-3">
-                            {participant.user?.image && (
+                            {participant.user?.image ? (
                               <img
                                 src={participant.user.image}
                                 alt={participant.user.name || participant.email}
-                                className="w-8 h-8 rounded-full"
+                                className="w-10 h-10 rounded-full object-cover"
                               />
+                            ) : (
+                              <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
+                                <FaUser className="w-5 h-5 text-gray-500" />
+                              </div>
                             )}
                             <div>
                               <p className="font-medium">
-                                {participant.user?.name || participant.email}
+                                {participant.user?.name || 'Anonymous User'}
                               </p>
                               <p className="text-sm text-gray-500">{participant.email}</p>
                             </div>
