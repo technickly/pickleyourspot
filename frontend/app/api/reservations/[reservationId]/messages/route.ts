@@ -14,6 +14,10 @@ interface ParticipantStatus {
   userImage: string | null;
 }
 
+interface Participant {
+  email: string;
+}
+
 export async function POST(
   request: Request,
   context: { params: Promise<{ reservationId: string }> }
@@ -56,7 +60,7 @@ export async function POST(
     // Check if user is owner or participant
     const isOwner = reservation.owner.email === session.user.email;
     const isParticipant = reservation.participants.some(
-      (p) => p.email === session.user.email
+      (p: Participant) => p.email === session.user.email
     );
 
     if (!isOwner && !isParticipant) {
@@ -66,11 +70,24 @@ export async function POST(
       );
     }
 
+    // Get the user's ID
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email },
+      select: { id: true }
+    });
+
+    if (!user) {
+      return NextResponse.json(
+        { error: 'User not found' },
+        { status: 404 }
+      );
+    }
+
     const message = await prisma.message.create({
       data: {
         content: content.trim(),
         reservationId,
-        userEmail: session.user.email,
+        userId: user.id,
       },
       include: {
         user: {
@@ -125,7 +142,7 @@ export async function GET(
     // Check if user is owner or participant
     const isOwner = reservation.owner.email === session.user.email;
     const isParticipant = reservation.participants.some(
-      (p) => p.email === session.user.email
+      (p: Participant) => p.email === session.user.email
     );
 
     if (!isOwner && !isParticipant) {

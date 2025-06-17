@@ -1,6 +1,14 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 
+interface ParticipantWithUser {
+  userId: string;
+  user: {
+    name: string | null;
+    email: string;
+  };
+}
+
 export async function GET(
   request: Request,
   context: { params: Promise<{ shortUrl: string }> }
@@ -8,14 +16,18 @@ export async function GET(
   try {
     const { shortUrl } = await context.params;
 
-    const reservation = await prisma.reservation.findFirst({
+    const reservation = await prisma.reservation.findUnique({
       where: {
         shortUrl,
       },
       include: {
         court: true,
         owner: true,
-        participants: true,
+        participants: {
+          include: {
+            user: true,
+          },
+        },
       },
     });
 
@@ -40,9 +52,9 @@ export async function GET(
         name: reservation.owner.name,
         email: reservation.owner.email,
       },
-      participants: reservation.participants.map((p: { name: string | null; email: string; userId: string }) => ({
-        name: p.name,
-        email: p.email,
+      participants: reservation.participants.map((p: ParticipantWithUser) => ({
+        name: p.user.name,
+        email: p.user.email,
         userId: p.userId,
       })),
     };
