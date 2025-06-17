@@ -6,6 +6,8 @@ import { useSession, signIn } from 'next-auth/react';
 import { toast } from 'react-hot-toast';
 import { formatInTimeZone } from 'date-fns-tz';
 import React from 'react';
+import { use } from 'react';
+import { FaSpinner } from 'react-icons/fa';
 
 interface Reservation {
   id: string;
@@ -26,21 +28,22 @@ interface Reservation {
     email: string;
   };
   passwordRequired: boolean;
+  passwordProtected: boolean;
 }
 
 const timeZone = 'America/Los_Angeles';
 
-export default function SharedReservationPage({ params }: { params: Promise<{ shortUrl: string }> }) {
+export default function ShortUrlPage({ params }: { params: Promise<{ shortUrl: string }> }) {
   const router = useRouter();
   const { data: session, status } = useSession();
   const [reservation, setReservation] = useState<Reservation | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isJoining, setIsJoining] = useState(false);
-  const [eventPassword, setEventPassword] = useState('');
-  const [isGoing, setIsGoing] = useState(true);
-  const [hasPaid, setHasPaid] = useState(false);
-  const [showPasswordError, setShowPasswordError] = useState(false);
-  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
+  const [password, setPassword] = useState('');
+  const [showPasswordInput, setShowPasswordInput] = useState(false);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [selectedStatus, setSelectedStatus] = useState<'going' | 'not-going'>('going');
+  const [selectedPayment, setSelectedPayment] = useState(false);
   const resolvedParams = React.use(params);
 
   useEffect(() => {
@@ -82,90 +85,52 @@ export default function SharedReservationPage({ params }: { params: Promise<{ sh
     }
   };
 
-  const handleJoinReservation = async () => {
+  const handleJoin = async () => {
     if (!session?.user?.email) {
-      toast.error('You must be logged in to join a reservation');
+      toast.error('Please sign in to join the reservation');
       return;
     }
 
-    if (!reservation) {
-      toast.error('Reservation not found');
+    if (reservation?.passwordProtected && !password) {
+      setShowPasswordInput(true);
       return;
     }
 
+    setIsJoining(true);
     try {
-      // If password is required, show password dialog
-      if (reservation.passwordRequired) {
-        if (!eventPassword.trim()) {
-          toast.error('Please enter the event password');
-          return;
-        }
-        setShowPasswordDialog(true);
-        return;
-      }
-
-      // If no password required, proceed with joining
-      const response = await fetch(`/api/reservations/${reservation.id}/join`, {
+      const response = await fetch(`/api/reservations/${reservation?.id}/join`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           email: session.user.email,
-          isGoing: true,
-          hasPaid: false
-        }),
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Failed to join reservation');
-      }
-
-      toast.success('Successfully joined reservation!');
-      router.push(`/reservations/${reservation.id}`);
-    } catch (error) {
-      console.error('Error joining reservation:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to join reservation');
-    }
-  };
-
-  const handlePasswordSubmit = async (password: string) => {
-    if (!reservation) {
-      toast.error('Reservation not found');
-      return;
-    }
-
-    try {
-      const response = await fetch(`/api/reservations/${reservation.id}/join`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
-          email: session?.user?.email,
-          password,
-          isGoing: true,
-          hasPaid: false
+          password: reservation?.passwordProtected ? password : undefined,
+          isGoing: selectedStatus === 'going',
+          hasPaid: selectedPayment,
         }),
       });
 
       if (!response.ok) {
         const data = await response.json();
         if (data.error === 'Invalid password') {
-          setShowPasswordError(true);
+          setPasswordError('Invalid password');
           return;
         }
         throw new Error(data.error || 'Failed to join reservation');
       }
 
-      toast.success('Successfully joined reservation!');
-      router.push(`/reservations/${reservation.id}`);
+      const updatedReservation = await response.json();
+      setReservation(updatedReservation);
+      toast.success('Successfully joined the reservation!');
+      setShowPasswordInput(false);
+      setPassword('');
+      setPasswordError(null);
     } catch (error) {
       console.error('Error joining reservation:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to join reservation');
     } finally {
-      setShowPasswordDialog(false);
+      setIsJoining(false);
     }
   };
 
@@ -220,6 +185,8 @@ export default function SharedReservationPage({ params }: { params: Promise<{ sh
       </div>
     );
   }
+
+  const isParticipant = reservation.participants.some(p => p.email === session.user?.email);
 
   return (
     <main className="min-h-screen p-8">
@@ -295,124 +262,90 @@ export default function SharedReservationPage({ params }: { params: Promise<{ sh
                 </div>
               </div>
 
-              {!reservation.participants.some(p => p.email === session.user?.email) && (
-                <div className="mt-6">
-                  <h2 className="text-lg font-semibold mb-2">Join Event</h2>
-                  {reservation.passwordRequired && (
-                    <div className="mb-4">
-                      <label htmlFor="eventPassword" className="block text-sm font-medium text-gray-700 mb-2">
-                        Enter Event Password
+              {!isParticipant && (
+                <div className="mt-6 space-y-4">
+                  <div className="flex flex-col gap-4">
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setSelectedStatus('going')}
+                        className={`flex-1 py-2 px-4 rounded-lg border transition-colors ${
+                          selectedStatus === 'going'
+                            ? 'bg-green-100 border-green-500 text-green-700'
+                            : 'bg-white border-gray-300 hover:bg-gray-50'
+                        }`}
+                      >
+                        Going
+                      </button>
+                      <button
+                        onClick={() => setSelectedStatus('not-going')}
+                        className={`flex-1 py-2 px-4 rounded-lg border transition-colors ${
+                          selectedStatus === 'not-going'
+                            ? 'bg-red-100 border-red-500 text-red-700'
+                            : 'bg-white border-gray-300 hover:bg-gray-50'
+                        }`}
+                      >
+                        Not Going
+                      </button>
+                    </div>
+
+                    {reservation.paymentRequired && (
+                      <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
+                        <input
+                          type="checkbox"
+                          id="payment"
+                          checked={selectedPayment}
+                          onChange={(e) => setSelectedPayment(e.target.checked)}
+                          className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                        />
+                        <label htmlFor="payment" className="text-sm text-gray-700">
+                          I have paid
+                        </label>
+                      </div>
+                    )}
+                  </div>
+
+                  {showPasswordInput && (
+                    <div className="mt-4">
+                      <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+                        Password
                       </label>
                       <input
-                        id="eventPassword"
                         type="password"
-                        value={eventPassword}
-                        onChange={(e) => setEventPassword(e.target.value)}
-                        placeholder="Enter the event password"
-                        className="w-full p-3 border rounded text-gray-700 placeholder-gray-400"
+                        id="password"
+                        value={password}
+                        onChange={(e) => {
+                          setPassword(e.target.value);
+                          setPasswordError(null);
+                        }}
+                        className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="Enter password"
                       />
-                      {showPasswordError && (
-                        <p className="text-red-600 mt-2">Wrong password, reach out to {reservation.owner.name || reservation.owner.email}</p>
+                      {passwordError && (
+                        <p className="mt-1 text-sm text-red-600">{passwordError}</p>
                       )}
                     </div>
                   )}
-                  <div className="flex items-center space-x-4 mb-4">
-                    <label className="inline-flex items-center">
-                      <input
-                        type="radio"
-                        checked={isGoing}
-                        onChange={() => setIsGoing(true)}
-                        className="form-radio text-primary"
-                      />
-                      <span className="ml-2">Going</span>
-                    </label>
-                    <label className="inline-flex items-center">
-                      <input
-                        type="radio"
-                        checked={!isGoing}
-                        onChange={() => setIsGoing(false)}
-                        className="form-radio text-primary"
-                      />
-                      <span className="ml-2">Not Going</span>
-                    </label>
-                  </div>
-                  {reservation.paymentRequired && (
-                    <div className="flex items-center space-x-4 mb-4">
-                      <label className="inline-flex items-center">
-                        <input
-                          type="radio"
-                          checked={hasPaid}
-                          onChange={() => setHasPaid(true)}
-                          className="form-radio text-primary"
-                        />
-                        <span className="ml-2">Paid</span>
-                      </label>
-                      <label className="inline-flex items-center">
-                        <input
-                          type="radio"
-                          checked={!hasPaid}
-                          onChange={() => setHasPaid(false)}
-                          className="form-radio text-primary"
-                        />
-                        <span className="ml-2">Not Paid</span>
-                      </label>
-                    </div>
-                  )}
-                  <div className="mt-8">
-                    <button
-                      onClick={handleJoinReservation}
-                      className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
-                    >
-                      Join Reservation
-                    </button>
-                  </div>
+
+                  <button
+                    onClick={handleJoin}
+                    disabled={isJoining || (reservation?.passwordProtected && !password)}
+                    className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    {isJoining ? (
+                      <div className="flex items-center justify-center gap-2">
+                        <FaSpinner className="w-4 h-4 animate-spin" />
+                        Joining...
+                      </div>
+                    ) : (
+                      'Join Reservation'
+                    )}
+                  </button>
                 </div>
               )}
             </div>
           </div>
         </div>
       </div>
-
-      {/* Password Dialog */}
-      {showPasswordDialog && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full">
-            <h2 className="text-xl font-bold mb-4">Enter Password</h2>
-            <p className="text-gray-600 mb-4">This reservation requires a password to join.</p>
-            <input
-              type="password"
-              value={eventPassword}
-              onChange={(e) => {
-                setEventPassword(e.target.value);
-                setShowPasswordError(false);
-              }}
-              className="w-full px-4 py-2 border rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Enter password"
-            />
-            {showPasswordError && (
-              <p className="text-red-500 mb-4">Invalid password. Please try again.</p>
-            )}
-            <div className="flex justify-end gap-4">
-              <button
-                onClick={() => {
-                  setShowPasswordDialog(false);
-                  setEventPassword('');
-                  setShowPasswordError(false);
-                }}
-                className="px-4 py-2 text-gray-600 hover:text-gray-800"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => handlePasswordSubmit(eventPassword)}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-              >
-                Join
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </main>
   );
 } 

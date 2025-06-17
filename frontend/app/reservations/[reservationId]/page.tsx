@@ -139,21 +139,15 @@ export default function ReservationPage({ params }: { params: Promise<{ reservat
     }
   };
 
-  const handleStatusUpdate = async (
-    participantId: string,
-    type: 'payment' | 'attendance',
-    newValue: boolean
-  ) => {
+  const handleStatusUpdate = async (participantId: string, type: 'payment', value: boolean) => {
     try {
-      const response = await fetch(`/api/reservations/${reservationId}/participant-status`, {
+      const response = await fetch(`/api/reservations/${reservationId}/participants/${participantId}/status`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          participantId,
-          type,
-          value: newValue,
+          [type]: value,
         }),
       });
 
@@ -161,22 +155,12 @@ export default function ReservationPage({ params }: { params: Promise<{ reservat
         throw new Error('Failed to update status');
       }
 
-      setReservation(prev => {
-        if (!prev) return null;
-        return {
-          ...prev,
-          participants: prev.participants.map(p => 
-            p.id === participantId
-              ? { ...p, [type === 'payment' ? 'hasPaid' : 'isGoing']: newValue }
-              : p
-          )
-        };
-      });
-
-      toast.success(`${type === 'payment' ? 'Payment' : 'Attendance'} status updated`);
+      const updatedReservation = await response.json();
+      setReservation(updatedReservation);
+      toast.success('Status updated successfully');
     } catch (error) {
       console.error('Error updating status:', error);
-      toast.error(`Failed to update ${type} status`);
+      toast.error('Failed to update status');
     }
   };
 
@@ -413,14 +397,22 @@ export default function ReservationPage({ params }: { params: Promise<{ reservat
                             {participant.email === session?.user?.email ? (
                               <>
                                 <button
-                                  onClick={() => handleParticipantStatusUpdate('going', false)}
+                                  onClick={() => {
+                                    if (window.confirm('Are you sure you want to change your status to Not Going?')) {
+                                      handleParticipantStatusUpdate('going', false);
+                                    }
+                                  }}
                                   className="px-3 py-1.5 text-sm rounded-full bg-red-100 text-red-800 hover:bg-red-200 transition-colors"
                                 >
                                   Not Going
                                 </button>
                                 {reservation.paymentRequired && (
                                   <button
-                                    onClick={() => handleParticipantStatusUpdate('payment', !participant.hasPaid)}
+                                    onClick={() => {
+                                      if (window.confirm(`Are you sure you want to mark yourself as ${participant.hasPaid ? 'Not Paid' : 'Paid'}?`)) {
+                                        handleParticipantStatusUpdate('payment', !participant.hasPaid);
+                                      }
+                                    }}
                                     className={`px-3 py-1.5 text-sm rounded-full transition-colors ${
                                       participant.hasPaid 
                                         ? 'bg-green-100 text-green-800 hover:bg-green-200' 
@@ -490,14 +482,22 @@ export default function ReservationPage({ params }: { params: Promise<{ reservat
                             {participant.email === session?.user?.email ? (
                               <>
                                 <button
-                                  onClick={() => handleParticipantStatusUpdate('going', true)}
+                                  onClick={() => {
+                                    if (window.confirm('Are you sure you want to change your status to Going?')) {
+                                      handleParticipantStatusUpdate('going', true);
+                                    }
+                                  }}
                                   className="px-3 py-1.5 text-sm rounded-full bg-green-100 text-green-800 hover:bg-green-200 transition-colors"
                                 >
                                   Going
                                 </button>
                                 {reservation.paymentRequired && (
                                   <button
-                                    onClick={() => handleParticipantStatusUpdate('payment', !participant.hasPaid)}
+                                    onClick={() => {
+                                      if (window.confirm(`Are you sure you want to mark yourself as ${participant.hasPaid ? 'Not Paid' : 'Paid'}?`)) {
+                                        handleParticipantStatusUpdate('payment', !participant.hasPaid);
+                                      }
+                                    }}
                                     className={`px-3 py-1.5 text-sm rounded-full transition-colors ${
                                       participant.hasPaid 
                                         ? 'bg-green-100 text-green-800 hover:bg-green-200' 
