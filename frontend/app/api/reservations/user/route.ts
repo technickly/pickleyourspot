@@ -1,14 +1,25 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/app/api/auth/[...nextauth]/auth';
+import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import prisma from '@/lib/prisma';
 import type { Reservation, User, ParticipantStatus } from '@prisma/client';
 
-interface ReservationWithParticipants extends Reservation {
+interface ReservationWithRelations extends Reservation {
+  court: {
+    name: string;
+  };
+  owner: {
+    name: string | null;
+    email: string;
+    image: string | null;
+  };
   participants: (ParticipantStatus & {
-    user: Pick<User, 'name' | 'email' | 'image'>;
+    user: {
+      name: string | null;
+      email: string;
+      image: string | null;
+    };
   })[];
-  owner: Pick<User, 'name' | 'email' | 'image'>;
 }
 
 interface Court {
@@ -41,6 +52,7 @@ interface FormattedReservation {
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
+    
     if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -53,6 +65,7 @@ export async function GET() {
         }
       },
       include: {
+        court: true,
         owner: {
           select: {
             name: true,
@@ -82,13 +95,12 @@ export async function GET() {
       where: {
         participants: {
           some: {
-            user: {
-              email: session.user.email,
-            },
+            userEmail: session.user.email,
           },
         },
       },
       include: {
+        court: true,
         owner: {
           select: {
             name: true,
@@ -115,15 +127,17 @@ export async function GET() {
 
     // Combine and format the results
     const allReservations = [
-      ...ownedReservations.map((r: ReservationWithParticipants) => ({
+      ...ownedReservations.map((r: ReservationWithRelations) => ({
         ...r,
         isOwner: true,
+        courtName: r.court.name,
       })),
       ...participantReservations
-        .filter((r: ReservationWithParticipants) => r.owner.email !== session.user.email)
-        .map((r: ReservationWithParticipants) => ({
+        .filter((r: ReservationWithRelations) => r.owner.email !== session.user.email)
+        .map((r: ReservationWithRelations) => ({
           ...r,
           isOwner: false,
+          courtName: r.court.name,
         })),
     ];
 
