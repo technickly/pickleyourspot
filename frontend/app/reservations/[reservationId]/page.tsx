@@ -308,25 +308,48 @@ export default function ReservationPage({ params }: { params: Promise<{ reservat
                 <p className="text-sm font-medium text-gray-500 mb-1">Date & Time</p>
                 <p className="text-gray-900">
                   {formatInTimeZone(
-                    new Date(reservation.date),
+                    new Date(`${reservation.date}T${reservation.startTime}`),
                     timeZone,
                     'EEEE, MMMM d, yyyy'
                   )}
                 </p>
                 <p className="text-gray-900">
                   {formatInTimeZone(
-                    new Date(reservation.startTime),
+                    new Date(`${reservation.date}T${reservation.startTime}`),
                     timeZone,
                     'h:mm a'
-                  )}{' '}
-                  -{' '}
-                  {formatInTimeZone(
-                    new Date(reservation.endTime),
+                  )} - {formatInTimeZone(
+                    new Date(`${reservation.date}T${reservation.endTime}`),
                     timeZone,
                     'h:mm a'
-                  )}{' '}
-                  PT
+                  )}
                 </p>
+              </div>
+
+              <div>
+                <p className="text-sm font-medium text-gray-500 mb-1">Location</p>
+                <p className="text-gray-900">{reservation.court.name}</p>
+                <p className="text-gray-600">{reservation.court.address}</p>
+              </div>
+
+              <div>
+                <p className="text-sm font-medium text-gray-500 mb-1">Organizer</p>
+                <div className="flex items-center gap-2">
+                  {reservation.owner.image ? (
+                    <img
+                      src={reservation.owner.image}
+                      alt={reservation.owner.name || reservation.owner.email}
+                      className="w-6 h-6 rounded-full"
+                    />
+                  ) : (
+                    <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center">
+                      <FaUser className="w-3 h-3 text-gray-500" />
+                    </div>
+                  )}
+                  <p className="text-gray-900">
+                    {reservation.owner.name || reservation.owner.email}
+                  </p>
+                </div>
               </div>
 
               {reservation.paymentDetails && (
