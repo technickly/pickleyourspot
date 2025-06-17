@@ -12,6 +12,10 @@ if (!process.env.NEXTAUTH_SECRET) {
   throw new Error('NEXTAUTH_SECRET is not set in environment variables');
 }
 
+if (!process.env.NEXTAUTH_URL) {
+  throw new Error('NEXTAUTH_URL is not set in environment variables');
+}
+
 export const authOptions = {
   adapter: PrismaAdapter(prisma),
   providers: [
