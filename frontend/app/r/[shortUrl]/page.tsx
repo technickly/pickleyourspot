@@ -245,12 +245,13 @@ export default function SharedReservationPage({ params }: { params: Promise<{ sh
                   <h2 className="text-lg font-semibold mb-2">Description</h2>
                   <div className="text-gray-700 prose prose-sm max-w-none bg-gray-50 p-3 rounded-lg">
                     {reservation.description.split('\n').map((line, i) => {
-                      // Check if the line is an image URL
-                      if (line.match(/^https?:\/\/.*\.(jpg|jpeg|png|gif|webp)$/i)) {
+                      // Remove @ symbol if present and check if the line is an image URL
+                      const cleanLine = line.trim().replace(/^@/, '');
+                      if (cleanLine.match(/^https?:\/\/.*\.(jpg|jpeg|png|gif|webp)$/i)) {
                         return (
                           <div key={i} className="my-4">
                             <img 
-                              src={line} 
+                              src={cleanLine} 
                               alt="Reservation image" 
                               className="rounded-lg max-w-full h-auto"
                             />

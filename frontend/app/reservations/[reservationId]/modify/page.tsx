@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { toast } from 'react-hot-toast';
 import { formatInTimeZone } from 'date-fns-tz';
+import React from 'react';
 import UserSearch from '@/app/components/UserSearch';
 
 interface Participant {
@@ -34,24 +35,28 @@ interface Reservation {
 
 const timeZone = 'America/Los_Angeles';
 
-export default function ModifyReservationPage({ params }: { params: { reservationId: string } }) {
+export default function ModifyReservationPage({ params }: { params: Promise<{ reservationId: string }> }) {
   const router = useRouter();
   const { data: session, status } = useSession();
-  const [reservation, setReservation] = useState<Reservation | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [reservation, setReservation] = useState<Reservation | null>(null);
   const [description, setDescription] = useState('');
   const [paymentInfo, setPaymentInfo] = useState('');
-  const [isSaving, setIsSaving] = useState(false);
+  const resolvedParams = React.use(params);
 
   useEffect(() => {
-    if (session?.user?.email) {
-      fetchReservation();
+    if (status === 'loading') return;
+    if (!session?.user?.email) {
+      router.push('/');
+      return;
     }
-  }, [session]);
+    fetchReservation();
+  }, [session, status, router, resolvedParams.reservationId]);
 
   const fetchReservation = async () => {
     try {
-      const response = await fetch(`/api/reservations/${params.reservationId}`);
+      const response = await fetch(`/api/reservations/${resolvedParams.reservationId}`);
       if (!response.ok) {
         throw new Error('Failed to fetch reservation');
       }
@@ -60,7 +65,8 @@ export default function ModifyReservationPage({ params }: { params: { reservatio
       setDescription(data.description || '');
       setPaymentInfo(data.paymentInfo || '');
     } catch (error) {
-      toast.error('Failed to load reservation details');
+      console.error('Error fetching reservation:', error);
+      toast.error('Failed to fetch reservation details');
       router.push('/my-reservations');
     } finally {
       setIsLoading(false);
@@ -72,7 +78,7 @@ export default function ModifyReservationPage({ params }: { params: { reservatio
 
     setIsSaving(true);
     try {
-      const response = await fetch(`/api/reservations/${params.reservationId}`, {
+      const response = await fetch(`/api/reservations/${resolvedParams.reservationId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

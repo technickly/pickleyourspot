@@ -316,15 +316,15 @@ export default function ReservationPage({ params }: { params: Promise<{ reservat
 
               {reservation.description && (
                 <div>
-                  <p className="text-sm font-medium text-gray-500 mb-1">Description</p>
-                  <div className="text-gray-700 prose prose-sm max-w-none">
+                  <h2 className="text-lg font-semibold mb-2">Description</h2>
+                  <div className="text-gray-700 prose prose-sm max-w-none bg-gray-50 p-3 rounded-lg">
                     {reservation.description.split('\n').map((line, i) => {
                       // Check if the line is an image URL
-                      if (line.match(/^https?:\/\/.*\.(jpg|jpeg|png|gif|webp)$/i)) {
+                      if (line.trim().match(/^https?:\/\/.*\.(jpg|jpeg|png|gif|webp)$/i)) {
                         return (
                           <div key={i} className="my-4">
                             <img 
-                              src={line} 
+                              src={line.trim()} 
                               alt="Reservation image" 
                               className="rounded-lg max-w-full h-auto"
                             />
