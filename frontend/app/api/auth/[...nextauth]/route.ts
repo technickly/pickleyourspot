@@ -40,7 +40,7 @@ export const authOptions = {
     maxAge: 30 * 24 * 60 * 60, // 30 days
   },
   callbacks: {
-    signIn: async ({ user, account, profile }: { user: User; account: Account | null; profile?: Profile }) => {
+    async signIn({ user, account, profile }: { user: User; account: Account | null; profile?: Profile }) {
       if (!account || !profile) return false;
       
       try {
@@ -76,15 +76,20 @@ export const authOptions = {
         return false;
       }
     },
-    session: async ({ session, token }: { session: Session; token: JWT }) => {
+    async session({ session, token }: { session: Session; token: JWT }) {
       if (session?.user) {
         session.user.id = token.sub;
+        session.user.email = token.email;
       }
       return session;
     },
-    jwt: async ({ token, user }: { token: JWT; user: User }) => {
+    async jwt({ token, user, account }: { token: JWT; user: User | AdapterUser; account: Account | null }) {
       if (user) {
         token.id = user.id;
+        token.email = user.email;
+      }
+      if (account) {
+        token.accessToken = account.access_token;
       }
       return token;
     },
