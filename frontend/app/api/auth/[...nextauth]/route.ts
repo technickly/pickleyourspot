@@ -1,5 +1,5 @@
 import NextAuth from 'next-auth';
-import { PrismaAdapter } from '@next-auth/prisma-adapter';
+import { PrismaAdapter } from '@auth/prisma-adapter';
 import GoogleProvider from 'next-auth/providers/google';
 import prisma from '@/lib/prisma';
 import { Session } from 'next-auth';
@@ -12,7 +12,7 @@ if (!process.env.NEXTAUTH_SECRET) {
   throw new Error('NEXTAUTH_SECRET is not set in environment variables');
 }
 
-const authOptions = {
+export const authOptions = {
   adapter: PrismaAdapter(prisma),
   providers: [
     GoogleProvider({
@@ -86,7 +86,7 @@ const authOptions = {
     },
   },
   pages: {
-    signIn: '/',
+    signIn: '/auth/signin',
     error: '/auth/error',
   },
   debug: process.env.NODE_ENV === 'development',
