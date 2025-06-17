@@ -11,22 +11,11 @@ export async function GET(
     const reservation = await prisma.reservation.findUnique({
       where: { shortUrl },
       include: {
-        court: {
-          select: {
-            name: true,
-            description: true,
-          },
-        },
-        owner: {
-          select: {
-            name: true,
-            email: true,
-          },
-        },
+        court: true,
+        owner: true,
         participants: {
-          select: {
-            name: true,
-            email: true,
+          include: {
+            user: true,
           },
         },
       },
@@ -39,7 +28,29 @@ export async function GET(
       );
     }
 
-    return NextResponse.json(reservation);
+    // Transform the reservation data to match the expected format
+    const response = {
+      id: reservation.id,
+      name: reservation.name,
+      courtName: reservation.court.name,
+      startTime: reservation.startTime.toISOString(),
+      endTime: reservation.endTime.toISOString(),
+      description: reservation.description,
+      paymentRequired: reservation.paymentRequired,
+      paymentInfo: reservation.paymentInfo,
+      passwordRequired: reservation.passwordRequired,
+      owner: {
+        name: reservation.owner.name,
+        email: reservation.owner.email,
+      },
+      participants: reservation.participants.map((p) => ({
+        name: p.user.name,
+        email: p.user.email,
+        userId: p.userId,
+      })),
+    };
+
+    return NextResponse.json(response);
   } catch (error) {
     console.error('Failed to fetch reservation:', error);
     return NextResponse.json(

@@ -63,7 +63,7 @@ export default function SharedReservationPage({ params }: { params: Promise<{ sh
 
   const fetchReservation = async () => {
     try {
-      const response = await fetch(`/api/reservations/shared/${resolvedParams.shortUrl}`, {
+      const response = await fetch(`/api/reservations/short/${resolvedParams.shortUrl}`, {
         headers: {
           'Cache-Control': 'no-cache',
           'Pragma': 'no-cache'
@@ -73,7 +73,27 @@ export default function SharedReservationPage({ params }: { params: Promise<{ sh
         throw new Error('Failed to fetch reservation');
       }
       const data = await response.json();
-      setReservation(data);
+      // Transform the data to match the expected format
+      setReservation({
+        id: data.id,
+        name: data.name,
+        courtName: data.court.name,
+        startTime: data.startTime,
+        endTime: data.endTime,
+        description: data.description,
+        paymentRequired: data.paymentRequired,
+        paymentInfo: data.paymentInfo,
+        participants: data.participants.map((p: any) => ({
+          name: p.name,
+          email: p.email,
+          userId: p.userId
+        })),
+        owner: {
+          name: data.owner.name,
+          email: data.owner.email
+        },
+        passwordRequired: data.passwordRequired
+      });
     } catch (error) {
       toast.error('Failed to fetch reservation details');
       router.push('/');
