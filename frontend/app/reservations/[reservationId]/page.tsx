@@ -14,7 +14,7 @@ import ParticipantList from '@/app/components/ParticipantList';
 import ReservationTitle from '@/app/components/ReservationTitle';
 import ReservationActions from '@/app/components/ReservationActions';
 import Link from 'next/link';
-import { FaShare, FaEdit, FaSpinner, FaEye, FaTrash } from 'react-icons/fa';
+import { FaShare, FaEdit, FaSpinner, FaEye, FaTrash, FaCheck, FaTimes } from 'react-icons/fa';
 
 interface User {
   name: string | null;
@@ -71,7 +71,6 @@ export default function ReservationPage({ params }: PageProps) {
   const { data: session, status } = useSession();
   const unwrappedParams = React.use(params);
   const [reservation, setReservation] = useState<Reservation | null>(null);
-  const [newMessage, setNewMessage] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
   const [paymentStatuses, setPaymentStatuses] = useState<Record<string, boolean>>({});
   const [isMessagesActive, setIsMessagesActive] = useState(true);
@@ -80,6 +79,7 @@ export default function ReservationPage({ params }: PageProps) {
   const { reservationId } = unwrappedParams;
   const [isNavigating, setIsNavigating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Scroll to bottom of messages
   const scrollToBottom = () => {
@@ -96,6 +96,7 @@ export default function ReservationPage({ params }: PageProps) {
 
     const fetchData = async () => {
       try {
+        setIsLoading(true);
         const [reservationRes, messagesRes, paymentRes] = await Promise.all([
           fetch(`/api/reservations/${reservationId}`, {
             headers: {
@@ -142,6 +143,10 @@ export default function ReservationPage({ params }: PageProps) {
       } catch (error) {
         console.error('Error fetching data:', error);
         toast.error('Failed to load reservation data');
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     };
 
@@ -160,15 +165,6 @@ export default function ReservationPage({ params }: PageProps) {
       scrollToBottom();
     }
   }, [messages, isMessagesActive]);
-
-  // Only poll for messages when the section is active
-  useEffect(() => {
-    if (!session || !isMessagesActive) return;
-    
-    fetchMessages();
-    const interval = setInterval(fetchMessages, 5000);
-    return () => clearInterval(interval);
-  }, [session, isMessagesActive, reservationId]);
 
   const fetchReservation = async () => {
     try {
@@ -190,13 +186,12 @@ export default function ReservationPage({ params }: PageProps) {
       
       if (!response.ok) {
         console.error('Failed to fetch messages:', data);
-        return; // Silently fail and keep existing messages
+        return;
       }
       
       setMessages(data);
     } catch (error) {
       console.error('Failed to fetch messages:', error);
-      // Don't throw error, just log it and keep existing messages
     }
   };
 
@@ -216,35 +211,6 @@ export default function ReservationPage({ params }: PageProps) {
       setPaymentStatuses(statusMap);
     } catch (error) {
       console.error('Failed to fetch payment statuses:', error);
-    }
-  };
-
-  const handleSendMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newMessage.trim()) return;
-
-    try {
-      const response = await fetch(`/api/reservations/${reservationId}/messages`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          content: newMessage.trim(),
-        }),
-      });
-
-      const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to send message');
-      }
-
-      setNewMessage('');
-      await fetchMessages(); // Refresh messages immediately
-    } catch (error) {
-      console.error('Error sending message:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to send message');
     }
   };
 
@@ -324,8 +290,43 @@ export default function ReservationPage({ params }: PageProps) {
     return new Date(endTime) < new Date();
   };
 
-  if (status === 'loading' || !reservation) {
-    return <div className="flex justify-center items-center min-h-screen">Loading...</div>;
+  if (status === 'loading' || isLoading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="flex flex-col items-center gap-4">
+          <FaSpinner className="w-8 h-8 animate-spin text-blue-600" />
+          <p className="text-gray-600">Loading reservation...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!session) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        <p className="text-xl mb-4">Please sign in to view reservations</p>
+        <button
+          onClick={() => router.push('/')}
+          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+        >
+          Go to Home
+        </button>
+      </div>
+    );
+  }
+
+  if (!reservation) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        <p className="text-xl mb-4">Reservation not found</p>
+        <button
+          onClick={() => router.push('/my-reservations')}
+          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+        >
+          Back to My Events
+        </button>
+      </div>
+    );
   }
 
   const isOwner = session?.user?.email === reservation.owner.email;
