@@ -59,6 +59,27 @@ interface Reservation {
 
 const timeZone = 'America/Los_Angeles';
 
+const formatDate = (date: string, time: string, format: string) => {
+  try {
+    // Ensure we have valid date and time strings
+    if (!date || !time) return 'Date not available';
+    
+    // Create a date object from the combined date and time
+    const dateTime = new Date(`${date}T${time}`);
+    
+    // Check if the date is valid
+    if (isNaN(dateTime.getTime())) {
+      console.error('Invalid date:', date, time);
+      return 'Invalid date';
+    }
+    
+    return formatInTimeZone(dateTime, timeZone, format);
+  } catch (error) {
+    console.error('Error formatting date:', error);
+    return 'Date formatting error';
+  }
+};
+
 export default function ReservationPage({ params }: { params: Promise<{ reservationId: string }> }) {
   const router = useRouter();
   const { data: session, status } = useSession();
@@ -307,22 +328,10 @@ export default function ReservationPage({ params }: { params: Promise<{ reservat
               <div>
                 <p className="text-sm font-medium text-gray-500 mb-1">Date & Time</p>
                 <p className="text-gray-900">
-                  {formatInTimeZone(
-                    new Date(`${reservation.date}T${reservation.startTime}`),
-                    timeZone,
-                    'EEEE, MMMM d, yyyy'
-                  )}
+                  {formatDate(reservation.date, reservation.startTime, 'EEEE, MMMM d, yyyy')}
                 </p>
                 <p className="text-gray-900">
-                  {formatInTimeZone(
-                    new Date(`${reservation.date}T${reservation.startTime}`),
-                    timeZone,
-                    'h:mm a'
-                  )} - {formatInTimeZone(
-                    new Date(`${reservation.date}T${reservation.endTime}`),
-                    timeZone,
-                    'h:mm a'
-                  )}
+                  {formatDate(reservation.date, reservation.startTime, 'h:mm a')} - {formatDate(reservation.date, reservation.endTime, 'h:mm a')}
                 </p>
               </div>
 
