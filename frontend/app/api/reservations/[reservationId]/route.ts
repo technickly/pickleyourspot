@@ -63,7 +63,7 @@ export async function GET(
     // Check if user is owner or participant
     const isOwner = reservation.owner.email === session.user.email;
     const isParticipant = reservation.participants.some(
-      (p) => p.email === session.user.email
+      (p) => p.user.email === session.user.email
     );
 
     if (!isOwner && !isParticipant) {
