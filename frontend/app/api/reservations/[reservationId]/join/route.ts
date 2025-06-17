@@ -26,7 +26,7 @@ export async function POST(
     }
 
     const { reservationId } = await context.params;
-    const { password } = await request.json();
+    const { password, isGoing, hasPaid } = await request.json();
 
     // Find the user
     const user = await prisma.user.findUnique({
@@ -91,18 +91,28 @@ export async function POST(
       }
     }
 
-    // Add user as a participant
-    const updatedReservation = await prisma.reservation.update({
-      where: { id: reservationId },
+    // Create participant status
+    const participantStatus = await prisma.participantStatus.create({
       data: {
-        participants: {
-          create: {
-            userId: user.id,
-            hasPaid: false,
-            isGoing: true
-          }
-        }
+        userId: user.id,
+        reservationId: reservation.id,
+        isGoing: isGoing ?? true,
+        hasPaid: hasPaid ?? false,
       },
+      include: {
+        user: {
+          select: {
+            email: true,
+            name: true,
+            image: true,
+          },
+        },
+      },
+    });
+
+    // Return updated reservation
+    const updatedReservation = await prisma.reservation.findUnique({
+      where: { id: reservationId },
       include: {
         court: true,
         owner: true,
@@ -120,36 +130,7 @@ export async function POST(
       },
     });
 
-    // Transform the response to match the expected format
-    const transformedReservation = {
-      id: updatedReservation.id,
-      name: updatedReservation.name,
-      startTime: updatedReservation.startTime,
-      endTime: updatedReservation.endTime,
-      description: updatedReservation.description,
-      paymentRequired: updatedReservation.paymentRequired,
-      paymentInfo: updatedReservation.paymentInfo,
-      shortUrl: updatedReservation.shortUrl,
-      court: {
-        name: updatedReservation.court.name,
-        description: updatedReservation.court.description,
-        imageUrl: updatedReservation.court.imageUrl,
-      },
-      owner: {
-        name: updatedReservation.owner.name,
-        email: updatedReservation.owner.email,
-        image: updatedReservation.owner.image,
-      },
-      participants: updatedReservation.participants.map((participant: ParticipantStatusType) => ({
-        name: participant.user.name,
-        email: participant.user.email,
-        image: participant.user.image,
-        hasPaid: participant.hasPaid,
-        isGoing: participant.isGoing,
-      })),
-    };
-
-    return NextResponse.json(transformedReservation);
+    return NextResponse.json(updatedReservation);
   } catch (error) {
     console.error('Error joining reservation:', error);
     return NextResponse.json(

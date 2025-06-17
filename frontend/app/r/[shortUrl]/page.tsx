@@ -366,29 +366,29 @@ export default function ShortUrlPage({ params }: { params: Promise<{ shortUrl: s
                         </div>
                       </div>
                     )}
-                  </div>
 
-                  {reservation.passwordRequired && (
-                    <div className="mt-4">
-                      <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-                        Password
-                      </label>
-                      <input
-                        type="password"
-                        id="password"
-                        value={password}
-                        onChange={(e) => {
-                          setPassword(e.target.value);
-                          setPasswordError(null);
-                        }}
-                        className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="Enter password"
-                      />
-                      {passwordError && (
-                        <p className="mt-1 text-sm text-red-600">{passwordError}</p>
-                      )}
-                    </div>
-                  )}
+                    {reservation.passwordRequired && (
+                      <div>
+                        <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+                          Password Required
+                        </label>
+                        <input
+                          type="password"
+                          id="password"
+                          value={password}
+                          onChange={(e) => {
+                            setPassword(e.target.value);
+                            setPasswordError(null);
+                          }}
+                          className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          placeholder="Enter password to join"
+                        />
+                        {passwordError && (
+                          <p className="mt-1 text-sm text-red-600">{passwordError}</p>
+                        )}
+                      </div>
+                    )}
+                  </div>
 
                   <button
                     onClick={handleJoin}
