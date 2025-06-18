@@ -106,6 +106,7 @@ export default function ReservationPage({ params }: PageProps) {
   const [isCopied, setIsCopied] = useState(false);
   const [showStatusDialog, setShowStatusDialog] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState<{ isGoing: boolean; hasPaid: boolean } | null>(null);
+  const [showAddParticipantDialog, setShowAddParticipantDialog] = useState(false);
 
   useEffect(() => {
     const fetchReservation = async () => {
@@ -310,6 +311,29 @@ export default function ReservationPage({ params }: PageProps) {
     }
   };
 
+  const handleAddParticipant = async (userId: string) => {
+    try {
+      const response = await fetch(`/api/reservations/${reservationId}/participants`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userId }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to add participant');
+      }
+
+      const updatedReservation = await response.json();
+      setReservation(updatedReservation);
+      toast.success('Participant added successfully');
+    } catch (error) {
+      console.error('Error adding participant:', error);
+      toast.error('Failed to add participant');
+    }
+  };
+
   if (status === 'loading' || loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -455,7 +479,7 @@ export default function ReservationPage({ params }: PageProps) {
                 <h2 className="text-xl font-semibold">Participants</h2>
                 {reservation.isOwner && (
                   <button
-                    onClick={() => setIsAddingParticipants(true)}
+                    onClick={() => setShowAddParticipantDialog(true)}
                     className="flex items-center gap-2 px-3 py-1.5 text-sm rounded-full bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors"
                   >
                     <FaUserPlus className="w-4 h-4" />
@@ -466,133 +490,67 @@ export default function ReservationPage({ params }: PageProps) {
               <div className="space-y-4">
                 <div>
                   <h3 className="text-sm font-medium text-green-700 mb-2">
-                    Going ({reservation.participants.filter(p => p.isGoing).length})
+                    Going ({reservation.participants?.filter(p => p.isGoing).length || 0})
                   </h3>
                   <div className="space-y-2">
-                    {reservation.participants
-                      .filter(p => p.isGoing)
-                      .map((participant) => (
-                        <div key={participant.id} className="flex items-center justify-between bg-gray-50 p-2 rounded">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              {participant.user?.image && (
-                                <img 
-                                  src={participant.user.image} 
-                                  alt={participant.user.name || ''} 
-                                  className="w-6 h-6 rounded-full"
-                                />
-                              )}
-                              <div>
-                                <p className="text-sm font-medium text-gray-900">
-                                  {participant.user?.name || 'Anonymous'}
-                                </p>
-                                <p className="text-xs text-gray-500">
-                                  {participant.user?.email}
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className={`px-2 py-0.5 text-xs rounded-full ${
-                              participant.hasPaid 
-                                ? 'bg-green-100 text-green-800' 
-                                : 'bg-yellow-100 text-yellow-800'
-                            }`}>
-                              {participant.hasPaid ? (
-                                <span className="flex items-center gap-1">
-                                  <FaCheck className="w-3 h-3" />
-                                  Paid
-                                </span>
-                              ) : (
-                                <span className="flex items-center gap-1">
-                                  <FaTimes className="w-3 h-3" />
-                                  Unpaid
-                                </span>
-                              )}
+                    {reservation.participants?.filter(p => p.isGoing).map((participant) => (
+                      <div key={participant.id} className="flex items-center gap-2">
+                        <div className="h-8 w-8 rounded-full bg-gray-100 flex items-center justify-center">
+                          {participant.user?.image ? (
+                            <img
+                              src={participant.user.image}
+                              alt={participant.user.name || ''}
+                              className="h-8 w-8 rounded-full"
+                            />
+                          ) : (
+                            <span className="text-sm font-medium text-gray-500">
+                              {participant.user?.name?.[0] || participant.user?.email?.[0] || '?'}
                             </span>
-                            {session?.user?.email === participant.user?.email && (
-                              <button
-                                onClick={() => {
-                                  setSelectedStatus({
-                                    isGoing: participant.isGoing,
-                                    hasPaid: participant.hasPaid
-                                  });
-                                  setShowStatusDialog(true);
-                                }}
-                                className="px-3 py-1 text-sm font-medium text-blue-600 hover:text-blue-700"
-                              >
-                                Update
-                              </button>
-                            )}
-                          </div>
+                          )}
                         </div>
-                      ))}
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">
+                            {participant.user?.name || 'Anonymous'}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {participant.user?.email}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
 
                 <div>
-                  <h3 className="text-sm font-medium text-gray-600 mb-2">
-                    Not Going ({reservation.participants.filter(p => !p.isGoing).length})
+                  <h3 className="text-sm font-medium text-red-700 mb-2">
+                    Not Going ({reservation.participants?.filter(p => !p.isGoing).length || 0})
                   </h3>
                   <div className="space-y-2">
-                    {reservation.participants
-                      .filter(p => !p.isGoing)
-                      .map((participant) => (
-                        <div key={participant.id} className="flex items-center justify-between bg-gray-50 p-2 rounded">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              {participant.user?.image && (
-                                <img 
-                                  src={participant.user.image} 
-                                  alt={participant.user.name || ''} 
-                                  className="w-6 h-6 rounded-full"
-                                />
-                              )}
-                              <div>
-                                <p className="text-sm font-medium text-gray-900">
-                                  {participant.user?.name || 'Anonymous'}
-                                </p>
-                                <p className="text-xs text-gray-500">
-                                  {participant.user?.email}
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className={`px-2 py-0.5 text-xs rounded-full ${
-                              participant.hasPaid 
-                                ? 'bg-green-100 text-green-800' 
-                                : 'bg-yellow-100 text-yellow-800'
-                            }`}>
-                              {participant.hasPaid ? (
-                                <span className="flex items-center gap-1">
-                                  <FaCheck className="w-3 h-3" />
-                                  Paid
-                                </span>
-                              ) : (
-                                <span className="flex items-center gap-1">
-                                  <FaTimes className="w-3 h-3" />
-                                  Unpaid
-                                </span>
-                              )}
+                    {reservation.participants?.filter(p => !p.isGoing).map((participant) => (
+                      <div key={participant.id} className="flex items-center gap-2">
+                        <div className="h-8 w-8 rounded-full bg-gray-100 flex items-center justify-center">
+                          {participant.user?.image ? (
+                            <img
+                              src={participant.user.image}
+                              alt={participant.user.name || ''}
+                              className="h-8 w-8 rounded-full"
+                            />
+                          ) : (
+                            <span className="text-sm font-medium text-gray-500">
+                              {participant.user?.name?.[0] || participant.user?.email?.[0] || '?'}
                             </span>
-                            {session?.user?.email === participant.user?.email && (
-                              <button
-                                onClick={() => {
-                                  setSelectedStatus({
-                                    isGoing: participant.isGoing,
-                                    hasPaid: participant.hasPaid
-                                  });
-                                  setShowStatusDialog(true);
-                                }}
-                                className="px-3 py-1 text-sm font-medium text-blue-600 hover:text-blue-700"
-                              >
-                                Update
-                              </button>
-                            )}
-                          </div>
+                          )}
                         </div>
-                      ))}
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">
+                            {participant.user?.name || 'Anonymous'}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {participant.user?.email}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               </div>
@@ -657,65 +615,34 @@ export default function ReservationPage({ params }: PageProps) {
             </div>
           )}
 
+          {/* Add Participant Button */}
+          {reservation.isOwner && (
+            <button
+              onClick={() => setShowAddParticipantDialog(true)}
+              className="w-full mt-4 px-4 py-2 text-sm font-medium text-white bg-green-500 rounded-lg hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+            >
+              Add Participant
+            </button>
+          )}
+
           {/* Add Participant Dialog */}
-          {showAddParticipant && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-              <div className="bg-white rounded-lg p-6 max-w-md w-full">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg font-semibold">Add Participants</h3>
+          {showAddParticipantDialog && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+              <div className="bg-white rounded-xl p-6 max-w-md w-full">
+                <h2 className="text-xl font-semibold text-gray-900 mb-4">Add Participant</h2>
+                <UserSearch
+                  onSelect={(user) => {
+                    handleAddParticipant(user.id);
+                    setShowAddParticipantDialog(false);
+                  }}
+                  excludeIds={reservation.participants.map(p => p.user.id)}
+                />
+                <div className="mt-4 flex justify-end">
                   <button
-                    onClick={() => {
-                      setShowAddParticipant(false);
-                      setSelectedParticipants([]);
-                    }}
-                    className="text-gray-500 hover:text-gray-700"
-                  >
-                    <FaTimes className="w-5 h-5" />
-                  </button>
-                </div>
-                <div className="mb-4">
-                  <UserSearch
-                    onSelect={(user) => {
-                      if (!selectedParticipants.some(p => p.email === user.email)) {
-                        setSelectedParticipants([...selectedParticipants, user]);
-                      }
-                    }}
-                  />
-                </div>
-                {selectedParticipants.length > 0 && (
-                  <div className="mb-4">
-                    <h4 className="text-sm font-medium text-gray-700 mb-2">Selected Participants</h4>
-                    <div className="space-y-2">
-                      {selectedParticipants.map((participant) => (
-                        <div key={participant.email} className="flex items-center justify-between bg-gray-50 p-2 rounded">
-                          <span>{participant.name || participant.email}</span>
-                          <button
-                            onClick={() => setSelectedParticipants(selectedParticipants.filter(p => p.email !== participant.email))}
-                            className="text-red-500 hover:text-red-700"
-                          >
-                            <FaTimes className="w-4 h-4" />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                <div className="flex justify-end gap-4">
-                  <button
-                    onClick={() => {
-                      setShowAddParticipant(false);
-                      setSelectedParticipants([]);
-                    }}
-                    className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                    onClick={() => setShowAddParticipantDialog(false)}
+                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
                   >
                     Cancel
-                  </button>
-                  <button
-                    onClick={handleAddParticipants}
-                    disabled={isAddingParticipants || selectedParticipants.length === 0}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-blue-300"
-                  >
-                    {isAddingParticipants ? 'Adding...' : 'Add Participants'}
                   </button>
                 </div>
               </div>
@@ -788,12 +715,6 @@ export default function ReservationPage({ params }: PageProps) {
               )}
               <div className="flex gap-2 mt-6">
                 <button
-                  onClick={() => setShowStatusDialog(false)}
-                  className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
-                >
-                  Cancel
-                </button>
-                <button
                   onClick={() => {
                     handleStatusUpdate(selectedStatus.isGoing, selectedStatus.hasPaid);
                     setShowStatusDialog(false);
@@ -802,6 +723,12 @@ export default function ReservationPage({ params }: PageProps) {
                   className="flex-1 px-4 py-2 text-sm font-medium text-white bg-blue-500 rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isUpdating ? 'Updating...' : 'Save Changes'}
+                </button>
+                <button
+                  onClick={() => setShowStatusDialog(false)}
+                  className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
+                >
+                  Cancel
                 </button>
               </div>
             </div>
