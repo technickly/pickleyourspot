@@ -233,7 +233,9 @@ export default function ReservePage() {
       passwordRequired: passwordRequired,
     };
 
-    console.log('Request body:', requestBody); // Add logging
+    console.log('Request body:', JSON.stringify(requestBody, null, 2));
+    console.log('passwordRequired value:', passwordRequired);
+    console.log('password value:', password);
 
     try {
       const response = await fetch('/api/reservations', {
@@ -246,7 +248,7 @@ export default function ReservePage() {
 
       if (response.ok) {
         const data = await response.json();
-        console.log('Response data:', data); // Add logging
+        console.log('Response data:', JSON.stringify(data, null, 2));
         toast.success('Reservation created successfully');
         router.push(`/reservations/${data.id}`);
       } else {
