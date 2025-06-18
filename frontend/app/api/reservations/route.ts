@@ -177,17 +177,18 @@ export async function POST(request: Request) {
     const reservationName = formatReservationName(user.name, new Date(startTime), court.name);
 
     // Create the reservation
-    const reservation = await createReservation({
-      name: reservationName,
-      startTime: new Date(startTime),
-      endTime: new Date(endTime),
-      description: description?.trim(),
-      paymentRequired: paymentRequired || false,
-      paymentInfo: paymentInfo?.trim(),
-      courtId,
-      ownerId: user.id,
-    });
-
+const reservation = await createReservation({
+  name: reservationName,
+  startTime: new Date(startTime),
+  endTime: new Date(endTime),
+  description: description?.trim(),
+  paymentRequired: paymentRequired || false,
+  paymentInfo: paymentInfo?.trim(),
+  courtId,
+  ownerId: user.id,
+  password: password?.trim(),
+  passwordRequired: passwordRequired === true,  // Changed to explicitly check for true
+});
     // Add participants if any
     if (participantIds.length > 0) {
       for (const email of participantIds) {
