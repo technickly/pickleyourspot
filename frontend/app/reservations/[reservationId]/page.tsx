@@ -327,7 +327,8 @@ export default function ReservationPage({ params }: PageProps) {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to add participant');
+        const error = await response.text();
+        throw new Error(error || 'Failed to add participant');
       }
 
       // Refresh the reservation data

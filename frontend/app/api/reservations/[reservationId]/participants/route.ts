@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import prisma from '@/lib/prisma';
-import { authOptions } from '../../../auth/[...nextauth]/auth';
+import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 
 interface ParticipantStatus {
   id: string;
@@ -15,12 +15,12 @@ interface ParticipantStatus {
 }
 
 export async function POST(
-  request: NextRequest,
+  request: Request,
   { params }: { params: { reservationId: string } }
 ) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user) {
+    if (!session?.user?.email) {
       return new NextResponse('Unauthorized', { status: 401 });
     }
 
@@ -29,17 +29,22 @@ export async function POST(
       return new NextResponse('User ID is required', { status: 400 });
     }
 
+    // Get the reservation ID from params
+    const { reservationId } = params;
+
     // Check if the user making the request is the reservation owner
     const reservation = await prisma.reservation.findUnique({
-      where: { id: params.reservationId },
-      select: { ownerId: true }
+      where: { id: reservationId },
+      include: {
+        owner: true
+      }
     });
 
     if (!reservation) {
       return new NextResponse('Reservation not found', { status: 404 });
     }
 
-    if (reservation.ownerId !== session.user.id) {
+    if (reservation.owner.email !== session.user.email) {
       return new NextResponse('Unauthorized', { status: 401 });
     }
 
@@ -48,7 +53,7 @@ export async function POST(
       where: {
         userId_reservationId: {
           userId,
-          reservationId: params.reservationId
+          reservationId
         }
       }
     });
@@ -61,7 +66,7 @@ export async function POST(
     const participant = await prisma.participantStatus.create({
       data: {
         userId,
-        reservationId: params.reservationId,
+        reservationId,
         isGoing: true,
         hasPaid: false
       },
