@@ -385,53 +385,55 @@ export default function ReservationsPage() {
                                   <span className="flex-1 text-sm">
                                     {participant.user?.name || participant.user?.email || participant.email}
                                   </span>
-                                  <span className={`ml-2 px-2 py-0.5 text-xs rounded-full ${
-                                    participant.hasPaid 
-                                      ? 'bg-green-100 text-green-800' 
-                                      : 'bg-yellow-100 text-yellow-800'
-                                  }`}>
-                                    {participant.hasPaid ? (
-                                      <span className="flex items-center gap-1">
-                                        <FaCheck className="w-3 h-3" />
-                                        Paid
-                                      </span>
-                                    ) : (
-                                      <span className="flex items-center gap-1">
-                                        <FaTimes className="w-3 h-3" />
-                                        Unpaid
-                                      </span>
-                                    )}
-                                  </span>
-                                  {session?.user?.email === (participant.user?.email || participant.email) && (
-                                    <div className="flex gap-2 ml-4">
-                                      <button
-                                        className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-medium border ${
-                                          participant.isGoing
-                                            ? 'bg-green-500 text-white border-green-600'
-                                            : 'bg-gray-200 text-gray-700 border-gray-300'
-                                        } hover:shadow transition`}
-                                        disabled={updatingStatus[reservation.id]}
-                                        onClick={() => handleStatusUpdate(reservation.id, participant.id, 'isGoing', !participant.isGoing)}
-                                      >
-                                        {participant.isGoing ? <FaUserCheck className="w-3 h-3" /> : <FaUserTimes className="w-3 h-3" />}
-                                        {participant.isGoing ? 'Going' : 'Not Going'}
-                                      </button>
-                                      {reservation.paymentRequired && (
+                                  <div className="flex items-center gap-2">
+                                    <span className={`px-2 py-0.5 text-xs rounded-full ${
+                                      participant.hasPaid 
+                                        ? 'bg-green-100 text-green-800' 
+                                        : 'bg-yellow-100 text-yellow-800'
+                                    }`}>
+                                      {participant.hasPaid ? (
+                                        <span className="flex items-center gap-1">
+                                          <FaCheck className="w-3 h-3" />
+                                          Paid
+                                        </span>
+                                      ) : (
+                                        <span className="flex items-center gap-1">
+                                          <FaTimes className="w-3 h-3" />
+                                          Unpaid
+                                        </span>
+                                      )}
+                                    </span>
+                                    {session?.user?.email === (participant.user?.email || participant.email) && (
+                                      <div className="flex gap-2">
                                         <button
                                           className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-medium border ${
-                                            participant.hasPaid
+                                            participant.isGoing
                                               ? 'bg-green-500 text-white border-green-600'
-                                              : 'bg-yellow-200 text-yellow-800 border-yellow-400'
+                                              : 'bg-gray-200 text-gray-700 border-gray-300'
                                           } hover:shadow transition`}
                                           disabled={updatingStatus[reservation.id]}
-                                          onClick={() => handleStatusUpdate(reservation.id, participant.id, 'hasPaid', !participant.hasPaid)}
+                                          onClick={() => handleStatusUpdate(reservation.id, participant.id, 'isGoing', !participant.isGoing)}
                                         >
-                                          <FaDollarSign className="w-3 h-3" />
-                                          {participant.hasPaid ? 'Paid' : 'Unpaid'}
+                                          {participant.isGoing ? <FaUserCheck className="w-3 h-3" /> : <FaUserTimes className="w-3 h-3" />}
+                                          {participant.isGoing ? 'Going' : 'Not Going'}
                                         </button>
-                                      )}
-                                    </div>
-                                  )}
+                                        {reservation.paymentRequired && (
+                                          <button
+                                            className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-medium border ${
+                                              participant.hasPaid
+                                                ? 'bg-green-500 text-white border-green-600'
+                                                : 'bg-yellow-200 text-yellow-800 border-yellow-400'
+                                            } hover:shadow transition`}
+                                            disabled={updatingStatus[reservation.id]}
+                                            onClick={() => handleStatusUpdate(reservation.id, participant.id, 'hasPaid', !participant.hasPaid)}
+                                          >
+                                            <FaDollarSign className="w-3 h-3" />
+                                            {participant.hasPaid ? 'Paid' : 'Unpaid'}
+                                          </button>
+                                        )}
+                                      </div>
+                                    )}
+                                  </div>
                                 </div>
                               ))}
                           </div>
@@ -446,53 +448,55 @@ export default function ReservationsPage() {
                                   <span className="flex-1 text-sm">
                                     {participant.user?.name || participant.user?.email || participant.email}
                                   </span>
-                                  <span className={`ml-2 px-2 py-0.5 text-xs rounded-full ${
-                                    participant.hasPaid 
-                                      ? 'bg-green-100 text-green-800' 
-                                      : 'bg-yellow-100 text-yellow-800'
-                                  }`}>
-                                    {participant.hasPaid ? (
-                                      <span className="flex items-center gap-1">
-                                        <FaCheck className="w-3 h-3" />
-                                        Paid
-                                      </span>
-                                    ) : (
-                                      <span className="flex items-center gap-1">
-                                        <FaTimes className="w-3 h-3" />
-                                        Unpaid
-                                      </span>
-                                    )}
-                                  </span>
-                                  {session?.user?.email === (participant.user?.email || participant.email) && (
-                                    <div className="flex gap-2 ml-4">
-                                      <button
-                                        className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-medium border ${
-                                          participant.isGoing
-                                            ? 'bg-green-500 text-white border-green-600'
-                                            : 'bg-gray-200 text-gray-700 border-gray-300'
-                                        } hover:shadow transition`}
-                                        disabled={updatingStatus[reservation.id]}
-                                        onClick={() => handleStatusUpdate(reservation.id, participant.id, 'isGoing', !participant.isGoing)}
-                                      >
-                                        {participant.isGoing ? <FaUserCheck className="w-3 h-3" /> : <FaUserTimes className="w-3 h-3" />}
-                                        {participant.isGoing ? 'Going' : 'Not Going'}
-                                      </button>
-                                      {reservation.paymentRequired && (
+                                  <div className="flex items-center gap-2">
+                                    <span className={`px-2 py-0.5 text-xs rounded-full ${
+                                      participant.hasPaid 
+                                        ? 'bg-green-100 text-green-800' 
+                                        : 'bg-yellow-100 text-yellow-800'
+                                    }`}>
+                                      {participant.hasPaid ? (
+                                        <span className="flex items-center gap-1">
+                                          <FaCheck className="w-3 h-3" />
+                                          Paid
+                                        </span>
+                                      ) : (
+                                        <span className="flex items-center gap-1">
+                                          <FaTimes className="w-3 h-3" />
+                                          Unpaid
+                                        </span>
+                                      )}
+                                    </span>
+                                    {session?.user?.email === (participant.user?.email || participant.email) && (
+                                      <div className="flex gap-2">
                                         <button
                                           className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-medium border ${
-                                            participant.hasPaid
+                                            participant.isGoing
                                               ? 'bg-green-500 text-white border-green-600'
-                                              : 'bg-yellow-200 text-yellow-800 border-yellow-400'
+                                              : 'bg-gray-200 text-gray-700 border-gray-300'
                                           } hover:shadow transition`}
                                           disabled={updatingStatus[reservation.id]}
-                                          onClick={() => handleStatusUpdate(reservation.id, participant.id, 'hasPaid', !participant.hasPaid)}
+                                          onClick={() => handleStatusUpdate(reservation.id, participant.id, 'isGoing', !participant.isGoing)}
                                         >
-                                          <FaDollarSign className="w-3 h-3" />
-                                          {participant.hasPaid ? 'Paid' : 'Unpaid'}
+                                          {participant.isGoing ? <FaUserCheck className="w-3 h-3" /> : <FaUserTimes className="w-3 h-3" />}
+                                          {participant.isGoing ? 'Going' : 'Not Going'}
                                         </button>
-                                      )}
-                                    </div>
-                                  )}
+                                        {reservation.paymentRequired && (
+                                          <button
+                                            className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-medium border ${
+                                              participant.hasPaid
+                                                ? 'bg-green-500 text-white border-green-600'
+                                                : 'bg-yellow-200 text-yellow-800 border-yellow-400'
+                                            } hover:shadow transition`}
+                                            disabled={updatingStatus[reservation.id]}
+                                            onClick={() => handleStatusUpdate(reservation.id, participant.id, 'hasPaid', !participant.hasPaid)}
+                                          >
+                                            <FaDollarSign className="w-3 h-3" />
+                                            {participant.hasPaid ? 'Paid' : 'Unpaid'}
+                                          </button>
+                                        )}
+                                      </div>
+                                    )}
+                                  </div>
                                 </div>
                               ))}
                           </div>
