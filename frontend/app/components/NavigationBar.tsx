@@ -29,6 +29,19 @@ export default function NavigationBar() {
     await signIn('google', { callbackUrl: '/' });
   };
 
+  const handleSignOut = async () => {
+    try {
+      await signOut({ 
+        callbackUrl: '/',
+        redirect: true 
+      });
+    } catch (error) {
+      console.error('Error signing out:', error);
+      // Fallback: force page refresh to clear session
+      window.location.href = '/';
+    }
+  };
+
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
   };
@@ -95,7 +108,7 @@ export default function NavigationBar() {
 
                 {session ? (
                   <button
-                    onClick={() => signOut()}
+                    onClick={handleSignOut}
                     className="button-secondary"
                   >
                     Sign Out
@@ -179,7 +192,7 @@ export default function NavigationBar() {
                 </div>
                 {session ? (
                   <button
-                    onClick={() => signOut()}
+                    onClick={handleSignOut}
                     className="text-sm text-red-600 hover:text-red-700 transition-colors"
                   >
                     Sign Out

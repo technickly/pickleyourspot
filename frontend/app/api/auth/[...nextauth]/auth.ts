@@ -37,7 +37,8 @@ export const authOptions: AuthOptions = {
       console.log('🔐 SignIn callback triggered:', { 
         userEmail: user.email, 
         userName: user.name,
-        accountProvider: account?.provider 
+        accountProvider: account?.provider,
+        providerAccountId: account?.providerAccountId
       });
 
       if (!user.email) {
@@ -53,22 +54,31 @@ export const authOptions: AuthOptions = {
         });
 
         if (existingUser) {
-          console.log('👤 User exists:', existingUser.id);
+          console.log('👤 User exists:', existingUser.id, 'with', existingUser.accounts.length, 'linked accounts');
+          
+          // If user has no linked accounts, allow linking this Google account
+          if (existingUser.accounts.length === 0) {
+            console.log('✅ User exists but has no linked accounts - allowing link');
+            return true;
+          }
+          
           // Check if this Google account is already linked
           const hasGoogleAccount = existingUser.accounts.some(
             (acc: any) => acc.provider === 'google' && acc.providerAccountId === account?.providerAccountId
           );
           
-          if (!hasGoogleAccount && existingUser.accounts.length > 0) {
-            console.log('⚠️ Account not linked - allowing link');
-            // Allow linking new Google account to existing user
+          if (hasGoogleAccount) {
+            console.log('✅ Google account already linked - allowing sign in');
             return true;
           }
+          
+          // If user has other accounts but not this Google account, allow linking
+          console.log('⚠️ User has other accounts but not this Google account - allowing link');
+          return true;
         } else {
           console.log('👤 Creating new user via adapter');
+          return true;
         }
-        
-        return true;
       } catch (error) {
         console.error('❌ Error in signIn callback:', error);
         return false;
