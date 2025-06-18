@@ -28,20 +28,13 @@ export async function POST(
       );
     }
 
-    const { email } = await request.json();
+    const { participants } = await request.json();
 
-    // Find or create the user
-    let userToAdd = await prisma.user.findUnique({
-      where: { email }
-    });
-
-    if (!userToAdd) {
-      userToAdd = await prisma.user.create({
-        data: {
-          email,
-          name: email.split('@')[0], // Use the part before @ as a default name
-        },
-      });
+    if (!Array.isArray(participants) || participants.length === 0) {
+      return NextResponse.json(
+        { error: 'At least one participant email is required' },
+        { status: 400 }
+      );
     }
 
     // Verify the user is the owner of the reservation
@@ -71,45 +64,80 @@ export async function POST(
       );
     }
 
-    // Check if user is already a participant
-    const isAlreadyParticipant = reservation.participants.some(
-      (p: { user: { email: string } }) => p.user.email === email
-    );
+    // Process each participant
+    const addedParticipants = [];
+    for (const email of participants) {
+      if (!email) continue;
 
-    if (isAlreadyParticipant) {
-      return NextResponse.json(
-        { error: 'User is already a participant' },
-        { status: 400 }
+      // Find or create the user
+      let userToAdd = await prisma.user.findUnique({
+        where: { email }
+      });
+
+      if (!userToAdd) {
+        userToAdd = await prisma.user.create({
+          data: {
+            email,
+            name: email.split('@')[0], // Use the part before @ as a default name
+          },
+        });
+      }
+
+      // Check if user is already a participant
+      const isAlreadyParticipant = reservation.participants.some(
+        (p: { user: { email: string } }) => p.user.email === email
       );
+
+      if (!isAlreadyParticipant) {
+        // Create the participant status
+        const participantStatus = await prisma.participantStatus.create({
+          data: {
+            userId: userToAdd.id,
+            reservationId: params.reservationId,
+            isGoing: true,
+            hasPaid: false,
+          },
+          include: {
+            user: {
+              select: {
+                name: true,
+                email: true,
+                image: true,
+              }
+            }
+          }
+        });
+
+        addedParticipants.push({
+          id: participantStatus.id,
+          hasPaid: participantStatus.hasPaid,
+          isGoing: participantStatus.isGoing,
+          name: participantStatus.user.name,
+          email: participantStatus.user.email,
+          image: participantStatus.user.image,
+        });
+      }
     }
 
-    // Create the participant status
-    const participantStatus = await prisma.participantStatus.create({
-      data: {
-        userId: userToAdd.id,
-        reservationId: params.reservationId,
-        isGoing: true,
-        hasPaid: false,
-      },
+    // Get updated reservation with all participants
+    const updatedReservation = await prisma.reservation.findUnique({
+      where: { id: params.reservationId },
       include: {
-        user: {
-          select: {
-            name: true,
-            email: true,
-            image: true,
+        participants: {
+          include: {
+            user: {
+              select: {
+                name: true,
+                email: true,
+                image: true,
+              }
+            }
           }
-        }
-      }
+        },
+      },
     });
 
-    return NextResponse.json({
-      id: participantStatus.id,
-      hasPaid: participantStatus.hasPaid,
-      isGoing: participantStatus.isGoing,
-      name: participantStatus.user.name,
-      email: participantStatus.user.email,
-      image: participantStatus.user.image,
-    });
+    return NextResponse.json(updatedReservation);
   } catch (error) {
     console.error('Failed to add participant:', error);
     return NextResponse.json(

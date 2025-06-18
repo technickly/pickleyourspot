@@ -88,9 +88,14 @@ export async function PUT(
         });
       }
     } else if (type === 'hasPaid') {
-      // Update user's hasPaid status
-      await prisma.user.update({
-        where: { id: user.id },
+      // Update participant's hasPaid status
+      await prisma.participantStatus.update({
+        where: {
+          userId_reservationId: {
+            userId: user.id,
+            reservationId: params.reservationId,
+          },
+        },
         data: {
           hasPaid: value,
         },
@@ -101,7 +106,11 @@ export async function PUT(
     const updatedReservation = await prisma.reservation.findUnique({
       where: { id: params.reservationId },
       include: {
-        participants: true,
+        participants: {
+          include: {
+            user: true,
+          },
+        },
       },
     });
 
