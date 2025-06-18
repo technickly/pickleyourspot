@@ -420,11 +420,11 @@ export default function ReservationPage({ params }: PageProps) {
               <div>
                 <p className="text-sm font-medium text-gray-500 mb-1">Date & Time</p>
                 <p className="text-gray-900">
-                  {format(new Date(reservation.startTime), 'EEEE, MMMM d, yyyy')}
+                  {format(new Date(reservation.date + 'T' + reservation.startTime), 'EEEE, MMMM d, yyyy')}
                 </p>
                 <p className="text-gray-600">
-                  {format(new Date(`2000-01-01T${reservation.startTime}`), 'h:mm a')} -{' '}
-                  {format(new Date(`2000-01-01T${reservation.endTime}`), 'h:mm a')}
+                  {format(new Date(reservation.date + 'T' + reservation.startTime), 'h:mm a')} -{' '}
+                  {format(new Date(reservation.date + 'T' + reservation.endTime), 'h:mm a')}
                 </p>
               </div>
               <div>
