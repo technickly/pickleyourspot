@@ -110,15 +110,20 @@ export default function ReservationPage({ params }: PageProps) {
   useEffect(() => {
     const fetchReservation = async () => {
       try {
-        setLoading(true);
         const response = await fetch(`/api/reservations/${reservationId}`);
         if (!response.ok) {
           throw new Error('Failed to fetch reservation');
         }
         const data = await response.json();
+        console.log('Reservation data:', {
+          date: data.date,
+          startTime: data.startTime,
+          endTime: data.endTime
+        });
         setReservation(data);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'An error occurred');
+      } catch (error) {
+        console.error('Error fetching reservation:', error);
+        toast.error('Failed to load reservation');
       } finally {
         setLoading(false);
       }
@@ -420,11 +425,10 @@ export default function ReservationPage({ params }: PageProps) {
               <div>
                 <p className="text-sm font-medium text-gray-500 mb-1">Date & Time</p>
                 <p className="text-gray-900">
-                  {format(new Date(reservation.date + 'T' + reservation.startTime), 'EEEE, MMMM d, yyyy')}
+                  {reservation.date}
                 </p>
                 <p className="text-gray-600">
-                  {format(new Date(`2024-01-01T${reservation.startTime}`), 'h:mm a')} -{' '}
-                  {format(new Date(`2024-01-01T${reservation.endTime}`), 'h:mm a')}
+                  {reservation.startTime} - {reservation.endTime}
                 </p>
               </div>
               <div>
