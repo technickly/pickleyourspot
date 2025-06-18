@@ -115,6 +115,8 @@ export default function ReservationPage({ params }: PageProps) {
   const [showAddParticipantDialog, setShowAddParticipantDialog] = useState(false);
   const [isAddParticipantOpen, setIsAddParticipantOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [participantToRemove, setParticipantToRemove] = useState<{ id: string; name: string; email: string } | null>(null);
+  const [removingParticipant, setRemovingParticipant] = useState<Record<string, boolean>>({});
   const [editForm, setEditForm] = useState({
     description: '',
     startTime: '',
@@ -401,6 +403,31 @@ export default function ReservationPage({ params }: PageProps) {
     }
   };
 
+  const handleRemoveParticipant = async (participantId: string, participantEmail: string) => {
+    if (!session?.user?.email) {
+      toast.error('You must be logged in to remove participants');
+      return;
+    }
+
+    setRemovingParticipant(prev => ({ ...prev, [participantId]: true }));
+    try {
+      const response = await fetch(`/api/reservations/${reservationId}/participants?email=${encodeURIComponent(participantEmail)}`, {
+        method: 'DELETE',
+      });
+      
+      if (!response.ok) throw new Error('Failed to remove participant');
+      
+      await refreshReservation();
+      toast.success('Participant removed successfully');
+      setParticipantToRemove(null);
+    } catch (error) {
+      console.error('Error removing participant:', error);
+      toast.error('Failed to remove participant');
+    } finally {
+      setRemovingParticipant(prev => ({ ...prev, [participantId]: false }));
+    }
+  };
+
   if (status === 'loading' || loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -467,7 +494,7 @@ export default function ReservationPage({ params }: PageProps) {
         <div className="bg-white rounded-lg shadow-sm p-6">
           <div className="flex justify-between items-start mb-6">
             <h1 className="text-2xl font-bold text-gray-900">
-              {reservation.court?.name || 'Unknown Court'}
+              {reservation.name || 'Untitled Reservation'}
             </h1>
             <div className="flex items-center gap-2">
               <CopyButton
@@ -634,18 +661,17 @@ export default function ReservationPage({ params }: PageProps) {
                               </span>
                             )}
                           </span>
-                          {session?.user?.email === participant.user?.email && (
+                          {reservation.isOwner && !isPastEvent(reservation.endTime) && (
                             <button
-                              onClick={() => {
-                                setSelectedStatus({
-                                  isGoing: participant.isGoing,
-                                  hasPaid: participant.hasPaid
-                                });
-                                setShowStatusDialog(true);
-                              }}
-                              className="px-3 py-1 text-sm font-medium text-blue-600 hover:text-blue-700"
+                              onClick={() => setParticipantToRemove({
+                                id: participant.id,
+                                name: participant.user?.name || participant.user?.email || 'Anonymous',
+                                email: participant.user?.email || ''
+                              })}
+                              className="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium border border-red-300 text-red-700 hover:bg-red-50 transition-colors"
                             >
-                              Update
+                              <FaTrash className="w-3 h-3" />
+                              Remove
                             </button>
                           )}
                         </div>
@@ -698,18 +724,17 @@ export default function ReservationPage({ params }: PageProps) {
                               </span>
                             )}
                           </span>
-                          {session?.user?.email === participant.user?.email && (
+                          {reservation.isOwner && !isPastEvent(reservation.endTime) && (
                             <button
-                              onClick={() => {
-                                setSelectedStatus({
-                                  isGoing: participant.isGoing,
-                                  hasPaid: participant.hasPaid
-                                });
-                                setShowStatusDialog(true);
-                              }}
-                              className="px-3 py-1 text-sm font-medium text-blue-600 hover:text-blue-700"
+                              onClick={() => setParticipantToRemove({
+                                id: participant.id,
+                                name: participant.user?.name || participant.user?.email || 'Anonymous',
+                                email: participant.user?.email || ''
+                              })}
+                              className="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium border border-red-300 text-red-700 hover:bg-red-50 transition-colors"
                             >
-                              Update
+                              <FaTrash className="w-3 h-3" />
+                              Remove
                             </button>
                           )}
                         </div>
@@ -968,6 +993,43 @@ export default function ReservationPage({ params }: PageProps) {
         onAddParticipant={handleAddParticipant}
         existingParticipants={reservation?.participants || []}
       />
+
+      {participantToRemove && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Confirm Removal</h3>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to remove {participantToRemove.name} from this reservation? This action cannot be undone.
+            </p>
+            <div className="flex justify-end gap-4">
+              <button
+                onClick={() => setParticipantToRemove(null)}
+                className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  if (participantToRemove) {
+                    handleRemoveParticipant(participantToRemove.id, participantToRemove.email);
+                  }
+                }}
+                disabled={removingParticipant[participantToRemove.id]}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
+              >
+                {removingParticipant[participantToRemove.id] ? (
+                  <span className="flex items-center gap-2">
+                    <FaSpinner className="w-4 h-4 animate-spin" />
+                    Removing...
+                  </span>
+                ) : (
+                  'Remove Participant'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 } 
