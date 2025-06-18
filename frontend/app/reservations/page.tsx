@@ -135,9 +135,25 @@ export default function ReservationsPage() {
       return;
     }
 
+    // Find the current user's participant ID
+    const reservation = reservations.find(r => r.id === reservationId);
+    if (!reservation) {
+      toast.error('Reservation not found');
+      return;
+    }
+
+    const currentParticipant = reservation.participants.find(
+      p => p.user?.email === session.user.email
+    );
+
+    if (!currentParticipant?.user?.id) {
+      toast.error('You are not a participant in this reservation');
+      return;
+    }
+
     setUpdatingStatus((prev) => ({ ...prev, [reservationId]: true }));
     try {
-      const response = await fetch(`/api/reservations/${reservationId}/participants/${session.user.email}/status`, {
+      const response = await fetch(`/api/reservations/${reservationId}/participants/${currentParticipant.user.id}/status`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ type, value: newValue }),
