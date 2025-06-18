@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { toast } from 'react-hot-toast';
-import { FaSpinner, FaShare, FaEdit, FaTrash, FaCheck, FaTimes, FaUserPlus, FaUser } from 'react-icons/fa';
+import { FaSpinner, FaShare, FaEdit, FaTrash, FaCheck, FaTimes, FaUserPlus, FaUser, FaUserCheck, FaUserTimes, FaDollarSign } from 'react-icons/fa';
 import { formatInTimeZone } from 'date-fns-tz';
 import Link from 'next/link';
 import CopyButton from '@/app/components/CopyButton';
@@ -96,6 +96,7 @@ export default function ReservationPage({ params }: { params: Promise<{ reservat
   const [selectedParticipants, setSelectedParticipants] = useState<{ email: string; name: string | null }[]>([]);
   const [isAddingParticipants, setIsAddingParticipants] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [updatingStatus, setUpdatingStatus] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     if (!session && status !== 'loading') {
@@ -161,32 +162,7 @@ export default function ReservationPage({ params }: { params: Promise<{ reservat
     }
   };
 
-  const handleStatusUpdate = async (participantId: string, type: 'payment', value: boolean) => {
-    try {
-      const response = await fetch(`/api/reservations/${reservationId}/participants/${participantId}/status`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          [type]: value,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to update status');
-      }
-
-      const updatedReservation = await response.json();
-      setReservation(updatedReservation);
-      toast.success('Status updated successfully');
-    } catch (error) {
-      console.error('Error updating status:', error);
-      toast.error('Failed to update status');
-    }
-  };
-
-  const handleParticipantStatusUpdate = async (type: 'going' | 'payment', value: boolean) => {
+  const handleStatusUpdate = async (reservationId: string, type: 'isGoing' | 'hasPaid', value: boolean) => {
     if (!session?.user?.email) return;
 
     try {
@@ -211,6 +187,8 @@ export default function ReservationPage({ params }: { params: Promise<{ reservat
     } catch (error) {
       console.error('Error updating status:', error);
       toast.error('Failed to update status');
+    } finally {
+      setUpdatingStatus(prev => ({ ...prev, [reservationId]: false }));
     }
   };
 
@@ -380,180 +358,166 @@ export default function ReservationPage({ params }: { params: Promise<{ reservat
               </div>
               <div className="space-y-4">
                 <div>
-                  <h3 className="text-sm font-medium text-green-700 mb-2">
-                    Going ({reservation.participants.filter(p => p.isGoing).length})
-                  </h3>
-                  <div className="space-y-2">
-                    {reservation.participants
-                      .filter(p => p.isGoing)
-                      .map((participant) => (
-                        <div key={participant.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                          <div className="flex items-center gap-3">
-                            {participant.user.image ? (
-                              <img
-                                src={participant.user.image}
-                                alt={participant.user.name || participant.email}
-                                className="w-10 h-10 rounded-full object-cover"
-                              />
-                            ) : (
-                              <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
-                                <FaUser className="w-5 h-5 text-gray-500" />
+                  <p className="text-sm font-medium text-gray-500 mb-2">Participants</p>
+                  <div className="space-y-4">
+                    <div>
+                      <h4 className="text-sm font-medium text-green-700 mb-2">Going ({reservation.participants.filter(p => p.isGoing).length})</h4>
+                      <div className="space-y-2">
+                        {reservation.participants
+                          .filter(p => p.isGoing)
+                          .map((participant) => (
+                            <div key={participant.id} className="flex items-center justify-between bg-gray-50 p-2 rounded">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2">
+                                  {participant.user?.image && (
+                                    <img 
+                                      src={participant.user.image} 
+                                      alt={participant.user.name || ''} 
+                                      className="w-6 h-6 rounded-full"
+                                    />
+                                  )}
+                                  <div>
+                                    <p className="text-sm font-medium text-gray-900">
+                                      {participant.user?.name || 'Anonymous'}
+                                    </p>
+                                    <p className="text-xs text-gray-500">
+                                      {participant.user?.email}
+                                    </p>
+                                  </div>
+                                </div>
                               </div>
-                            )}
-                            <div>
-                              <p className="font-medium">
-                                {participant.user.name || 'Anonymous User'}
-                              </p>
-                              <p className="text-sm text-gray-500">{participant.email}</p>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            {participant.email === session?.user?.email ? (
-                              <>
-                                <button
-                                  onClick={() => {
-                                    if (window.confirm('Are you sure you want to change your status to Not Going?')) {
-                                      handleParticipantStatusUpdate('going', false);
-                                    }
-                                  }}
-                                  className="px-3 py-1.5 text-sm rounded-full bg-red-100 text-red-800 hover:bg-red-200 transition-colors"
-                                >
-                                  Not Going
-                                </button>
-                                {reservation.paymentRequired && (
-                                  <button
-                                    onClick={() => {
-                                      if (window.confirm(`Are you sure you want to mark yourself as ${participant.hasPaid ? 'Not Paid' : 'Paid'}?`)) {
-                                        handleParticipantStatusUpdate('payment', !participant.hasPaid);
-                                      }
-                                    }}
-                                    className={`px-3 py-1.5 text-sm rounded-full transition-colors ${
-                                      participant.hasPaid 
-                                        ? 'bg-green-100 text-green-800 hover:bg-green-200' 
-                                        : 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
-                                    }`}
-                                  >
-                                    {participant.hasPaid ? 'Paid' : 'Mark as Paid'}
-                                  </button>
+                              <div className="flex items-center gap-2">
+                                <span className={`px-2 py-0.5 text-xs rounded-full ${
+                                  participant.hasPaid 
+                                    ? 'bg-green-100 text-green-800' 
+                                    : 'bg-yellow-100 text-yellow-800'
+                                }`}>
+                                  {participant.hasPaid ? (
+                                    <span className="flex items-center gap-1">
+                                      <FaCheck className="w-3 h-3" />
+                                      Paid
+                                    </span>
+                                  ) : (
+                                    <span className="flex items-center gap-1">
+                                      <FaTimes className="w-3 h-3" />
+                                      Unpaid
+                                    </span>
+                                  )}
+                                </span>
+                                {session?.user?.email === participant.user?.email && (
+                                  <div className="flex gap-2">
+                                    <button
+                                      className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-medium border ${
+                                        participant.isGoing
+                                          ? 'bg-green-500 text-white border-green-600'
+                                          : 'bg-gray-200 text-gray-700 border-gray-300'
+                                      } hover:shadow transition`}
+                                      disabled={updatingStatus[reservation.id]}
+                                      onClick={() => handleStatusUpdate(reservation.id, 'isGoing', !participant.isGoing)}
+                                    >
+                                      {participant.isGoing ? <FaUserCheck className="w-3 h-3" /> : <FaUserTimes className="w-3 h-3" />}
+                                      {participant.isGoing ? 'Going' : 'Not Going'}
+                                    </button>
+                                    {reservation.paymentRequired && (
+                                      <button
+                                        className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-medium border ${
+                                          participant.hasPaid
+                                            ? 'bg-green-500 text-white border-green-600'
+                                            : 'bg-yellow-200 text-yellow-800 border-yellow-400'
+                                        } hover:shadow transition`}
+                                        disabled={updatingStatus[reservation.id]}
+                                        onClick={() => handleStatusUpdate(reservation.id, 'hasPaid', !participant.hasPaid)}
+                                      >
+                                        <FaDollarSign className="w-3 h-3" />
+                                        {participant.hasPaid ? 'Paid' : 'Unpaid'}
+                                      </button>
+                                    )}
+                                  </div>
                                 )}
-                              </>
-                            ) : (
-                              <>
-                                {reservation.isOwner && (
-                                  <button
-                                    onClick={() => handleStatusUpdate(participant.id, 'payment', !participant.hasPaid)}
-                                    className={`px-3 py-1.5 text-sm rounded-full transition-colors ${
-                                      participant.hasPaid 
-                                        ? 'bg-green-100 text-green-800 hover:bg-green-200' 
-                                        : 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
-                                    }`}
-                                  >
-                                    {participant.hasPaid ? 'Paid' : 'Mark as Paid'}
-                                  </button>
-                                )}
-                                {!reservation.isOwner && reservation.paymentRequired && (
-                                  <span className={`px-3 py-1.5 text-sm rounded-full ${
-                                    participant.hasPaid 
-                                      ? 'bg-green-100 text-green-800' 
-                                      : 'bg-yellow-100 text-yellow-800'
-                                  }`}>
-                                    {participant.hasPaid ? 'Paid' : 'Unpaid'}
-                                  </span>
-                                )}
-                              </>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className="text-sm font-medium text-gray-600 mb-2">
-                    Not Going ({reservation.participants.filter(p => !p.isGoing).length})
-                  </h3>
-                  <div className="space-y-2">
-                    {reservation.participants
-                      .filter(p => !p.isGoing)
-                      .map((participant) => (
-                        <div key={participant.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                          <div className="flex items-center gap-3">
-                            {participant.user.image ? (
-                              <img
-                                src={participant.user.image}
-                                alt={participant.user.name || participant.email}
-                                className="w-10 h-10 rounded-full object-cover"
-                              />
-                            ) : (
-                              <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
-                                <FaUser className="w-5 h-5 text-gray-500" />
                               </div>
-                            )}
-                            <div>
-                              <p className="font-medium">
-                                {participant.user?.name || 'Anonymous User'}
-                              </p>
-                              <p className="text-sm text-gray-500">{participant.email}</p>
                             </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            {participant.email === session?.user?.email ? (
-                              <>
-                                <button
-                                  onClick={() => {
-                                    if (window.confirm('Are you sure you want to change your status to Going?')) {
-                                      handleParticipantStatusUpdate('going', true);
-                                    }
-                                  }}
-                                  className="px-3 py-1.5 text-sm rounded-full bg-green-100 text-green-800 hover:bg-green-200 transition-colors"
-                                >
-                                  Going
-                                </button>
-                                {reservation.paymentRequired && (
-                                  <button
-                                    onClick={() => {
-                                      if (window.confirm(`Are you sure you want to mark yourself as ${participant.hasPaid ? 'Not Paid' : 'Paid'}?`)) {
-                                        handleParticipantStatusUpdate('payment', !participant.hasPaid);
-                                      }
-                                    }}
-                                    className={`px-3 py-1.5 text-sm rounded-full transition-colors ${
-                                      participant.hasPaid 
-                                        ? 'bg-green-100 text-green-800 hover:bg-green-200' 
-                                        : 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
-                                    }`}
-                                  >
-                                    {participant.hasPaid ? 'Paid' : 'Mark as Paid'}
-                                  </button>
+                          ))}
+                      </div>
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-medium text-gray-600 mb-2">Not Going ({reservation.participants.filter(p => !p.isGoing).length})</h4>
+                      <div className="space-y-2">
+                        {reservation.participants
+                          .filter(p => !p.isGoing)
+                          .map((participant) => (
+                            <div key={participant.id} className="flex items-center justify-between bg-gray-50 p-2 rounded">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2">
+                                  {participant.user?.image && (
+                                    <img 
+                                      src={participant.user.image} 
+                                      alt={participant.user.name || ''} 
+                                      className="w-6 h-6 rounded-full"
+                                    />
+                                  )}
+                                  <div>
+                                    <p className="text-sm font-medium text-gray-900">
+                                      {participant.user?.name || 'Anonymous'}
+                                    </p>
+                                    <p className="text-xs text-gray-500">
+                                      {participant.user?.email}
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className={`px-2 py-0.5 text-xs rounded-full ${
+                                  participant.hasPaid 
+                                    ? 'bg-green-100 text-green-800' 
+                                    : 'bg-yellow-100 text-yellow-800'
+                                }`}>
+                                  {participant.hasPaid ? (
+                                    <span className="flex items-center gap-1">
+                                      <FaCheck className="w-3 h-3" />
+                                      Paid
+                                    </span>
+                                  ) : (
+                                    <span className="flex items-center gap-1">
+                                      <FaTimes className="w-3 h-3" />
+                                      Unpaid
+                                    </span>
+                                  )}
+                                </span>
+                                {session?.user?.email === participant.user?.email && (
+                                  <div className="flex gap-2">
+                                    <button
+                                      className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-medium border ${
+                                        participant.isGoing
+                                          ? 'bg-green-500 text-white border-green-600'
+                                          : 'bg-gray-200 text-gray-700 border-gray-300'
+                                      } hover:shadow transition`}
+                                      disabled={updatingStatus[reservation.id]}
+                                      onClick={() => handleStatusUpdate(reservation.id, 'isGoing', !participant.isGoing)}
+                                    >
+                                      {participant.isGoing ? <FaUserCheck className="w-3 h-3" /> : <FaUserTimes className="w-3 h-3" />}
+                                      {participant.isGoing ? 'Going' : 'Not Going'}
+                                    </button>
+                                    {reservation.paymentRequired && (
+                                      <button
+                                        className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-medium border ${
+                                          participant.hasPaid
+                                            ? 'bg-green-500 text-white border-green-600'
+                                            : 'bg-yellow-200 text-yellow-800 border-yellow-400'
+                                        } hover:shadow transition`}
+                                        disabled={updatingStatus[reservation.id]}
+                                        onClick={() => handleStatusUpdate(reservation.id, 'hasPaid', !participant.hasPaid)}
+                                      >
+                                        <FaDollarSign className="w-3 h-3" />
+                                        {participant.hasPaid ? 'Paid' : 'Unpaid'}
+                                      </button>
+                                    )}
+                                  </div>
                                 )}
-                              </>
-                            ) : (
-                              <>
-                                {reservation.isOwner && (
-                                  <button
-                                    onClick={() => handleStatusUpdate(participant.id, 'payment', !participant.hasPaid)}
-                                    className={`px-3 py-1.5 text-sm rounded-full transition-colors ${
-                                      participant.hasPaid 
-                                        ? 'bg-green-100 text-green-800 hover:bg-green-200' 
-                                        : 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
-                                    }`}
-                                  >
-                                    {participant.hasPaid ? 'Paid' : 'Mark as Paid'}
-                                  </button>
-                                )}
-                                {!reservation.isOwner && reservation.paymentRequired && (
-                                  <span className={`px-3 py-1.5 text-sm rounded-full ${
-                                    participant.hasPaid 
-                                      ? 'bg-green-100 text-green-800' 
-                                      : 'bg-yellow-100 text-yellow-800'
-                                  }`}>
-                                    {participant.hasPaid ? 'Paid' : 'Unpaid'}
-                                  </span>
-                                )}
-                              </>
-                            )}
-                          </div>
-                        </div>
-                      ))}
+                              </div>
+                            </div>
+                          ))}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
