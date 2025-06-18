@@ -10,7 +10,13 @@ export async function PUT(
 ) {
   try {
     const session = await getServerSession();
-    const { reservationId, participantId } = await params;
+    const { reservationId, participantId } = params;
+
+    console.log('Status update request:', {
+      reservationId,
+      participantId,
+      userEmail: session?.user?.email
+    });
 
     if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -38,6 +44,7 @@ export async function PUT(
     });
 
     if (!requestingUser) {
+      console.error('Requesting user not found:', session.user.email);
       return NextResponse.json(
         { error: 'User not found' },
         { status: 404 }
@@ -46,6 +53,10 @@ export async function PUT(
 
     // Verify the user is authorized to update this status
     if (requestingUser.id !== participantId) {
+      console.error('User not authorized:', {
+        requestingUserId: requestingUser.id,
+        targetUserId: participantId
+      });
       return NextResponse.json(
         { error: 'You can only update your own status' },
         { status: 403 }
@@ -65,6 +76,7 @@ export async function PUT(
     });
 
     if (!reservation) {
+      console.error('Reservation not found:', reservationId);
       return NextResponse.json(
         { error: 'Reservation not found' },
         { status: 404 }
@@ -77,6 +89,10 @@ export async function PUT(
     );
 
     if (!isParticipant) {
+      console.error('User is not a participant:', {
+        userId: participantId,
+        reservationId
+      });
       return NextResponse.json(
         { error: 'User is not a participant in this reservation' },
         { status: 403 }
@@ -114,6 +130,13 @@ export async function PUT(
           }
         }
       }
+    });
+
+    console.log('Status updated successfully:', {
+      reservationId,
+      participantId,
+      type,
+      value
     });
 
     return NextResponse.json(updatedReservation);

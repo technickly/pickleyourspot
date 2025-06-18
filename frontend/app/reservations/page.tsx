@@ -147,18 +147,38 @@ export default function ReservationsPage() {
     );
 
     if (!currentParticipant?.user?.id) {
+      console.error('Participant not found:', {
+        userEmail: session.user.email,
+        participants: reservation.participants
+      });
       toast.error('You are not a participant in this reservation');
       return;
     }
 
     setUpdatingStatus((prev) => ({ ...prev, [reservationId]: true }));
     try {
+      console.log('Updating status:', {
+        reservationId,
+        participantId: currentParticipant.user.id,
+        type,
+        newValue
+      });
+
       const response = await fetch(`/api/reservations/${reservationId}/participants/${currentParticipant.user.id}/status`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ type, value: newValue }),
       });
-      if (!response.ok) throw new Error('Failed to update status');
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Status update failed:', {
+          status: response.status,
+          error: errorData
+        });
+        throw new Error(errorData.error || 'Failed to update status');
+      }
+
       await fetchReservations();
       toast.success(`${type === 'isGoing' ? 'Attendance' : 'Payment'} status updated`);
     } catch (error) {
