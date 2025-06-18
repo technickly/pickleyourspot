@@ -33,7 +33,7 @@ export async function PUT(
       );
     }
 
-    // Get the reservation
+    // Get the reservation with participants
     const reservation = await prisma.reservation.findUnique({
       where: { id: params.reservationId },
       include: { participants: true },

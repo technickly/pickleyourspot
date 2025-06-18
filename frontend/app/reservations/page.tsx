@@ -15,6 +15,7 @@ interface Participant {
   isGoing: boolean;
   hasPaid: boolean;
   user?: {
+    id: string;
     name: string;
     email: string;
     image: string;
@@ -132,7 +133,16 @@ export default function ReservationsPage() {
   ) => {
     setUpdatingStatus((prev) => ({ ...prev, [reservationId]: true }));
     try {
-      const response = await fetch(`/api/reservations/${reservationId}/participants/${participantId}/status`, {
+      // Get the user ID from the participant
+      const participant = reservations
+        .find(r => r.id === reservationId)
+        ?.participants.find(p => p.id === participantId);
+      
+      if (!participant?.user?.id) {
+        throw new Error('Participant not found');
+      }
+
+      const response = await fetch(`/api/reservations/${reservationId}/participants/${participant.user.id}/status`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ type, value: newValue }),
@@ -141,6 +151,7 @@ export default function ReservationsPage() {
       await fetchReservations();
       toast.success(`${type === 'isGoing' ? 'Attendance' : 'Payment'} status updated`);
     } catch (error) {
+      console.error('Error updating status:', error);
       toast.error('Failed to update status');
     } finally {
       setUpdatingStatus((prev) => ({ ...prev, [reservationId]: false }));
