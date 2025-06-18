@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation';
 import { useSession, signIn } from 'next-auth/react';
 import { toast } from 'react-hot-toast';
 import { FaSpinner, FaShare, FaEdit, FaTrash, FaCheck, FaTimes, FaUserPlus, FaUser, FaUserCheck, FaUserTimes, FaDollarSign } from 'react-icons/fa';
-import { formatInTimeZone, parse } from 'date-fns-tz';
+import { formatInTimeZone } from 'date-fns-tz';
+import { parseISO } from 'date-fns';
 import Link from 'next/link';
 import CopyButton from '@/app/components/CopyButton';
 import { use } from 'react';
@@ -147,9 +148,8 @@ export default function ReservationPage({ params }: PageProps) {
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!session?.user?.email || !newMessage.trim() || isSendingMessage) return;
+    if (!newMessage.trim() || !session?.user) return;
 
-    setIsSendingMessage(true);
     try {
       const response = await fetch(`/api/reservations/${reservationId}/messages`, {
         method: 'POST',
@@ -157,7 +157,8 @@ export default function ReservationPage({ params }: PageProps) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          content: newMessage.trim(),
+          content: newMessage,
+          userId: session.user.id,
         }),
       });
 
@@ -165,14 +166,11 @@ export default function ReservationPage({ params }: PageProps) {
         throw new Error('Failed to send message');
       }
 
-      const updatedReservation = await response.json();
-      setReservation(updatedReservation);
       setNewMessage('');
+      await refreshReservation();
     } catch (error) {
       console.error('Error sending message:', error);
       toast.error('Failed to send message');
-    } finally {
-      setIsSendingMessage(false);
     }
   };
 
@@ -470,13 +468,13 @@ export default function ReservationPage({ params }: PageProps) {
                 <div className="flex items-center gap-2 text-gray-600">
                   <Calendar className="w-5 h-5" />
                   <span>
-                    {formatInTimeZone(new Date(reservation.startTime), 'America/Los_Angeles', 'EEEE, MMMM d, yyyy')}
+                    {formatInTimeZone(parseISO(reservation.startTime), 'America/Los_Angeles', 'EEEE, MMMM d, yyyy')}
                   </span>
                 </div>
                 <div className="flex items-center gap-2 text-gray-600">
                   <Clock className="w-5 h-5" />
                   <span>
-                    {formatInTimeZone(new Date(reservation.startTime), 'America/Los_Angeles', 'h:mm a')} - {formatInTimeZone(new Date(reservation.endTime), 'America/Los_Angeles', 'h:mm a')} PT
+                    {formatInTimeZone(parseISO(reservation.startTime), 'America/Los_Angeles', 'h:mm a')} - {formatInTimeZone(parseISO(reservation.endTime), 'America/Los_Angeles', 'h:mm a')}
                   </span>
                 </div>
               </div>
@@ -651,27 +649,14 @@ export default function ReservationPage({ params }: PageProps) {
               <div className="space-y-4 mb-4">
                 {reservation.messages && reservation.messages.length > 0 ? (
                   reservation.messages.map((message) => (
-                    <div key={message.id} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
-                      {message.user?.image ? (
-                        <img
-                          src={message.user.image}
-                          alt={message.user.name || message.user.email}
-                          className="w-8 h-8 rounded-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
-                          <FaUser className="w-4 h-4 text-gray-500" />
-                        </div>
-                      )}
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <p className="font-medium">{message.user?.name || message.user?.email}</p>
-                          <p className="text-sm text-gray-500">
-                            {formatInTimeZone(new Date(message.createdAt), timeZone, 'MMM d, h:mm a')}
-                          </p>
-                        </div>
-                        <p className="text-gray-700">{message.content}</p>
+                    <div key={message.id} className="flex flex-col space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="font-medium">{message.user.name || message.user.email}</span>
+                        <span className="text-sm text-gray-500">
+                          {formatInTimeZone(parseISO(message.createdAt), 'America/Los_Angeles', 'MMM d, h:mm a')}
+                        </span>
                       </div>
+                      <p className="text-gray-700">{message.content}</p>
                     </div>
                   ))
                 ) : (
