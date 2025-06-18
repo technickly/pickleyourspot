@@ -69,6 +69,7 @@ export default function ReservationsPage() {
 
   const fetchReservations = async () => {
     try {
+      console.log('Fetching reservations...');
       const response = await fetch('/api/reservations/user', {
         headers: {
           'Cache-Control': 'no-cache, no-store, must-revalidate',
@@ -80,6 +81,9 @@ export default function ReservationsPage() {
         throw new Error('Failed to fetch reservations');
       }
       const data = await response.json();
+      console.log('=== RESERVATIONS DATA ===');
+      console.log(JSON.stringify(data, null, 2));
+      console.log('=======================');
       setReservations(data);
     } catch (error) {
       console.error('Error fetching reservations:', error);
