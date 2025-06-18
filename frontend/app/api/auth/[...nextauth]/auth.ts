@@ -3,8 +3,22 @@ import { PrismaAdapter } from '@next-auth/prisma-adapter';
 import GoogleProvider from 'next-auth/providers/google';
 import prisma from '@/lib/prisma';
 
+// Custom adapter to set default role
+const customPrismaAdapter = PrismaAdapter(prisma);
+
 export const authOptions: AuthOptions = {
-  adapter: PrismaAdapter(prisma),
+  adapter: {
+    ...customPrismaAdapter,
+    createUser: async (data: any) => {
+      const user = await prisma.user.create({
+        data: {
+          ...data,
+          role: 'FREE' // Set default role
+        }
+      });
+      return user;
+    }
+  },
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
@@ -31,31 +45,9 @@ export const authOptions: AuthOptions = {
         return false;
       }
 
-      try {
-        const existingUser = await prisma.user.findUnique({
-          where: { email: user.email }
-        });
-
-        if (!existingUser) {
-          console.log('👤 Creating new user:', user.email);
-          const newUser = await prisma.user.create({
-            data: {
-              email: user.email,
-              name: user.name,
-              image: user.image,
-              role: 'FREE'
-            }
-          });
-          console.log('✅ New user created successfully:', newUser.id);
-        } else {
-          console.log('👤 User already exists:', existingUser.id);
-        }
-
-        return true;
-      } catch (error) {
-        console.error('❌ Error in signIn callback:', error);
-        return false;
-      }
+      // Let PrismaAdapter handle user creation
+      console.log('✅ Sign-in allowed, PrismaAdapter will handle user creation');
+      return true;
     },
     async jwt({ token, user, account }) {
       if (user) {
@@ -66,6 +58,12 @@ export const authOptions: AuthOptions = {
       return token;
     },
     async session({ session, token }) {
+      console.log('🔑 Session callback triggered:', { 
+        sessionUser: session.user?.email,
+        tokenId: token.id,
+        tokenEmail: token.email 
+      });
+      
       if (session.user) {
         session.user.id = token.id as string;
         session.user.email = token.email as string;
