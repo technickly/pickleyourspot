@@ -451,12 +451,18 @@ export default function ReservationPage({ params }: PageProps) {
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-500 mb-1">Date & Time</p>
-                <p className="text-gray-900">
-                  {reservation.date}
-                </p>
-                <p className="text-gray-600">
-                  {reservation.startTime} - {reservation.endTime}
-                </p>
+                <div className="flex items-center gap-2 text-gray-600">
+                  <Calendar className="w-5 h-5" />
+                  <span>
+                    {formatInTimeZone(new Date(reservation.startTime), 'America/Los_Angeles', 'EEEE, MMMM d, yyyy')}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 text-gray-600">
+                  <Clock className="w-5 h-5" />
+                  <span>
+                    {formatInTimeZone(new Date(reservation.startTime), 'America/Los_Angeles', 'h:mm a')} - {formatInTimeZone(new Date(reservation.endTime), 'America/Los_Angeles', 'h:mm a')} PT
+                  </span>
+                </div>
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-500 mb-1">Organizer</p>
