@@ -732,14 +732,16 @@ export default function ReservationPage({ params }: PageProps) {
                               </span>
                             )}
                           </span>
-                          {/* Show Modify Status button for all users */}
-                          <button
-                            onClick={() => setParticipantToModify(participant)}
-                            className="flex items-center gap-1 px-3 py-1.5 rounded-md text-sm font-medium bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors border border-blue-300"
-                          >
-                            <FaEdit className="w-3 h-3" />
-                            Modify Status
-                          </button>
+                          {/* Show Modify Status button only for the current user's own entry */}
+                          {participant.user?.email === session?.user?.email && (
+                            <button
+                              onClick={() => setParticipantToModify(participant)}
+                              className="flex items-center gap-1 px-3 py-1.5 rounded-md text-sm font-medium bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors border border-blue-300"
+                            >
+                              <FaEdit className="w-3 h-3" />
+                              Modify Status
+                            </button>
+                          )}
                           {reservation.isOwner && !isPastEvent(reservation.endTime) && (
                             <button
                               onClick={() => setParticipantToRemove({
@@ -803,14 +805,16 @@ export default function ReservationPage({ params }: PageProps) {
                               </span>
                             )}
                           </span>
-                          {/* Show Modify Status button for all users */}
-                          <button
-                            onClick={() => setParticipantToModify(participant)}
-                            className="flex items-center gap-1 px-3 py-1.5 rounded-md text-sm font-medium bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors border border-blue-300"
-                          >
-                            <FaEdit className="w-3 h-3" />
-                            Modify Status
-                          </button>
+                          {/* Show Modify Status button only for the current user's own entry */}
+                          {participant.user?.email === session?.user?.email && (
+                            <button
+                              onClick={() => setParticipantToModify(participant)}
+                              className="flex items-center gap-1 px-3 py-1.5 rounded-md text-sm font-medium bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors border border-blue-300"
+                            >
+                              <FaEdit className="w-3 h-3" />
+                              Modify Status
+                            </button>
+                          )}
                           {reservation.isOwner && !isPastEvent(reservation.endTime) && (
                             <button
                               onClick={() => setParticipantToRemove({
@@ -1123,12 +1127,12 @@ export default function ReservationPage({ params }: PageProps) {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              Modify Status for {participantToModify.user?.name || participantToModify.user?.email || 'Participant'}
+              Update Your Status
             </h3>
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Are they going?
+                  Are you going?
                 </label>
                 <div className="flex gap-2">
                   <button
@@ -1156,7 +1160,7 @@ export default function ReservationPage({ params }: PageProps) {
               {reservation.paymentRequired && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Have they paid?
+                    Have you paid?
                   </label>
                   <div className="flex gap-2">
                     <button
