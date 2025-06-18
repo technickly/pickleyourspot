@@ -125,6 +125,12 @@ export default function ReservationPage({ params }: PageProps) {
     passwordRequired: false,
   });
 
+  const isPastEvent = (endTime: string) => {
+    const end = new Date(endTime);
+    const now = new Date();
+    return end < now;
+  };
+
   useEffect(() => {
     const fetchReservation = async () => {
       try {
