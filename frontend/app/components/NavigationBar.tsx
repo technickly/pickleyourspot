@@ -31,6 +31,14 @@ export default function NavigationBar() {
 
   const handleSignOut = async () => {
     try {
+      // Clear any stored OAuth state
+      if (typeof window !== 'undefined') {
+        // Clear any Google OAuth related storage
+        sessionStorage.clear();
+        localStorage.removeItem('next-auth.callback-url');
+        localStorage.removeItem('next-auth.csrf-token');
+      }
+      
       await signOut({ 
         callbackUrl: '/',
         redirect: true 
@@ -38,7 +46,9 @@ export default function NavigationBar() {
     } catch (error) {
       console.error('Error signing out:', error);
       // Fallback: force page refresh to clear session
-      window.location.href = '/';
+      if (typeof window !== 'undefined') {
+        window.location.href = '/';
+      }
     }
   };
 
