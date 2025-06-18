@@ -336,7 +336,10 @@ export default function ReservationsPage() {
                           {reservation.passwordRequired ? 'Private' : 'Public'}
                         </span>
                       </div>
-                      <p className="text-gray-600">{reservation.courtName}</p>
+                      <div className="flex items-center gap-2 text-gray-600">
+                        <span className="text-sm">Court:</span>
+                        <span>{reservation.courtName}</span>
+                      </div>
                     </div>
                     <div className="flex items-center gap-2">
                       <CopyButton
