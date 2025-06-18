@@ -5,15 +5,15 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/auth';
 
 export async function PUT(
   request: Request,
-  { params }: { params: { reservationId: string } }
+  { params }: { params: Promise<{ reservationId: string }> }
 ) {
   try {
+    const { reservationId } = await params;
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { reservationId } = params;
     let userId, type, value;
     try {
       ({ userId, type, value } = await request.json());
