@@ -403,10 +403,15 @@ export default function ReservationsPage() {
                             {reservation.participants
                               .filter(p => p.isGoing)
                               .map((participant) => (
-                                <div key={participant.id} className="flex items-center justify-between">
-                                  <span className="flex-1 text-sm">
-                                    {participant.user?.name || participant.user?.email || participant.email}
-                                  </span>
+                                <div key={participant.id} className="flex items-center justify-between bg-gray-50 p-2 rounded">
+                                  <div className="flex-1">
+                                    <p className="text-sm font-medium text-gray-900">
+                                      {participant.user?.name || 'Anonymous'}
+                                    </p>
+                                    <p className="text-xs text-gray-500">
+                                      {participant.user?.email || participant.email}
+                                    </p>
+                                  </div>
                                   <div className="flex items-center gap-2">
                                     <span className={`px-2 py-0.5 text-xs rounded-full ${
                                       participant.hasPaid 
@@ -466,10 +471,15 @@ export default function ReservationsPage() {
                             {reservation.participants
                               .filter(p => !p.isGoing)
                               .map((participant) => (
-                                <div key={participant.id} className="flex items-center justify-between">
-                                  <span className="flex-1 text-sm">
-                                    {participant.user?.name || participant.user?.email || participant.email}
-                                  </span>
+                                <div key={participant.id} className="flex items-center justify-between bg-gray-50 p-2 rounded">
+                                  <div className="flex-1">
+                                    <p className="text-sm font-medium text-gray-900">
+                                      {participant.user?.name || 'Anonymous'}
+                                    </p>
+                                    <p className="text-xs text-gray-500">
+                                      {participant.user?.email || participant.email}
+                                    </p>
+                                  </div>
                                   <div className="flex items-center gap-2">
                                     <span className={`px-2 py-0.5 text-xs rounded-full ${
                                       participant.hasPaid 
