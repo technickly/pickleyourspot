@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
+import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import prisma from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
 
@@ -11,8 +12,6 @@ interface CreateReservationBody {
   participantIds: string[];
   paymentRequired?: boolean;
   paymentInfo?: string | null;
-  password?: string | null;
-  passwordRequired?: boolean;
 }
 
 interface ParticipantStatusType {
@@ -144,7 +143,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { courtId, startTime, endTime, participantIds, description, paymentRequired, paymentInfo, password, passwordRequired } = await request.json() as CreateReservationBody;
+    const { courtId, startTime, endTime, participantIds, description, paymentRequired, paymentInfo } = await request.json() as CreateReservationBody;
 
     // Validate required fields
     if (!courtId || !startTime || !endTime) {
@@ -254,6 +253,49 @@ const reservation = await createReservation({
     console.error('Error creating reservation:', error);
     return NextResponse.json(
       { error: 'Failed to create reservation' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function GET() {
+  try {
+    const session = await getServerSession(authOptions);
+
+    if (!session?.user?.email) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    // Get all reservations where the user is either the owner or a participant
+    const reservations = await prisma.reservation.findMany({
+      where: {
+        OR: [
+          { owner: { email: session.user.email } },
+          { participants: { some: { user: { email: session.user.email } } } }
+        ]
+      },
+      include: {
+        court: true,
+        owner: true,
+        participants: {
+          include: {
+            user: true
+          }
+        }
+      },
+      orderBy: {
+        startTime: 'desc'
+      }
+    });
+
+    return NextResponse.json(reservations);
+  } catch (error) {
+    console.error('Error fetching reservations:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch reservations' },
       { status: 500 }
     );
   }
