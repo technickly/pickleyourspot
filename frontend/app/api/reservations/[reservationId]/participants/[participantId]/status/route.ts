@@ -100,23 +100,21 @@ export async function PUT(
     }
 
     // Update the participant status
-    const updatedReservation = await prisma.reservation.update({
-      where: { id: reservationId },
-      data: {
-        participants: {
-          update: {
-            where: {
-              userId_reservationId: {
-                userId: participantId,
-                reservationId: reservationId
-              }
-            },
-            data: {
-              [type]: value
-            }
-          }
+    await prisma.participantStatus.update({
+      where: {
+        userId_reservationId: {
+          userId: participantId,
+          reservationId: reservationId
         }
       },
+      data: {
+        [type]: value
+      }
+    });
+
+    // Get the updated reservation
+    const updatedReservation = await prisma.reservation.findUnique({
+      where: { id: reservationId },
       include: {
         participants: {
           include: {

@@ -429,7 +429,7 @@ export default function ReservationsPage() {
                                       {participant.user?.name || 'Anonymous'}
                                     </p>
                                     <p className="text-xs text-gray-500">
-                                      {participant.user?.email || participant.email}
+                                      {participant.user?.email}
                                     </p>
                                   </div>
                                   <div className="flex items-center gap-2">
@@ -450,7 +450,7 @@ export default function ReservationsPage() {
                                         </span>
                                       )}
                                     </span>
-                                    {session?.user?.email === (participant.user?.email || participant.email) && (
+                                    {session?.user?.email === participant.user?.email && (
                                       <div className="flex gap-2">
                                         <button
                                           className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-medium border ${
@@ -497,7 +497,7 @@ export default function ReservationsPage() {
                                       {participant.user?.name || 'Anonymous'}
                                     </p>
                                     <p className="text-xs text-gray-500">
-                                      {participant.user?.email || participant.email}
+                                      {participant.user?.email}
                                     </p>
                                   </div>
                                   <div className="flex items-center gap-2">
@@ -518,7 +518,7 @@ export default function ReservationsPage() {
                                         </span>
                                       )}
                                     </span>
-                                    {session?.user?.email === (participant.user?.email || participant.email) && (
+                                    {session?.user?.email === participant.user?.email && (
                                       <div className="flex gap-2">
                                         <button
                                           className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-medium border ${
