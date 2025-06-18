@@ -127,13 +127,17 @@ export default function ReservationsPage() {
 
   const handleStatusUpdate = async (
     reservationId: string,
-    participantId: string,
     type: 'isGoing' | 'hasPaid',
     newValue: boolean
   ) => {
+    if (!session?.user?.email) {
+      toast.error('You must be logged in to update your status');
+      return;
+    }
+
     setUpdatingStatus((prev) => ({ ...prev, [reservationId]: true }));
     try {
-      const response = await fetch(`/api/reservations/${reservationId}/participants/${participantId}/status`, {
+      const response = await fetch(`/api/reservations/${reservationId}/participants/${session.user.email}/status`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ type, value: newValue }),
@@ -414,7 +418,7 @@ export default function ReservationsPage() {
                                               : 'bg-gray-200 text-gray-700 border-gray-300'
                                           } hover:shadow transition`}
                                           disabled={updatingStatus[reservation.id]}
-                                          onClick={() => handleStatusUpdate(reservation.id, participant.user?.id || '', 'isGoing', !participant.isGoing)}
+                                          onClick={() => handleStatusUpdate(reservation.id, 'isGoing', !participant.isGoing)}
                                         >
                                           {participant.isGoing ? <FaUserCheck className="w-3 h-3" /> : <FaUserTimes className="w-3 h-3" />}
                                           {participant.isGoing ? 'Going' : 'Not Going'}
@@ -427,7 +431,7 @@ export default function ReservationsPage() {
                                                 : 'bg-yellow-200 text-yellow-800 border-yellow-400'
                                             } hover:shadow transition`}
                                             disabled={updatingStatus[reservation.id]}
-                                            onClick={() => handleStatusUpdate(reservation.id, participant.user?.id || '', 'hasPaid', !participant.hasPaid)}
+                                            onClick={() => handleStatusUpdate(reservation.id, 'hasPaid', !participant.hasPaid)}
                                           >
                                             <FaDollarSign className="w-3 h-3" />
                                             {participant.hasPaid ? 'Paid' : 'Unpaid'}
@@ -477,7 +481,7 @@ export default function ReservationsPage() {
                                               : 'bg-gray-200 text-gray-700 border-gray-300'
                                           } hover:shadow transition`}
                                           disabled={updatingStatus[reservation.id]}
-                                          onClick={() => handleStatusUpdate(reservation.id, participant.user?.id || '', 'isGoing', !participant.isGoing)}
+                                          onClick={() => handleStatusUpdate(reservation.id, 'isGoing', !participant.isGoing)}
                                         >
                                           {participant.isGoing ? <FaUserCheck className="w-3 h-3" /> : <FaUserTimes className="w-3 h-3" />}
                                           {participant.isGoing ? 'Going' : 'Not Going'}
@@ -490,7 +494,7 @@ export default function ReservationsPage() {
                                                 : 'bg-yellow-200 text-yellow-800 border-yellow-400'
                                             } hover:shadow transition`}
                                             disabled={updatingStatus[reservation.id]}
-                                            onClick={() => handleStatusUpdate(reservation.id, participant.user?.id || '', 'hasPaid', !participant.hasPaid)}
+                                            onClick={() => handleStatusUpdate(reservation.id, 'hasPaid', !participant.hasPaid)}
                                           >
                                             <FaDollarSign className="w-3 h-3" />
                                             {participant.hasPaid ? 'Paid' : 'Unpaid'}

@@ -23,13 +23,21 @@ export async function PUT(
 
     // Get the user
     const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
+      where: { email: params.participantId },
     });
 
     if (!user) {
       return NextResponse.json(
         { error: 'User not found' },
         { status: 404 }
+      );
+    }
+
+    // Verify that the requesting user is the same as the target user
+    if (user.email !== session.user.email) {
+      return NextResponse.json(
+        { error: 'You can only update your own status' },
+        { status: 403 }
       );
     }
 
