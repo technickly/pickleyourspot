@@ -23,41 +23,31 @@ interface Message {
   };
 }
 
+interface User {
+  id: string;
+  name: string | null;
+  email: string;
+  image: string | null;
+}
+
 interface Participant {
   id: string;
-  email: string;
   isGoing: boolean;
   hasPaid: boolean;
-  user: {
-    name: string | null;
-    email: string;
-    image: string | null;
-  };
+  user: User;
 }
 
 interface Reservation {
   id: string;
-  court: {
-    name: string;
-    address: string;
-  };
-  date: string;
+  name: string;
   startTime: string;
   endTime: string;
-  owner: {
-    name: string | null;
-    email: string;
-    image: string | null;
+  court: {
+    name: string;
   };
   participants: Participant[];
-  messages: Message[];
-  isOwner: boolean;
   paymentRequired: boolean;
-  paymentAmount: number | null;
-  paymentDetails: string | null;
-  shortUrl: string;
-  description?: string;
-  paymentInfo?: string;
+  isOwner: boolean;
 }
 
 const timeZone = 'America/Los_Angeles';
@@ -125,7 +115,7 @@ export default function ReservationPage({ params }: { params: Promise<{ reservat
 
   const isParticipant = () => {
     if (!session?.user?.email || !reservation) return false;
-    return reservation.participants.some(p => p.email === session.user.email);
+    return reservation.participants.some(p => p.user?.email === session.user.email);
   };
 
   const handleSendMessage = async (e: React.FormEvent) => {
@@ -160,19 +150,31 @@ export default function ReservationPage({ params }: { params: Promise<{ reservat
   };
 
   const handleStatusUpdate = async (isGoing: boolean, hasPaid: boolean) => {
-    if (!session?.user?.email) return;
+    if (!session?.user?.email || !reservation) return;
 
     try {
-      const response = await fetch(`/api/reservations/${reservationId}/participants/status`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          isGoing,
-          hasPaid,
-        }),
-      });
+      // Find the current user's participant ID
+      const currentParticipant = reservation.participants.find(
+        p => p.user?.email === session.user?.email
+      );
+
+      if (!currentParticipant) {
+        throw new Error('Participant not found');
+      }
+
+      const response = await fetch(
+        `/api/reservations/${reservationId}/participants/${currentParticipant.user.id}/status`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            isGoing,
+            hasPaid,
+          }),
+        }
+      );
 
       if (!response.ok) {
         throw new Error('Failed to update status');
