@@ -71,8 +71,9 @@ export default function ReservationsPage() {
     try {
       const response = await fetch('/api/reservations/user', {
         headers: {
-          'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache'
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
         }
       });
       if (!response.ok) {
