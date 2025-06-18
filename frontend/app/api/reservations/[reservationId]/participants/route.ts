@@ -20,7 +20,7 @@ export async function POST(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    const reservationId = await params.reservationId;
+    const { reservationId } = params;
     
     if (!session?.user?.email) {
       return NextResponse.json(

@@ -9,8 +9,7 @@ export async function PUT(
 ) {
   try {
     const session = await getServerSession();
-    const reservationId = await params.reservationId;
-    const participantId = await params.participantId;
+    const { reservationId, participantId } = params;
 
     if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
