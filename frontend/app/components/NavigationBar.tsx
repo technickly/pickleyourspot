@@ -14,6 +14,14 @@ export default function NavigationBar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
 
+  // Debug logging
+  console.log('🧭 NavigationBar - Session state:', { 
+    status, 
+    hasSession: !!session, 
+    sessionUser: session?.user?.email,
+    sessionData: session 
+  });
+
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20);

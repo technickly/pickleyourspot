@@ -7,6 +7,14 @@ import { FaGoogle, FaComments, FaDollarSign, FaEnvelope, FaShare, FaDiscord } fr
 export default function HomePage() {
   const { data: session, status } = useSession();
 
+  // Debug logging
+  console.log('🏠 HomePage - Session state:', { 
+    status, 
+    hasSession: !!session, 
+    sessionUser: session?.user?.email,
+    sessionData: session 
+  });
+
   const handleSignIn = async () => {
     await signIn('google', { callbackUrl: '/' });
   };

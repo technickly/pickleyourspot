@@ -107,13 +107,34 @@ export const authOptions: AuthOptions = {
       console.log('🔄 JWT callback:', { 
         trigger,
         tokenEmail: token.email,
-        hasUser: !!user 
+        hasUser: !!user,
+        userData: user 
       });
       
+      // If we have user data, update the token
       if (user) {
+        console.log('👤 Setting user data in JWT token:', user.email);
         token.id = user.id;
         token.email = user.email;
         token.name = user.name;
+      }
+      
+      // If we have a token but no user, ensure we have the basic data
+      if (token.email && !token.id) {
+        console.log('⚠️ Token has email but no ID, fetching user data');
+        try {
+          const dbUser = await prisma.user.findUnique({
+            where: { email: token.email },
+            select: { id: true, name: true, email: true }
+          });
+          if (dbUser) {
+            token.id = dbUser.id;
+            token.name = dbUser.name;
+            console.log('✅ Updated token with user data from database');
+          }
+        } catch (error) {
+          console.error('❌ Error fetching user data for token:', error);
+        }
       }
       
       return token;
@@ -126,11 +147,16 @@ export const authOptions: AuthOptions = {
         hasToken: !!token.email
       });
       
-      if (session.user) {
-        session.user.id = token.id as string;
-        session.user.email = token.email as string;
-        session.user.name = token.name as string;
+      // Always set user data from token
+      if (token.email) {
+        session.user = {
+          ...session.user,
+          id: token.id as string,
+          email: token.email as string,
+          name: token.name as string,
+        };
       }
+      
       return session;
     }
   },
