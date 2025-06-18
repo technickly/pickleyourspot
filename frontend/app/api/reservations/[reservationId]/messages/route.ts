@@ -27,47 +27,39 @@ export async function POST(
     const { reservationId } = await context.params;
     
     if (!session?.user?.email) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return new NextResponse('Unauthorized', { status: 401 });
     }
 
     const { content } = await request.json();
 
     if (!content?.trim()) {
-      return NextResponse.json(
-        { error: 'Message content is required' },
-        { status: 400 }
-      );
+      return new NextResponse('Message content is required', { status: 400 });
     }
 
     const reservation = await prisma.reservation.findUnique({
       where: { id: reservationId },
       include: {
         owner: true,
-        participants: true,
+        participants: {
+          include: {
+            user: true
+          }
+        }
       },
     });
 
     if (!reservation) {
-      return NextResponse.json(
-        { error: 'Reservation not found' },
-        { status: 404 }
-      );
+      return new NextResponse('Reservation not found', { status: 404 });
     }
 
     // Check if user is owner or participant
     const isOwner = reservation.owner.email === session.user.email;
     const isParticipant = reservation.participants.some(
-      (p: Participant) => p.email === session.user.email
+      (p) => p.user.email === session.user.email
     );
 
     if (!isOwner && !isParticipant) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return new NextResponse('Unauthorized', { status: 401 });
     }
 
     // Get the user's ID
@@ -77,10 +69,7 @@ export async function POST(
     });
 
     if (!user) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      );
+      return new NextResponse('User not found', { status: 404 });
     }
 
     const message = await prisma.message.create({
@@ -102,10 +91,7 @@ export async function POST(
     return NextResponse.json(message);
   } catch (error) {
     console.error('Error creating message:', error);
-    return NextResponse.json(
-      { error: 'Failed to create message' },
-      { status: 500 }
-    );
+    return new NextResponse('Internal Server Error', { status: 500 });
   }
 }
 
@@ -118,38 +104,33 @@ export async function GET(
     const { reservationId } = await context.params;
     
     if (!session?.user?.email) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return new NextResponse('Unauthorized', { status: 401 });
     }
 
     const reservation = await prisma.reservation.findUnique({
       where: { id: reservationId },
       include: {
         owner: true,
-        participants: true,
+        participants: {
+          include: {
+            user: true
+          }
+        }
       },
     });
 
     if (!reservation) {
-      return NextResponse.json(
-        { error: 'Reservation not found' },
-        { status: 404 }
-      );
+      return new NextResponse('Reservation not found', { status: 404 });
     }
 
     // Check if user is owner or participant
     const isOwner = reservation.owner.email === session.user.email;
     const isParticipant = reservation.participants.some(
-      (p: Participant) => p.email === session.user.email
+      (p) => p.user.email === session.user.email
     );
 
     if (!isOwner && !isParticipant) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return new NextResponse('Unauthorized', { status: 401 });
     }
 
     const messages = await prisma.message.findMany({
@@ -172,9 +153,6 @@ export async function GET(
     return NextResponse.json(messages);
   } catch (error) {
     console.error('Error fetching messages:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch messages' },
-      { status: 500 }
-    );
+    return new NextResponse('Internal Server Error', { status: 500 });
   }
 } 

@@ -51,6 +51,8 @@ export default function ShortUrlPage({ params }: { params: Promise<{ shortUrl: s
   const [selectedStatus, setSelectedStatus] = useState<'going' | 'not-going'>('going');
   const [selectedPayment, setSelectedPayment] = useState<'paid' | 'not-paid'>('not-paid');
   const [showConfirmation, setShowConfirmation] = useState(false);
+  const [showErrorDialog, setShowErrorDialog] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const resolvedParams = React.use(params);
 
   useEffect(() => {
@@ -125,7 +127,9 @@ export default function ShortUrlPage({ params }: { params: Promise<{ shortUrl: s
       if (!response.ok) {
         const data = await response.json();
         if (data.error === 'Invalid password') {
-          setPasswordError('Invalid password');
+          setErrorMessage('Invalid password');
+          setShowErrorDialog(true);
+          setShowConfirmation(false);
           return;
         }
         throw new Error(data.error || 'Failed to join reservation');
@@ -404,6 +408,31 @@ export default function ShortUrlPage({ params }: { params: Promise<{ shortUrl: s
                       'Join Reservation'
                     )}
                   </button>
+                </div>
+              )}
+
+              {showErrorDialog && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                  <div className="bg-white rounded-lg p-6 max-w-md w-full">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="flex-shrink-0">
+                        <FaTimes className="w-6 h-6 text-red-500" />
+                      </div>
+                      <h3 className="text-lg font-semibold text-gray-900">Error</h3>
+                    </div>
+                    <p className="text-gray-600 mb-6">{errorMessage}</p>
+                    <div className="flex justify-end">
+                      <button
+                        onClick={() => {
+                          setShowErrorDialog(false);
+                          setErrorMessage(null);
+                        }}
+                        className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                      >
+                        Try Again
+                      </button>
+                    </div>
+                  </div>
                 </div>
               )}
 

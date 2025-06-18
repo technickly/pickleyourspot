@@ -94,42 +94,107 @@ export async function PUT(
   { params }: { params: { reservationId: string } }
 ) {
   try {
-    const session = await getServerSession();
+    const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return new NextResponse('Unauthorized', { status: 401 });
     }
 
     const reservation = await prisma.reservation.findUnique({
       where: { id: params.reservationId },
-      include: { owner: true },
+      include: { 
+        owner: true,
+        court: true
+      },
     });
 
     if (!reservation) {
-      return NextResponse.json({ error: 'Reservation not found' }, { status: 404 });
+      return new NextResponse('Reservation not found', { status: 404 });
     }
 
     // Check if user is owner
     if (reservation.owner.email !== session.user.email) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return new NextResponse('Unauthorized', { status: 401 });
     }
 
     const body = await request.json();
-    const { description, paymentInfo } = body;
+    const { 
+      description, 
+      paymentInfo, 
+      startTime, 
+      endTime, 
+      password,
+      passwordRequired 
+    } = body;
 
+    // Validate time slots if provided
+    if (startTime && endTime) {
+      const newStartTime = new Date(startTime);
+      const newEndTime = new Date(endTime);
+
+      if (newStartTime >= newEndTime) {
+        return new NextResponse('End time must be after start time', { status: 400 });
+      }
+
+      // Check for overlapping reservations
+      const overlappingReservation = await prisma.reservation.findFirst({
+        where: {
+          courtId: reservation.courtId,
+          id: { not: reservation.id },
+          OR: [
+            {
+              AND: [
+                { startTime: { lte: newStartTime } },
+                { endTime: { gt: newStartTime } }
+              ]
+            },
+            {
+              AND: [
+                { startTime: { lt: newEndTime } },
+                { endTime: { gte: newEndTime } }
+              ]
+            }
+          ]
+        }
+      });
+
+      if (overlappingReservation) {
+        return new NextResponse('Time slot overlaps with another reservation', { status: 400 });
+      }
+    }
+
+    // Update the reservation
     const updatedReservation = await prisma.reservation.update({
       where: { id: params.reservationId },
       data: {
-        description,
-        paymentInfo,
+        description: description !== undefined ? description : undefined,
+        paymentInfo: paymentInfo !== undefined ? paymentInfo : undefined,
+        startTime: startTime ? new Date(startTime) : undefined,
+        endTime: endTime ? new Date(endTime) : undefined,
+        password: passwordRequired ? (password || null) : null,
+        passwordRequired: passwordRequired !== undefined ? passwordRequired : undefined,
+      },
+      include: {
+        court: true,
+        owner: true,
+        participants: {
+          include: {
+            user: true,
+          },
+        },
+        messages: {
+          include: {
+            user: true,
+          },
+          orderBy: {
+            createdAt: 'asc',
+          },
+        },
       },
     });
 
     return NextResponse.json(updatedReservation);
   } catch (error) {
     console.error('Error updating reservation:', error);
-    return NextResponse.json(
-      { error: 'Failed to update reservation' },
-      { status: 500 }
-    );
+    return new NextResponse('Internal Server Error', { status: 500 });
   }
 } 
