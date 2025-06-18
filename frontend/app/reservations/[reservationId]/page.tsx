@@ -159,33 +159,84 @@ export default function ReservationPage({ params }: { params: Promise<{ reservat
       );
 
       if (!currentParticipant) {
+        console.error('Current participant not found:', {
+          userEmail: session.user.email,
+          participants: reservation.participants
+        });
         throw new Error('Participant not found');
       }
 
-      const response = await fetch(
-        `/api/reservations/${reservationId}/participants/${currentParticipant.user.id}/status`,
+      console.log('Updating status for participant:', {
+        reservationId: params.reservationId,
+        participantId: currentParticipant.user.id,
+        isGoing,
+        hasPaid
+      });
+
+      // First update isGoing status
+      const goingResponse = await fetch(
+        `/api/reservations/${params.reservationId}/participants/${currentParticipant.user.id}/status`,
         {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            isGoing,
-            hasPaid,
+            type: 'isGoing',
+            value: isGoing
           }),
         }
       );
 
-      if (!response.ok) {
-        throw new Error('Failed to update status');
+      if (!goingResponse.ok) {
+        const errorData = await goingResponse.text();
+        console.error('Failed to update going status:', {
+          status: goingResponse.status,
+          statusText: goingResponse.statusText,
+          error: errorData
+        });
+        throw new Error(`Failed to update going status: ${goingResponse.statusText}`);
       }
 
-      const updatedReservation = await response.json();
+      // Then update hasPaid status if payment is required
+      if (reservation.paymentRequired) {
+        const paidResponse = await fetch(
+          `/api/reservations/${params.reservationId}/participants/${currentParticipant.user.id}/status`,
+          {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              type: 'hasPaid',
+              value: hasPaid
+            }),
+          }
+        );
+
+        if (!paidResponse.ok) {
+          const errorData = await paidResponse.text();
+          console.error('Failed to update payment status:', {
+            status: paidResponse.status,
+            statusText: paidResponse.statusText,
+            error: errorData
+          });
+          throw new Error(`Failed to update payment status: ${paidResponse.statusText}`);
+        }
+      }
+
+      // Get the updated reservation
+      const updatedResponse = await fetch(`/api/reservations/${params.reservationId}`);
+      if (!updatedResponse.ok) {
+        throw new Error('Failed to fetch updated reservation');
+      }
+
+      const updatedReservation = await updatedResponse.json();
       setReservation(updatedReservation);
       toast.success('Status updated successfully');
     } catch (error) {
       console.error('Error updating status:', error);
-      toast.error('Failed to update status');
+      toast.error(error instanceof Error ? error.message : 'Failed to update status');
     }
   };
 
