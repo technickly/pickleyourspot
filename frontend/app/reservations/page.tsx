@@ -7,7 +7,7 @@ import { toast } from 'react-hot-toast';
 import { formatInTimeZone } from 'date-fns-tz';
 import CopyButton from '@/app/components/CopyButton';
 import { useRouter } from 'next/navigation';
-import { FaShare, FaEdit, FaTrash, FaEye, FaCheck, FaTimes, FaSpinner } from 'react-icons/fa';
+import { FaShare, FaEdit, FaTrash, FaEye, FaCheck, FaTimes, FaSpinner, FaDollarSign, FaUserCheck, FaUserTimes } from 'react-icons/fa';
 
 interface Participant {
   id: string;
@@ -62,6 +62,7 @@ export default function ReservationsPage() {
   const [messages, setMessages] = useState<Record<string, Message[]>>({});
   const [newMessage, setNewMessage] = useState<Record<string, string>>({});
   const [isSendingMessage, setIsSendingMessage] = useState<Record<string, boolean>>({});
+  const [updatingStatus, setUpdatingStatus] = useState<Record<string, boolean>>({});
 
   const fetchReservations = async () => {
     try {
@@ -120,6 +121,29 @@ export default function ReservationsPage() {
       toast.error('Failed to send message');
     } finally {
       setIsSendingMessage(prev => ({ ...prev, [reservationId]: false }));
+    }
+  };
+
+  const handleStatusUpdate = async (
+    reservationId: string,
+    participantId: string,
+    type: 'isGoing' | 'hasPaid',
+    newValue: boolean
+  ) => {
+    setUpdatingStatus((prev) => ({ ...prev, [reservationId]: true }));
+    try {
+      const response = await fetch(`/api/reservations/${reservationId}/participants/${participantId}/status`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type, value: newValue }),
+      });
+      if (!response.ok) throw new Error('Failed to update status');
+      await fetchReservations();
+      toast.success(`${type === 'isGoing' ? 'Attendance' : 'Payment'} status updated`);
+    } catch (error) {
+      toast.error('Failed to update status');
+    } finally {
+      setUpdatingStatus((prev) => ({ ...prev, [reservationId]: false }));
     }
   };
 
@@ -378,6 +402,36 @@ export default function ReservationsPage() {
                                       </span>
                                     )}
                                   </span>
+                                  {session?.user?.email === (participant.user?.email || participant.email) && (
+                                    <div className="flex gap-2 ml-4">
+                                      <button
+                                        className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-medium border ${
+                                          participant.isGoing
+                                            ? 'bg-green-500 text-white border-green-600'
+                                            : 'bg-gray-200 text-gray-700 border-gray-300'
+                                        } hover:shadow transition`}
+                                        disabled={updatingStatus[reservation.id]}
+                                        onClick={() => handleStatusUpdate(reservation.id, participant.id, 'isGoing', !participant.isGoing)}
+                                      >
+                                        {participant.isGoing ? <FaUserCheck className="w-3 h-3" /> : <FaUserTimes className="w-3 h-3" />}
+                                        {participant.isGoing ? 'Going' : 'Not Going'}
+                                      </button>
+                                      {reservation.paymentRequired && (
+                                        <button
+                                          className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-medium border ${
+                                            participant.hasPaid
+                                              ? 'bg-green-500 text-white border-green-600'
+                                              : 'bg-yellow-200 text-yellow-800 border-yellow-400'
+                                          } hover:shadow transition`}
+                                          disabled={updatingStatus[reservation.id]}
+                                          onClick={() => handleStatusUpdate(reservation.id, participant.id, 'hasPaid', !participant.hasPaid)}
+                                        >
+                                          <FaDollarSign className="w-3 h-3" />
+                                          {participant.hasPaid ? 'Paid' : 'Unpaid'}
+                                        </button>
+                                      )}
+                                    </div>
+                                  )}
                                 </div>
                               ))}
                           </div>
@@ -409,6 +463,36 @@ export default function ReservationsPage() {
                                       </span>
                                     )}
                                   </span>
+                                  {session?.user?.email === (participant.user?.email || participant.email) && (
+                                    <div className="flex gap-2 ml-4">
+                                      <button
+                                        className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-medium border ${
+                                          participant.isGoing
+                                            ? 'bg-green-500 text-white border-green-600'
+                                            : 'bg-gray-200 text-gray-700 border-gray-300'
+                                        } hover:shadow transition`}
+                                        disabled={updatingStatus[reservation.id]}
+                                        onClick={() => handleStatusUpdate(reservation.id, participant.id, 'isGoing', !participant.isGoing)}
+                                      >
+                                        {participant.isGoing ? <FaUserCheck className="w-3 h-3" /> : <FaUserTimes className="w-3 h-3" />}
+                                        {participant.isGoing ? 'Going' : 'Not Going'}
+                                      </button>
+                                      {reservation.paymentRequired && (
+                                        <button
+                                          className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-medium border ${
+                                            participant.hasPaid
+                                              ? 'bg-green-500 text-white border-green-600'
+                                              : 'bg-yellow-200 text-yellow-800 border-yellow-400'
+                                          } hover:shadow transition`}
+                                          disabled={updatingStatus[reservation.id]}
+                                          onClick={() => handleStatusUpdate(reservation.id, participant.id, 'hasPaid', !participant.hasPaid)}
+                                        >
+                                          <FaDollarSign className="w-3 h-3" />
+                                          {participant.hasPaid ? 'Paid' : 'Unpaid'}
+                                        </button>
+                                      )}
+                                    </div>
+                                  )}
                                 </div>
                               ))}
                           </div>
@@ -466,30 +550,6 @@ export default function ReservationsPage() {
                       )}
                     </div>
                   </div>
-
-                  {showDeleteConfirm === reservation.id && (
-                    <div 
-                      className="mt-4 p-4 bg-red-50 rounded-lg"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <p className="text-red-700 mb-2">Are you sure you want to delete this event?</p>
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => handleDeleteReservation(reservation.id)}
-                          className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
-                          disabled={isDeleting}
-                        >
-                          {isDeleting ? 'Deleting...' : 'Yes, Delete'}
-                        </button>
-                        <button
-                          onClick={() => setShowDeleteConfirm(null)}
-                          className="bg-gray-200 text-gray-700 px-4 py-2 rounded hover:bg-gray-300"
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    </div>
-                  )}
 
                   {/* Messages Section */}
                   <div className="mt-6 border-t pt-4">
