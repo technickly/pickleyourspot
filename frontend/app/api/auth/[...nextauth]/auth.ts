@@ -108,7 +108,8 @@ export const authOptions: AuthOptions = {
         trigger,
         tokenEmail: token.email,
         hasUser: !!user,
-        userData: user 
+        userData: user,
+        currentToken: token
       });
       
       // If we have user data, update the token
@@ -117,6 +118,7 @@ export const authOptions: AuthOptions = {
         token.id = user.id;
         token.email = user.email;
         token.name = user.name;
+        token.picture = user.image;
       }
       
       // If we have a token but no user, ensure we have the basic data
@@ -125,11 +127,12 @@ export const authOptions: AuthOptions = {
         try {
           const dbUser = await prisma.user.findUnique({
             where: { email: token.email },
-            select: { id: true, name: true, email: true }
+            select: { id: true, name: true, email: true, image: true }
           });
           if (dbUser) {
             token.id = dbUser.id;
             token.name = dbUser.name;
+            token.picture = dbUser.image;
             console.log('✅ Updated token with user data from database');
           }
         } catch (error) {
@@ -137,6 +140,7 @@ export const authOptions: AuthOptions = {
         }
       }
       
+      console.log('🔄 Final JWT token being returned:', token);
       return token;
     },
     async session({ session, token }) {
@@ -144,20 +148,37 @@ export const authOptions: AuthOptions = {
         sessionUser: session.user?.email,
         tokenId: token.id,
         tokenEmail: token.email,
-        hasToken: !!token.email
+        hasToken: !!token.email,
+        fullToken: token,
+        fullSession: session
       });
       
       // Always set user data from token
       if (token.email) {
-        session.user = {
-          ...session.user,
-          id: token.id as string,
-          email: token.email as string,
-          name: token.name as string,
+        console.log('👤 Setting session user data from token:', {
+          id: token.id,
+          email: token.email,
+          name: token.name
+        });
+        
+        // Create a new session object to avoid mutation issues
+        const updatedSession = {
+          ...session,
+          user: {
+            id: token.id as string,
+            email: token.email as string,
+            name: token.name as string,
+            image: token.picture as string || null,
+          }
         };
+        
+        console.log('✅ Session user data set:', updatedSession.user);
+        console.log('🔑 Final session being returned:', updatedSession);
+        return updatedSession;
+      } else {
+        console.log('⚠️ No token email found, returning original session');
+        return session;
       }
-      
-      return session;
     }
   },
   pages: {
@@ -171,12 +192,12 @@ export const authOptions: AuthOptions = {
   },
   cookies: {
     sessionToken: {
-      name: `__Secure-next-auth.session-token`,
+      name: '__Secure-next-auth.session-token',
       options: {
         httpOnly: true,
         sameSite: 'lax',
         path: '/',
-        secure: process.env.NODE_ENV === 'production',
+        secure: true,
         domain: process.env.NODE_ENV === 'production' ? '.pickleyourspot.com' : undefined
       }
     }

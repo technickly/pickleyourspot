@@ -49,6 +49,14 @@ export default function MyReservationsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [isNavigating, setIsNavigating] = useState(false);
 
+  // Debug logging
+  console.log('📅 MyReservations - Session state:', { 
+    status, 
+    hasSession: !!session, 
+    sessionUser: session?.user?.email,
+    sessionData: session 
+  });
+
   const fetchReservations = async () => {
     try {
       const response = await fetch('/api/reservations/user', {
