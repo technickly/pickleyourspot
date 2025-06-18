@@ -7,7 +7,7 @@ import { toast } from 'react-hot-toast';
 import { formatInTimeZone } from 'date-fns-tz';
 import React from 'react';
 import { use } from 'react';
-import { FaSpinner, FaUser, FaCheck, FaTimes } from 'react-icons/fa';
+import { FaSpinner, FaUser, FaCheck, FaTimes, FaDollarSign } from 'react-icons/fa';
 
 interface Reservation {
   id: string;
@@ -257,11 +257,12 @@ export default function ShortUrlPage({ params }: { params: Promise<{ shortUrl: s
               )}
 
               {reservation.paymentRequired && (
-                <div>
-                  <h2 className="text-lg font-semibold mb-2">Payment Information</h2>
-                  <div className="bg-yellow-50 p-3 rounded-lg">
-                    <p className="text-yellow-800">{reservation.paymentInfo}</p>
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mt-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <FaDollarSign className="text-yellow-600 w-4 h-4" />
+                    <p className="text-sm font-medium text-yellow-800">Payment Information</p>
                   </div>
+                  <p className="text-yellow-700 bg-white rounded p-2 border border-yellow-100">{reservation.paymentInfo}</p>
                 </div>
               )}
 

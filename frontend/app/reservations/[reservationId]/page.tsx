@@ -564,9 +564,12 @@ export default function ReservationPage({ params }: PageProps) {
                 </div>
               )}
               {reservation.paymentRequired && (
-                <div>
-                  <p className="text-sm font-medium text-gray-500 mb-1">Payment Information</p>
-                  <p className="text-gray-900">{reservation.paymentInfo || 'No payment information available'}</p>
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mt-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <FaDollarSign className="text-yellow-600 w-4 h-4" />
+                    <p className="text-sm font-medium text-yellow-800">Payment Information</p>
+                  </div>
+                  <p className="text-yellow-700 bg-white rounded p-2 border border-yellow-100">{reservation.paymentInfo || 'No payment information available'}</p>
                 </div>
               )}
             </div>
