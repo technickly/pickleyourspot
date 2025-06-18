@@ -20,7 +20,16 @@ export const authOptions: AuthOptions = {
   ],
   callbacks: {
     async signIn({ user, account, profile }) {
-      if (!user.email) return false;
+      console.log('🔐 SignIn callback triggered:', { 
+        userEmail: user.email, 
+        userName: user.name,
+        accountProvider: account?.provider 
+      });
+
+      if (!user.email) {
+        console.log('❌ No email provided, sign-in failed');
+        return false;
+      }
 
       try {
         const existingUser = await prisma.user.findUnique({
@@ -28,19 +37,23 @@ export const authOptions: AuthOptions = {
         });
 
         if (!existingUser) {
-          await prisma.user.create({
+          console.log('👤 Creating new user:', user.email);
+          const newUser = await prisma.user.create({
             data: {
               email: user.email,
               name: user.name,
               image: user.image,
-              role: 'USER'
+              role: 'FREE'
             }
           });
+          console.log('✅ New user created successfully:', newUser.id);
+        } else {
+          console.log('👤 User already exists:', existingUser.id);
         }
 
         return true;
       } catch (error) {
-        console.error('Error in signIn callback:', error);
+        console.error('❌ Error in signIn callback:', error);
         return false;
       }
     },
