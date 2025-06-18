@@ -315,7 +315,7 @@ export default function ReservationsPage() {
                   <div className="flex justify-between items-start mb-4">
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
-                        <h2 className="text-xl font-semibold text-gray-900">{reservation.name}</h2>
+                        <h2 className="text-2xl font-bold text-gray-900">{reservation.name}</h2>
                         <span className={`px-3 py-1 rounded-full text-sm font-medium ${
                           isPastEvent(reservation.endTime)
                             ? 'bg-gray-100 text-gray-600'
@@ -336,8 +336,8 @@ export default function ReservationsPage() {
                           {reservation.passwordRequired ? 'Private' : 'Public'}
                         </span>
                       </div>
-                      <div className="flex items-center gap-2 text-gray-600">
-                        <span className="text-sm">Court:</span>
+                      <div className="flex items-center gap-2 text-gray-500 text-sm">
+                        <span>Court:</span>
                         <span>{reservation.courtName}</span>
                       </div>
                     </div>
