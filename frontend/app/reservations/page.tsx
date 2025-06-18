@@ -10,7 +10,7 @@ import { useRouter } from 'next/navigation';
 import { FaShare, FaEdit, FaTrash, FaEye, FaCheck, FaTimes, FaSpinner, FaDollarSign, FaUserCheck, FaUserTimes } from 'react-icons/fa';
 
 interface Participant {
-  id: string;
+  userId: string;
   email: string;
   isGoing: boolean;
   hasPaid: boolean;
@@ -499,7 +499,7 @@ export default function ReservationsPage() {
                             {reservation.participants
                               .filter(p => p.isGoing)
                               .map((participant) => (
-                                <div key={participant.id} className="flex items-center justify-between bg-gray-50 p-2 rounded">
+                                <div key={participant.userId} className="flex items-center justify-between bg-gray-50 p-2 rounded">
                                   <div className="flex-1">
                                     <p className="text-sm font-medium text-gray-900">
                                       {participant.user?.name || 'Anonymous'}
@@ -529,7 +529,7 @@ export default function ReservationsPage() {
                                     {reservation.isOwner && !isPastEvent(reservation.endTime) && (
                                       <button
                                         onClick={() => setParticipantToRemove({
-                                          id: participant.id,
+                                          id: participant.userId,
                                           name: participant.user?.name || participant.email,
                                           email: participant.user?.email || participant.email
                                         })}
@@ -580,7 +580,7 @@ export default function ReservationsPage() {
                             {reservation.participants
                               .filter(p => !p.isGoing)
                               .map((participant) => (
-                                <div key={participant.id} className="flex items-center justify-between bg-gray-50 p-2 rounded">
+                                <div key={participant.userId} className="flex items-center justify-between bg-gray-50 p-2 rounded">
                                   <div className="flex-1">
                                     <p className="text-sm font-medium text-gray-900">
                                       {participant.user?.name || 'Anonymous'}
@@ -610,7 +610,7 @@ export default function ReservationsPage() {
                                     {reservation.isOwner && !isPastEvent(reservation.endTime) && (
                                       <button
                                         onClick={() => setParticipantToRemove({
-                                          id: participant.id,
+                                          id: participant.userId,
                                           name: participant.user?.name || participant.email,
                                           email: participant.user?.email || participant.email
                                         })}
