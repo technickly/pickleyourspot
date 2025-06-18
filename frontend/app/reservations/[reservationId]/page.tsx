@@ -688,10 +688,6 @@ export default function ReservationPage({ params }: PageProps) {
                   <h3 className="text-sm font-medium text-green-700 mb-2">
                     Going ({reservation.participants?.filter(p => p.isGoing).length || 0})
                   </h3>
-                  {/* Debug info */}
-                  <div className="text-xs text-gray-500 mb-2">
-                    Debug: {reservation.participants?.filter(p => p.isGoing).length || 0} participants going
-                  </div>
                   <div className="space-y-2">
                     {reservation.participants?.filter(p => p.isGoing).map((participant) => (
                       <div key={participant.id} className="flex items-center justify-between bg-gray-50 p-2 rounded">

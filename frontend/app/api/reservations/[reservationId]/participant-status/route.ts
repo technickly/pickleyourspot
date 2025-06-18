@@ -20,9 +20,10 @@ const updateStatusSchema = z.object({
 
 export async function PUT(
   request: Request,
-  { params }: { params: { reservationId: string } }
+  { params }: { params: Promise<{ reservationId: string }> }
 ) {
   try {
+    const { reservationId } = await params;
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
       return NextResponse.json(
@@ -37,7 +38,7 @@ export async function PUT(
 
     // Fetch the reservation and check permissions
     const reservation = await prisma.reservation.findUnique({
-      where: { id: params.reservationId },
+      where: { id: reservationId },
       include: {
         owner: true,
         participants: {
@@ -80,7 +81,7 @@ export async function PUT(
       where: {
         userId_reservationId: {
           userId: userId,
-          reservationId: params.reservationId,
+          reservationId: reservationId,
         },
       },
       data: {
