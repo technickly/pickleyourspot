@@ -144,7 +144,10 @@ export default function ReservationPage({ params }: PageProps) {
         console.log('Reservation data:', {
           date: data.date,
           startTime: data.startTime,
-          endTime: data.endTime
+          endTime: data.endTime,
+          isOwner: data.isOwner,
+          participants: data.participants?.length || 0,
+          isPastEvent: new Date(data.endTime) < new Date()
         });
         setReservation(data);
       } catch (error) {
@@ -685,6 +688,10 @@ export default function ReservationPage({ params }: PageProps) {
                   <h3 className="text-sm font-medium text-green-700 mb-2">
                     Going ({reservation.participants?.filter(p => p.isGoing).length || 0})
                   </h3>
+                  {/* Debug info */}
+                  <div className="text-xs text-gray-500 mb-2">
+                    Debug: {reservation.participants?.filter(p => p.isGoing).length || 0} participants going
+                  </div>
                   <div className="space-y-2">
                     {reservation.participants?.filter(p => p.isGoing).map((participant) => (
                       <div key={participant.id} className="flex items-center justify-between bg-gray-50 p-2 rounded">
@@ -725,27 +732,26 @@ export default function ReservationPage({ params }: PageProps) {
                               </span>
                             )}
                           </span>
+                          {/* Show Modify Status button for all users */}
+                          <button
+                            onClick={() => setParticipantToModify(participant)}
+                            className="flex items-center gap-1 px-3 py-1.5 rounded-md text-sm font-medium bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors border border-blue-300"
+                          >
+                            <FaEdit className="w-3 h-3" />
+                            Modify Status
+                          </button>
                           {reservation.isOwner && !isPastEvent(reservation.endTime) && (
-                            <>
-                              <button
-                                onClick={() => setParticipantToModify(participant)}
-                                className="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium border border-blue-300 text-blue-700 hover:bg-blue-50 transition-colors"
-                              >
-                                <FaEdit className="w-3 h-3" />
-                                Modify Status
-                              </button>
-                              <button
-                                onClick={() => setParticipantToRemove({
-                                  id: participant.id,
-                                  name: participant.user?.name || participant.user?.email || 'Anonymous',
-                                  email: participant.user?.email || ''
-                                })}
-                                className="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium border border-red-300 text-red-700 hover:bg-red-50 transition-colors"
-                              >
-                                <FaTrash className="w-3 h-3" />
-                                Remove
-                              </button>
-                            </>
+                            <button
+                              onClick={() => setParticipantToRemove({
+                                id: participant.id,
+                                name: participant.user?.name || participant.user?.email || 'Anonymous',
+                                email: participant.user?.email || ''
+                              })}
+                              className="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium border border-red-300 text-red-700 hover:bg-red-50 transition-colors"
+                            >
+                              <FaTrash className="w-3 h-3" />
+                              Remove
+                            </button>
                           )}
                         </div>
                       </div>
@@ -797,27 +803,26 @@ export default function ReservationPage({ params }: PageProps) {
                               </span>
                             )}
                           </span>
+                          {/* Show Modify Status button for all users */}
+                          <button
+                            onClick={() => setParticipantToModify(participant)}
+                            className="flex items-center gap-1 px-3 py-1.5 rounded-md text-sm font-medium bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors border border-blue-300"
+                          >
+                            <FaEdit className="w-3 h-3" />
+                            Modify Status
+                          </button>
                           {reservation.isOwner && !isPastEvent(reservation.endTime) && (
-                            <>
-                              <button
-                                onClick={() => setParticipantToModify(participant)}
-                                className="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium border border-blue-300 text-blue-700 hover:bg-blue-50 transition-colors"
-                              >
-                                <FaEdit className="w-3 h-3" />
-                                Modify Status
-                              </button>
-                              <button
-                                onClick={() => setParticipantToRemove({
-                                  id: participant.id,
-                                  name: participant.user?.name || participant.user?.email || 'Anonymous',
-                                  email: participant.user?.email || ''
-                                })}
-                                className="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium border border-red-300 text-red-700 hover:bg-red-50 transition-colors"
-                              >
-                                <FaTrash className="w-3 h-3" />
-                                Remove
-                              </button>
-                            </>
+                            <button
+                              onClick={() => setParticipantToRemove({
+                                id: participant.id,
+                                name: participant.user?.name || participant.user?.email || 'Anonymous',
+                                email: participant.user?.email || ''
+                              })}
+                              className="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium border border-red-300 text-red-700 hover:bg-red-50 transition-colors"
+                            >
+                              <FaTrash className="w-3 h-3" />
+                              Remove
+                            </button>
                           )}
                         </div>
                       </div>
