@@ -246,14 +246,14 @@ export default function ReservePage() {
         body: JSON.stringify(requestBody),
       });
 
+      const data = await response.json();
+      console.log('Response data:', JSON.stringify(data, null, 2));
+
       if (response.ok) {
-        const data = await response.json();
-        console.log('Response data:', JSON.stringify(data, null, 2));
         toast.success('Reservation created successfully');
         router.push(`/reservations/${data.id}`);
       } else {
-        const data = await response.json();
-        console.error('Error response:', data); // Add logging
+        console.error('Error response:', data);
         toast.error(data.error || 'Failed to create reservation');
       }
     } catch (error) {
