@@ -7,6 +7,7 @@ import { toast } from 'react-hot-toast';
 import { formatInTimeZone } from 'date-fns-tz';
 import React from 'react';
 import UserSearch from '@/app/components/UserSearch';
+import { FaCheck, FaTimes, FaDollarSign, FaUser } from 'react-icons/fa';
 
 interface Participant {
   id: string;
@@ -44,6 +45,7 @@ export default function ModifyReservationPage({ params }: { params: Promise<{ re
   const [description, setDescription] = useState('');
   const [paymentInfo, setPaymentInfo] = useState('');
   const [name, setName] = useState('');
+  const [participants, setParticipants] = useState<Participant[]>([]);
   const resolvedParams = React.use(params);
 
   useEffect(() => {
@@ -66,12 +68,49 @@ export default function ModifyReservationPage({ params }: { params: Promise<{ re
       setDescription(data.description || '');
       setPaymentInfo(data.paymentInfo || '');
       setName(data.name || '');
+      setParticipants(data.participants || []);
     } catch (error) {
       console.error('Error fetching reservation:', error);
       toast.error('Failed to fetch reservation details');
       router.push('/my-reservations');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleStatusUpdate = async (
+    participantId: string,
+    type: 'payment' | 'attendance',
+    newValue: boolean
+  ) => {
+    try {
+      const response = await fetch(`/api/reservations/${resolvedParams.reservationId}/participant-status`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: participantId,
+          type,
+          value: newValue,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update status');
+      }
+
+      // Update local state
+      setParticipants(prev => prev.map(p => 
+        p.id === participantId 
+          ? { ...p, [type === 'payment' ? 'hasPaid' : 'isGoing']: newValue }
+          : p
+      ));
+
+      toast.success(`${type === 'payment' ? 'Payment' : 'Attendance'} status updated`);
+    } catch (error) {
+      console.error('Error updating status:', error);
+      toast.error(`Failed to update ${type} status`);
     }
   };
 
@@ -144,7 +183,7 @@ export default function ModifyReservationPage({ params }: { params: Promise<{ re
 
   return (
     <div className="min-h-screen p-8 bg-gray-50">
-      <div className="max-w-2xl mx-auto">
+      <div className="max-w-4xl mx-auto">
         <div className="bg-white rounded-lg shadow-sm p-6">
           <h1 className="text-2xl font-bold text-gray-900 mb-6">Modify Reservation</h1>
 
@@ -203,6 +242,69 @@ export default function ModifyReservationPage({ params }: { params: Promise<{ re
                 />
               </div>
             )}
+
+            {/* Participant Management Section */}
+            <div className="border-t pt-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Manage Participants</h3>
+              
+              {participants.length === 0 ? (
+                <p className="text-gray-500 text-center py-4">No participants yet</p>
+              ) : (
+                <div className="space-y-3">
+                  {participants.map((participant) => (
+                    <div key={participant.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                          <FaUser className="text-blue-600 text-sm" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-gray-900">
+                            {participant.user?.name || participant.email}
+                          </p>
+                          <p className="text-sm text-gray-500">{participant.email}</p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center space-x-4">
+                        {/* Attendance Status */}
+                        <div className="flex items-center space-x-2">
+                          <span className="text-sm text-gray-600">Going:</span>
+                          <button
+                            onClick={() => handleStatusUpdate(participant.id, 'attendance', !participant.isGoing)}
+                            className={`p-2 rounded-full transition-colors ${
+                              participant.isGoing 
+                                ? 'bg-green-100 text-green-600 hover:bg-green-200' 
+                                : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
+                            }`}
+                            title={participant.isGoing ? 'Mark as not going' : 'Mark as going'}
+                          >
+                            {participant.isGoing ? <FaCheck className="w-4 h-4" /> : <FaTimes className="w-4 h-4" />}
+                          </button>
+                        </div>
+
+                        {/* Payment Status */}
+                        {reservation.paymentRequired && (
+                          <div className="flex items-center space-x-2">
+                            <span className="text-sm text-gray-600">Paid:</span>
+                            <button
+                              onClick={() => handleStatusUpdate(participant.id, 'payment', !participant.hasPaid)}
+                              className={`p-2 rounded-full transition-colors ${
+                                participant.hasPaid 
+                                  ? 'bg-green-100 text-green-600 hover:bg-green-200' 
+                                  : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
+                              }`}
+                              title={participant.hasPaid ? 'Mark as unpaid' : 'Mark as paid'}
+                            >
+                              <FaDollarSign className="w-4 h-4" />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
 
             <div className="flex justify-end gap-4 pt-4">
               <button
