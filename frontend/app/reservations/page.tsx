@@ -382,7 +382,33 @@ export default function ReservationsPage() {
                       {reservation.description && (
                         <div>
                           <p className="text-sm font-medium text-gray-500 mb-1">Description</p>
-                          <p className="text-gray-700">{reservation.description}</p>
+                          <div className="text-gray-700 prose prose-sm max-w-none">
+                            {reservation.description.split('\n').map((line, i) => {
+                              // Check if the line is a URL (with or without @ prefix)
+                              const cleanLine = line.trim().replace(/^@/, '');
+                              if (cleanLine.match(/^https?:\/\/.*\.(jpg|jpeg|png|gif|webp|svg)$/i)) {
+                                return (
+                                  <div key={i} className="my-4">
+                                    <img 
+                                      src={cleanLine} 
+                                      alt="Reservation image" 
+                                      className="rounded-lg max-w-full h-auto shadow-md hover:shadow-lg transition-shadow duration-200"
+                                      loading="lazy"
+                                      onError={(e) => {
+                                        const target = e.target as HTMLImageElement;
+                                        target.style.display = 'none';
+                                      }}
+                                    />
+                                  </div>
+                                );
+                              }
+                              // If the line contains a URL but isn't just a URL, render it as text
+                              if (cleanLine.includes('http')) {
+                                return <p key={i}>{line}</p>;
+                              }
+                              return <p key={i}>{line}</p>;
+                            })}
+                          </div>
                         </div>
                       )}
 
