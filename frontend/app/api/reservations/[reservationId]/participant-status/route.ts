@@ -1,3 +1,9 @@
+import { NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { prisma } from '@/lib/prisma';
+import { updateStatusSchema } from '@/lib/validations/update-status';
+
 export async function PUT(
   request: Request,
   { params }: { params: Promise<{ reservationId: string }> }
@@ -28,9 +34,10 @@ export async function PUT(
         },
       },
     });
-
-    // ... rest of the function ...
   } catch (error) {
-    // ... handle error ...
+    return NextResponse.json(
+      { error: 'Internal Server Error' },
+      { status: 500 }
+    );
   }
 } 
