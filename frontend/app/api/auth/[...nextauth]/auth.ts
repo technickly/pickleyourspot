@@ -45,9 +45,34 @@ export const authOptions: AuthOptions = {
         return false;
       }
 
-      // Let PrismaAdapter handle user creation
-      console.log('✅ Sign-in allowed, PrismaAdapter will handle user creation');
-      return true;
+      // Check if user exists and allow sign in
+      try {
+        const existingUser = await prisma.user.findUnique({
+          where: { email: user.email },
+          include: { accounts: true }
+        });
+
+        if (existingUser) {
+          console.log('👤 User exists:', existingUser.id);
+          // Check if this Google account is already linked
+          const hasGoogleAccount = existingUser.accounts.some(
+            (acc: any) => acc.provider === 'google' && acc.providerAccountId === account?.providerAccountId
+          );
+          
+          if (!hasGoogleAccount && existingUser.accounts.length > 0) {
+            console.log('⚠️ Account not linked - allowing link');
+            // Allow linking new Google account to existing user
+            return true;
+          }
+        } else {
+          console.log('👤 Creating new user via adapter');
+        }
+        
+        return true;
+      } catch (error) {
+        console.error('❌ Error in signIn callback:', error);
+        return false;
+      }
     },
     async jwt({ token, user, account }) {
       if (user) {
@@ -75,6 +100,7 @@ export const authOptions: AuthOptions = {
   pages: {
     signIn: '/',
     error: '/auth/error',
+    signOut: '/',
   },
   session: {
     strategy: 'jwt',
