@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
+import { useSession, signIn } from 'next-auth/react';
 import { toast } from 'react-hot-toast';
 import { FaSpinner, FaShare, FaEdit, FaTrash, FaCheck, FaTimes, FaUserPlus, FaUser, FaUserCheck, FaUserTimes, FaDollarSign } from 'react-icons/fa';
 import { formatInTimeZone } from 'date-fns-tz';
@@ -87,7 +87,7 @@ export default function ReservationPage({ params }: { params: Promise<{ reservat
   const router = useRouter();
   const { data: session, status } = useSession();
   const [reservation, setReservation] = useState<Reservation | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
   const [newMessage, setNewMessage] = useState('');
   const [isSendingMessage, setIsSendingMessage] = useState(false);
   const [isNavigating, setIsNavigating] = useState(false);
@@ -99,32 +99,26 @@ export default function ReservationPage({ params }: { params: Promise<{ reservat
   const [updatingStatus, setUpdatingStatus] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
-    if (!session && status !== 'loading') {
-      router.push('/');
-      return;
-    }
-
     const fetchReservation = async () => {
-      if (!session?.user?.email) return;
-
       try {
+        setLoading(true);
         const response = await fetch(`/api/reservations/${reservationId}`);
         if (!response.ok) {
           throw new Error('Failed to fetch reservation');
         }
         const data = await response.json();
-        console.log('Fetched reservation data:', data); // Debug log
         setReservation(data);
-      } catch (error) {
-        console.error('Error fetching reservation:', error);
-        setError('Failed to load reservation');
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'An error occurred');
       } finally {
-        setIsLoading(false);
+        setLoading(false);
       }
     };
 
-    fetchReservation();
-  }, [reservationId, session?.user?.email]);
+    if (reservationId) {
+      fetchReservation();
+    }
+  }, [reservationId]);
 
   const isParticipant = () => {
     if (!session?.user?.email || !reservation) return false;
@@ -224,11 +218,11 @@ export default function ReservationPage({ params }: { params: Promise<{ reservat
     }
   };
 
-  if (status === 'loading' || isLoading) {
+  if (status === 'loading' || loading) {
     return (
-      <div className="flex justify-center items-center min-h-screen">
-        <div className="flex flex-col items-center gap-4">
-          <FaSpinner className="w-8 h-8 animate-spin text-blue-600" />
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <FaSpinner className="w-8 h-8 text-blue-600 animate-spin mx-auto mb-4" />
           <p className="text-gray-600">Loading reservation...</p>
         </div>
       </div>
@@ -237,28 +231,49 @@ export default function ReservationPage({ params }: { params: Promise<{ reservat
 
   if (!session) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen">
-        <p className="text-xl mb-4">Please sign in to view reservations</p>
-        <button
-          onClick={() => router.push('/')}
-          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-        >
-          Go to Home
-        </button>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">Please sign in to view this reservation</h1>
+          <button
+            onClick={() => signIn()}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Sign In
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-red-600 mb-4">Error</h1>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <Link
+            href="/reservations"
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Back to Reservations
+          </Link>
+        </div>
       </div>
     );
   }
 
   if (!reservation) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen">
-        <p className="text-xl mb-4">Reservation not found</p>
-        <button
-          onClick={() => router.push('/my-reservations')}
-          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-        >
-          Back to My Events
-        </button>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">Reservation not found</h1>
+          <Link
+            href="/reservations"
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Back to Reservations
+          </Link>
+        </div>
       </div>
     );
   }
@@ -268,7 +283,9 @@ export default function ReservationPage({ params }: { params: Promise<{ reservat
       <div className="max-w-4xl mx-auto">
         <div className="bg-white rounded-lg shadow-sm p-6">
           <div className="flex justify-between items-start mb-6">
-            <h1 className="text-2xl font-bold text-gray-900">{reservation.court.name}</h1>
+            <h1 className="text-2xl font-bold text-gray-900">
+              {reservation.court?.name || 'Unknown Court'}
+            </h1>
             <div className="flex items-center gap-2">
               <CopyButton
                 text={`${window.location.origin}/r/${reservation.shortUrl}`}
