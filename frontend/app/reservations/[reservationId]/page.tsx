@@ -135,7 +135,7 @@ export default function ReservationPage({ params }: PageProps) {
     }
   }, [reservationId]);
 
-  const isParticipant = reservation?.participants?.some(
+  const isParticipant: boolean = reservation?.participants?.some(
     p => p.user?.email === session?.user?.email
   ) ?? false;
 
@@ -699,7 +699,7 @@ export default function ReservationPage({ params }: PageProps) {
           </div>
 
           {/* Messages Section */}
-          {isParticipant() && (
+          {isParticipant && (
             <div className="mt-8">
               <h2 className="text-xl font-semibold mb-4">Messages</h2>
               <div className="space-y-4 mb-4">
