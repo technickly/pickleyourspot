@@ -12,6 +12,8 @@ interface CreateReservationBody {
   participantIds: string[];
   paymentRequired?: boolean;
   paymentInfo?: string | null;
+  password?: string | null;
+  passwordRequired?: boolean;
 }
 
 interface ParticipantStatusType {
@@ -114,6 +116,8 @@ async function createReservation(data: {
   paymentInfo?: string | null;
   courtId: string;
   ownerId: string;
+  password?: string | null;
+  passwordRequired?: boolean;
 }) {
   return await prisma.reservation.create({
     data,
@@ -143,7 +147,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { courtId, startTime, endTime, participantIds, description, paymentRequired, paymentInfo } = await request.json() as CreateReservationBody;
+    const { courtId, startTime, endTime, participantIds, description, paymentRequired, paymentInfo, password, passwordRequired } = await request.json() as CreateReservationBody;
 
     // Validate required fields
     if (!courtId || !startTime || !endTime) {
@@ -177,18 +181,19 @@ export async function POST(request: Request) {
     const reservationName = formatReservationName(user.name, new Date(startTime), court.name);
 
     // Create the reservation
-const reservation = await createReservation({
-  name: reservationName,
-  startTime: new Date(startTime),
-  endTime: new Date(endTime),
-  description: description?.trim(),
-  paymentRequired: paymentRequired || false,
-  paymentInfo: paymentInfo?.trim(),
-  courtId,
-  ownerId: user.id,
-  password: password?.trim(),
-  passwordRequired: passwordRequired === true,  // Changed to explicitly check for true
-});
+    const reservation = await createReservation({
+      name: reservationName,
+      startTime: new Date(startTime),
+      endTime: new Date(endTime),
+      description: description?.trim(),
+      paymentRequired: paymentRequired || false,
+      paymentInfo: paymentInfo?.trim(),
+      courtId,
+      ownerId: user.id,
+      password: passwordRequired ? password?.trim() : null,
+      passwordRequired: passwordRequired || false
+    });
+
     // Add participants if any
     if (participantIds.length > 0) {
       for (const email of participantIds) {
