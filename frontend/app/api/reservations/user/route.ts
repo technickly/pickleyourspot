@@ -2,9 +2,17 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import prisma from '@/lib/prisma';
-import type { Reservation, User, ParticipantStatus } from '@prisma/client';
 
-interface ReservationWithRelations extends Reservation {
+interface ReservationWithRelations {
+  id: string;
+  name: string;
+  startTime: Date;
+  endTime: Date;
+  shortUrl: string;
+  description: string | null;
+  paymentRequired: boolean;
+  paymentInfo: string | null;
+  passwordRequired: boolean;
   court: {
     name: string;
   };
@@ -13,13 +21,16 @@ interface ReservationWithRelations extends Reservation {
     email: string;
     image: string | null;
   };
-  participants: (ParticipantStatus & {
+  participants: Array<{
+    userId: string;
+    hasPaid: boolean;
+    isGoing: boolean;
     user: {
       name: string | null;
       email: string;
       image: string | null;
     };
-  })[];
+  }>;
 }
 
 interface Court {
@@ -141,6 +152,7 @@ export async function GET() {
         ...r,
         isOwner: true,
         courtName: r.court.name,
+        name: r.name && r.name.trim() ? r.name : `${r.court.name} - ${new Date(r.startTime).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`,
       })),
       ...participantReservations
         .filter((r: ReservationWithRelations) => r.owner.email !== session.user.email)
@@ -148,6 +160,7 @@ export async function GET() {
           ...r,
           isOwner: false,
           courtName: r.court.name,
+          name: r.name && r.name.trim() ? r.name : `${r.court.name} - ${new Date(r.startTime).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`,
         })),
     ];
 
