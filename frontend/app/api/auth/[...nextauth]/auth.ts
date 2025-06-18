@@ -83,19 +83,27 @@ export const authOptions: AuthOptions = {
         return false;
       }
     },
-    async jwt({ token, user, account }) {
+    async jwt({ token, user, account, trigger }) {
+      console.log('🔄 JWT callback:', { 
+        trigger,
+        tokenEmail: token.email,
+        hasUser: !!user 
+      });
+      
       if (user) {
         token.id = user.id;
         token.email = user.email;
         token.name = user.name;
       }
+      
       return token;
     },
     async session({ session, token }) {
       console.log('🔑 Session callback triggered:', { 
         sessionUser: session.user?.email,
         tokenId: token.id,
-        tokenEmail: token.email 
+        tokenEmail: token.email,
+        hasToken: !!token.email
       });
       
       if (session.user) {
@@ -113,7 +121,7 @@ export const authOptions: AuthOptions = {
   },
   session: {
     strategy: 'jwt',
-    maxAge: 30 * 24 * 60 * 60, // 30 days
+    maxAge: 24 * 60 * 60, // 24 hours instead of 30 days
   },
   cookies: {
     sessionToken: {

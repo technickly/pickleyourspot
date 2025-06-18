@@ -39,10 +39,24 @@ export default function NavigationBar() {
         localStorage.removeItem('next-auth.csrf-token');
       }
       
-      await signOut({ 
-        callbackUrl: '/',
-        redirect: true 
+      // Use custom sign out endpoint that properly clears cookies
+      const response = await fetch('/api/auth/signout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
       });
+      
+      if (response.ok) {
+        // Force page refresh to ensure session is cleared
+        window.location.href = '/';
+      } else {
+        // Fallback to NextAuth sign out
+        await signOut({ 
+          callbackUrl: '/',
+          redirect: true 
+        });
+      }
     } catch (error) {
       console.error('Error signing out:', error);
       // Fallback: force page refresh to clear session
