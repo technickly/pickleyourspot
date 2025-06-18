@@ -23,7 +23,7 @@ export async function PUT(
 
     // Get the user
     const user = await prisma.user.findUnique({
-      where: { email: params.participantId },
+      where: { id: params.participantId },
     });
 
     if (!user) {
