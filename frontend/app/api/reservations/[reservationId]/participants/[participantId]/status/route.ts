@@ -2,41 +2,50 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import prisma from '@/lib/prisma';
 import { User } from '@prisma/client';
+import { NextRequest } from 'next/server';
 
 export async function PUT(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { reservationId: string; participantId: string } }
 ) {
   try {
     const session = await getServerSession();
-    const { reservationId, participantId } = params;
+    const { reservationId, participantId } = await params;
 
     if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { type, value } = await request.json();
-    if (type !== 'isGoing' && type !== 'hasPaid') {
+
+    if (!type || !['isGoing', 'hasPaid'].includes(type)) {
       return NextResponse.json(
         { error: 'Invalid status type' },
         { status: 400 }
       );
     }
 
-    // Get the user
-    const user = await prisma.user.findUnique({
-      where: { id: participantId },
+    if (typeof value !== 'boolean') {
+      return NextResponse.json(
+        { error: 'Status value must be a boolean' },
+        { status: 400 }
+      );
+    }
+
+    // Get the user making the request
+    const requestingUser = await prisma.user.findUnique({
+      where: { email: session.user.email },
     });
 
-    if (!user) {
+    if (!requestingUser) {
       return NextResponse.json(
         { error: 'User not found' },
         { status: 404 }
       );
     }
 
-    // Verify that the requesting user is the same as the target user
-    if (user.email !== session.user.email) {
+    // Verify the user is authorized to update this status
+    if (requestingUser.id !== participantId) {
       return NextResponse.json(
         { error: 'You can only update your own status' },
         { status: 403 }
@@ -46,7 +55,13 @@ export async function PUT(
     // Get the reservation
     const reservation = await prisma.reservation.findUnique({
       where: { id: reservationId },
-      include: { participants: true },
+      include: {
+        participants: {
+          include: {
+            user: true
+          }
+        }
+      }
     });
 
     if (!reservation) {
@@ -56,8 +71,11 @@ export async function PUT(
       );
     }
 
-    // Verify that the user is a participant
-    const isParticipant = reservation.participants.some((p: User) => p.id === user.id);
+    // Verify the user is a participant
+    const isParticipant = reservation.participants.some(
+      (p: { user: { id: string } }) => p.user.id === participantId
+    );
+
     if (!isParticipant) {
       return NextResponse.json(
         { error: 'User is not a participant in this reservation' },
@@ -65,60 +83,42 @@ export async function PUT(
       );
     }
 
-    if (type === 'isGoing') {
-      if (value) {
-        // Add user to participants if not already there
-        if (!isParticipant) {
-          await prisma.reservation.update({
-            where: { id: reservationId },
-            data: {
-              participants: {
-                connect: { id: user.id },
-              },
-            },
-          });
-        }
-      } else {
-        // Remove user from participants
-        await prisma.reservation.update({
-          where: { id: reservationId },
-          data: {
-            participants: {
-              disconnect: { id: user.id },
-            },
-          },
-        });
-      }
-    } else if (type === 'hasPaid') {
-      // Update participant's hasPaid status
-      await prisma.participantStatus.update({
-        where: {
-          userId_reservationId: {
-            userId: user.id,
-            reservationId: reservationId,
-          },
-        },
-        data: {
-          hasPaid: value,
-        },
-      });
-    }
-
-    // Return updated reservation with participants
-    const updatedReservation = await prisma.reservation.findUnique({
+    // Update the participant status
+    const updatedReservation = await prisma.reservation.update({
       where: { id: reservationId },
+      data: {
+        participants: {
+          update: {
+            where: {
+              userId_reservationId: {
+                userId: participantId,
+                reservationId: reservationId
+              }
+            },
+            data: {
+              [type]: value
+            }
+          }
+        }
+      },
       include: {
         participants: {
           include: {
-            user: true,
-          },
-        },
-      },
+            user: {
+              select: {
+                name: true,
+                email: true,
+                image: true,
+              }
+            }
+          }
+        }
+      }
     });
 
     return NextResponse.json(updatedReservation);
   } catch (error) {
-    console.error('Error updating participant status:', error);
+    console.error('Failed to update participant status:', error);
     return NextResponse.json(
       { error: 'Failed to update participant status' },
       { status: 500 }
