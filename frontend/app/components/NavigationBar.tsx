@@ -31,12 +31,24 @@ export default function NavigationBar() {
 
   const handleSignOut = async () => {
     try {
+      console.log('🚪 Starting sign out process...');
+      
       // Clear any stored OAuth state
       if (typeof window !== 'undefined') {
-        // Clear any Google OAuth related storage
+        // Clear all storage
         sessionStorage.clear();
+        localStorage.clear();
+        
+        // Clear any Google OAuth related storage
         localStorage.removeItem('next-auth.callback-url');
         localStorage.removeItem('next-auth.csrf-token');
+        localStorage.removeItem('next-auth.state');
+        
+        // Clear any Google OAuth state
+        sessionStorage.removeItem('oauth_state');
+        sessionStorage.removeItem('oauth_verifier');
+        
+        console.log('🧹 Cleared all client-side storage');
       }
       
       // Use custom sign out endpoint that properly clears cookies
@@ -45,12 +57,17 @@ export default function NavigationBar() {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include', // Include cookies in the request
       });
       
+      console.log('📡 Sign out response status:', response.status);
+      
       if (response.ok) {
+        console.log('✅ Sign out successful, redirecting...');
         // Force page refresh to ensure session is cleared
         window.location.href = '/';
       } else {
+        console.log('⚠️ Custom sign out failed, using fallback...');
         // Fallback to NextAuth sign out
         await signOut({ 
           callbackUrl: '/',
@@ -58,7 +75,7 @@ export default function NavigationBar() {
         });
       }
     } catch (error) {
-      console.error('Error signing out:', error);
+      console.error('❌ Error signing out:', error);
       // Fallback: force page refresh to clear session
       if (typeof window !== 'undefined') {
         window.location.href = '/';
