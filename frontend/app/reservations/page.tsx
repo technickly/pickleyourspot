@@ -425,12 +425,23 @@ export default function ReservationsPage() {
                               .map((participant) => (
                                 <div key={participant.id} className="flex items-center justify-between bg-gray-50 p-2 rounded">
                                   <div className="flex-1">
-                                    <p className="text-sm font-medium text-gray-900">
-                                      {participant.user?.name || 'Anonymous'}
-                                    </p>
-                                    <p className="text-xs text-gray-500">
-                                      {participant.user?.email}
-                                    </p>
+                                    <div className="flex items-center gap-2">
+                                      {participant.user?.image && (
+                                        <img 
+                                          src={participant.user.image} 
+                                          alt={participant.user.name || ''} 
+                                          className="w-6 h-6 rounded-full"
+                                        />
+                                      )}
+                                      <div>
+                                        <p className="text-sm font-medium text-gray-900">
+                                          {participant.user?.name || 'Anonymous'}
+                                        </p>
+                                        <p className="text-xs text-gray-500">
+                                          {participant.user?.email}
+                                        </p>
+                                      </div>
+                                    </div>
                                   </div>
                                   <div className="flex items-center gap-2">
                                     <span className={`px-2 py-0.5 text-xs rounded-full ${
@@ -493,12 +504,23 @@ export default function ReservationsPage() {
                               .map((participant) => (
                                 <div key={participant.id} className="flex items-center justify-between bg-gray-50 p-2 rounded">
                                   <div className="flex-1">
-                                    <p className="text-sm font-medium text-gray-900">
-                                      {participant.user?.name || 'Anonymous'}
-                                    </p>
-                                    <p className="text-xs text-gray-500">
-                                      {participant.user?.email}
-                                    </p>
+                                    <div className="flex items-center gap-2">
+                                      {participant.user?.image && (
+                                        <img 
+                                          src={participant.user.image} 
+                                          alt={participant.user.name || ''} 
+                                          className="w-6 h-6 rounded-full"
+                                        />
+                                      )}
+                                      <div>
+                                        <p className="text-sm font-medium text-gray-900">
+                                          {participant.user?.name || 'Anonymous'}
+                                        </p>
+                                        <p className="text-xs text-gray-500">
+                                          {participant.user?.email}
+                                        </p>
+                                      </div>
+                                    </div>
                                   </div>
                                   <div className="flex items-center gap-2">
                                     <span className={`px-2 py-0.5 text-xs rounded-full ${
