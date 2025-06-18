@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useSession, signIn } from 'next-auth/react';
 import { toast } from 'react-hot-toast';
 import { FaSpinner, FaShare, FaEdit, FaTrash, FaCheck, FaTimes, FaUserPlus, FaUser, FaUserCheck, FaUserTimes, FaDollarSign } from 'react-icons/fa';
-import { formatInTimeZone } from 'date-fns-tz';
+import { formatInTimeZone, parse } from 'date-fns-tz';
 import Link from 'next/link';
 import CopyButton from '@/app/components/CopyButton';
 import { use } from 'react';
@@ -423,8 +423,8 @@ export default function ReservationPage({ params }: PageProps) {
                   {format(new Date(reservation.date + 'T' + reservation.startTime), 'EEEE, MMMM d, yyyy')}
                 </p>
                 <p className="text-gray-600">
-                  {format(new Date(reservation.date + 'T' + reservation.startTime), 'h:mm a')} -{' '}
-                  {format(new Date(reservation.date + 'T' + reservation.endTime), 'h:mm a')}
+                  {format(new Date(`2024-01-01T${reservation.startTime}`), 'h:mm a')} -{' '}
+                  {format(new Date(`2024-01-01T${reservation.endTime}`), 'h:mm a')}
                 </p>
               </div>
               <div>
