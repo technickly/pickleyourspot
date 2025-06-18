@@ -21,6 +21,16 @@ interface Participant {
   };
 }
 
+interface Message {
+  id: string;
+  content: string;
+  createdAt: string;
+  user: {
+    name: string | null;
+    email: string;
+  };
+}
+
 interface Reservation {
   id: string;
   name: string;
@@ -34,6 +44,7 @@ interface Reservation {
   participants: Participant[];
   shortUrl: string;
   passwordRequired: boolean;
+  messages?: Message[];
 }
 
 const timeZone = 'America/Los_Angeles';
@@ -48,6 +59,9 @@ export default function ReservationsPage() {
   const router = useRouter();
   const [currentPage, setCurrentPage] = useState(1);
   const [isNavigating, setIsNavigating] = useState(false);
+  const [messages, setMessages] = useState<Record<string, Message[]>>({});
+  const [newMessage, setNewMessage] = useState<Record<string, string>>({});
+  const [isSendingMessage, setIsSendingMessage] = useState<Record<string, boolean>>({});
 
   const fetchReservations = async () => {
     try {
@@ -67,6 +81,45 @@ export default function ReservationsPage() {
       toast.error('Failed to load reservations');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const fetchMessages = async (reservationId: string) => {
+    try {
+      const response = await fetch(`/api/reservations/${reservationId}/messages`);
+      if (!response.ok) throw new Error('Failed to fetch messages');
+      const data = await response.json();
+      setMessages(prev => ({ ...prev, [reservationId]: data }));
+    } catch (error) {
+      console.error('Error fetching messages:', error);
+      toast.error('Failed to load messages');
+    }
+  };
+
+  const sendMessage = async (reservationId: string) => {
+    if (!newMessage[reservationId]?.trim()) return;
+    
+    setIsSendingMessage(prev => ({ ...prev, [reservationId]: true }));
+    try {
+      const response = await fetch(`/api/reservations/${reservationId}/messages`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: newMessage[reservationId] }),
+      });
+      
+      if (!response.ok) throw new Error('Failed to send message');
+      
+      const message = await response.json();
+      setMessages(prev => ({
+        ...prev,
+        [reservationId]: [...(prev[reservationId] || []), message],
+      }));
+      setNewMessage(prev => ({ ...prev, [reservationId]: '' }));
+    } catch (error) {
+      console.error('Error sending message:', error);
+      toast.error('Failed to send message');
+    } finally {
+      setIsSendingMessage(prev => ({ ...prev, [reservationId]: false }));
     }
   };
 
@@ -437,6 +490,73 @@ export default function ReservationsPage() {
                       </div>
                     </div>
                   )}
+
+                  {/* Messages Section */}
+                  <div className="mt-6 border-t pt-4">
+                    <div className="flex justify-between items-center mb-4">
+                      <h3 className="text-lg font-semibold text-gray-900">Messages</h3>
+                      <button
+                        onClick={() => fetchMessages(reservation.id)}
+                        className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                      >
+                        Refresh
+                      </button>
+                    </div>
+                    
+                    <div className="space-y-4 mb-4 max-h-60 overflow-y-auto">
+                      {messages[reservation.id]?.length > 0 ? (
+                        messages[reservation.id].map((message) => (
+                          <div key={message.id} className="flex flex-col">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="font-medium text-gray-900">
+                                {message.user.name || message.user.email}
+                              </span>
+                              <span className="text-xs text-gray-500">
+                                {new Date(message.createdAt).toLocaleString()}
+                              </span>
+                            </div>
+                            <p className="text-gray-700 bg-gray-50 rounded-lg p-3">
+                              {message.content}
+                            </p>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-gray-500 text-center py-4">
+                          No messages yet. Start the conversation!
+                        </p>
+                      )}
+                    </div>
+                    
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={newMessage[reservation.id] || ''}
+                        onChange={(e) => setNewMessage(prev => ({
+                          ...prev,
+                          [reservation.id]: e.target.value
+                        }))}
+                        placeholder="Type your message..."
+                        className="flex-1 rounded-lg border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        onKeyPress={(e) => {
+                          if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault();
+                            sendMessage(reservation.id);
+                          }
+                        }}
+                      />
+                      <button
+                        onClick={() => sendMessage(reservation.id)}
+                        disabled={isSendingMessage[reservation.id] || !newMessage[reservation.id]?.trim()}
+                        className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {isSendingMessage[reservation.id] ? (
+                          <FaSpinner className="w-5 h-5 animate-spin" />
+                        ) : (
+                          'Send'
+                        )}
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
             ))}

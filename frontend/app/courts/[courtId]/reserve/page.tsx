@@ -64,6 +64,7 @@ export default function ReservePage() {
   const [paymentDescription, setPaymentDescription] = useState('');
   const [password, setPassword] = useState('');
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [passwordRequired, setPasswordRequired] = useState(false);
 
   useEffect(() => {
     if (!session && status !== 'loading') {
@@ -209,8 +210,8 @@ export default function ReservePage() {
       return;
     }
 
-    if (paymentRequired && !password.trim()) {
-      toast.error('Please enter event password to join');
+    if (passwordRequired && !password.trim()) {
+      toast.error('Please enter event password');
       return;
     }
 
@@ -235,7 +236,7 @@ export default function ReservePage() {
           paymentRequired: requirePayment,
           paymentInfo: paymentDescription.trim() || null,
           password: password.trim() || null,
-          userId: session?.user?.id,
+          passwordRequired: passwordRequired,
         }),
       });
 
@@ -248,6 +249,7 @@ export default function ReservePage() {
         toast.error(data.error || 'Failed to create reservation');
       }
     } catch (error) {
+      console.error('Error creating reservation:', error);
       toast.error('Failed to create reservation');
     }
   };
@@ -485,8 +487,8 @@ export default function ReservePage() {
               <input
                 type="checkbox"
                 id="requirePassword"
-                checked={paymentRequired}
-                onChange={(e) => setPaymentRequired(e.target.checked)}
+                checked={passwordRequired}
+                onChange={(e) => setPasswordRequired(e.target.checked)}
                 className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
               />
               <label htmlFor="requirePassword" className="text-gray-700">
@@ -494,7 +496,7 @@ export default function ReservePage() {
               </label>
             </div>
 
-            {paymentRequired && (
+            {passwordRequired && (
               <div className="bg-gray-50 p-4 rounded-lg">
                 <label htmlFor="eventPassword" className="block text-sm font-medium text-gray-700 mb-2">
                   Event Password
