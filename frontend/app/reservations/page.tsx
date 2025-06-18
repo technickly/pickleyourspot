@@ -65,7 +65,7 @@ export default function ReservationsPage() {
   const [isSendingMessage, setIsSendingMessage] = useState<Record<string, boolean>>({});
   const [updatingStatus, setUpdatingStatus] = useState<Record<string, boolean>>({});
   const [removingParticipant, setRemovingParticipant] = useState<Record<string, boolean>>({});
-  const [participantToRemove, setParticipantToRemove] = useState<{ id: string; name: string } | null>(null);
+  const [participantToRemove, setParticipantToRemove] = useState<{ id: string; name: string; email: string } | null>(null);
 
   const fetchReservations = async () => {
     try {
@@ -171,7 +171,7 @@ export default function ReservationsPage() {
     }
   };
 
-  const handleRemoveParticipant = async (reservationId: string, participantId: string) => {
+  const handleRemoveParticipant = async (reservationId: string, participantId: string, participantEmail: string) => {
     if (!session?.user?.email) {
       toast.error('You must be logged in to remove participants');
       return;
@@ -179,7 +179,7 @@ export default function ReservationsPage() {
 
     setRemovingParticipant(prev => ({ ...prev, [participantId]: true }));
     try {
-      const response = await fetch(`/api/reservations/${reservationId}/participants/${participantId}`, {
+      const response = await fetch(`/api/reservations/${reservationId}/participants?email=${encodeURIComponent(participantEmail)}`, {
         method: 'DELETE',
       });
       
@@ -300,7 +300,7 @@ export default function ReservationsPage() {
               <button
                 onClick={() => {
                   if (participantToRemove) {
-                    handleRemoveParticipant(participantToRemove.id, participantToRemove.id);
+                    handleRemoveParticipant(participantToRemove.id, participantToRemove.id, participantToRemove.email);
                   }
                 }}
                 disabled={removingParticipant[participantToRemove.id]}
@@ -529,7 +529,8 @@ export default function ReservationsPage() {
                                       <button
                                         onClick={() => setParticipantToRemove({
                                           id: participant.id,
-                                          name: participant.user?.name || participant.email
+                                          name: participant.user?.name || participant.email,
+                                          email: participant.user?.email || participant.email
                                         })}
                                         className="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium border border-red-300 text-red-700 hover:bg-red-50 transition-colors"
                                       >
@@ -609,7 +610,8 @@ export default function ReservationsPage() {
                                       <button
                                         onClick={() => setParticipantToRemove({
                                           id: participant.id,
-                                          name: participant.user?.name || participant.email
+                                          name: participant.user?.name || participant.email,
+                                          email: participant.user?.email || participant.email
                                         })}
                                         className="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium border border-red-300 text-red-700 hover:bg-red-50 transition-colors"
                                       >
