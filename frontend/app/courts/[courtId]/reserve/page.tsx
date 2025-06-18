@@ -183,8 +183,8 @@ export default function ReservePage() {
 
       // Check if the slot is consecutive
       if (slotIndex === lastSelectedIndex + 1) {
-        // Check if we're within the 3-hour limit (3 slots of 1 hour each)
-        if (current.length < 3) {
+        // Check if we're within the 6-hour limit (6 slots of 1 hour each)
+        if (current.length < 6) {
           return [...current, slot];
         }
       }
@@ -379,6 +379,10 @@ export default function ReservePage() {
 
           <div>
             <h2 className="text-xl font-semibold mb-4">Pick Your Time Slots</h2>
+            <p className="text-sm text-gray-600 mb-4">
+              Available time slots are shown in Pacific Time (PT). You can reserve up to 6 hours.
+              Operating hours: 8 AM - 8 PM daily.
+            </p>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
               {timeSlots.map((slot) => {
                 const isSelected = selectedTimeSlots.some(

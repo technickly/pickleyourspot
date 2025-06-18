@@ -118,6 +118,7 @@ export async function PUT(
 
     const body = await request.json();
     const { 
+      name,
       description, 
       paymentInfo, 
       startTime, 
@@ -166,6 +167,7 @@ export async function PUT(
     const updatedReservation = await prisma.reservation.update({
       where: { id: params.reservationId },
       data: {
+        name: name !== undefined ? name : undefined,
         description: description !== undefined ? description : undefined,
         paymentInfo: paymentInfo !== undefined ? paymentInfo : undefined,
         startTime: startTime ? new Date(startTime) : undefined,

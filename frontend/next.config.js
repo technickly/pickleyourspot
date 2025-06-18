@@ -22,7 +22,7 @@ const nextConfig = {
   },
   experimental: {
     serverActions: {
-      allowedOrigins: ['localhost:3000', 'pickleyourspot.com'],
+      allowedOrigins: ['localhost:3000', 'pickleyourspot.com', 'www.pickleyourspot.com'],
     },
   },
   allowedDevOrigins: ['pickleyourspot.com', 'www.pickleyourspot.com'],

@@ -19,6 +19,31 @@ export const authOptions: AuthOptions = {
     }),
   ],
   callbacks: {
+    async signIn({ user, account, profile }) {
+      if (!user.email) return false;
+
+      try {
+        const existingUser = await prisma.user.findUnique({
+          where: { email: user.email }
+        });
+
+        if (!existingUser) {
+          await prisma.user.create({
+            data: {
+              email: user.email,
+              name: user.name,
+              image: user.image,
+              role: 'USER'
+            }
+          });
+        }
+
+        return true;
+      } catch (error) {
+        console.error('Error in signIn callback:', error);
+        return false;
+      }
+    },
     async jwt({ token, user, account }) {
       if (user) {
         token.id = user.id;
@@ -38,7 +63,7 @@ export const authOptions: AuthOptions = {
   },
   pages: {
     signIn: '/',
-    error: '/',
+    error: '/auth/error',
   },
   session: {
     strategy: 'jwt',
@@ -51,10 +76,10 @@ export const authOptions: AuthOptions = {
         httpOnly: true,
         sameSite: 'lax',
         path: '/',
-        secure: true,
+        secure: process.env.NODE_ENV === 'production',
         domain: process.env.NODE_ENV === 'production' ? '.pickleyourspot.com' : undefined
       }
     }
   },
-  debug: true, // Enable debug in production temporarily
+  debug: process.env.NODE_ENV === 'development',
 }; 

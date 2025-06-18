@@ -149,8 +149,8 @@ export default function EditReservationPage({ params }: PageProps) {
         });
       }
 
-      // Check if the slot is consecutive and within 3-hour limit (3 slots of 1 hour each)
-      if (slotIndex === lastSelectedIndex + 1 && current.length < 3) {
+      // Check if the slot is consecutive and within 6-hour limit (6 slots of 1 hour each)
+      if (slotIndex === lastSelectedIndex + 1 && current.length < 6) {
         return [...current, slot];
       }
 
@@ -245,8 +245,8 @@ export default function EditReservationPage({ params }: PageProps) {
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Enter a name for your reservation"
-              className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="Enter reservation name"
+              className="w-full p-3 border rounded-lg"
             />
           </div>
 
@@ -268,8 +268,8 @@ export default function EditReservationPage({ params }: PageProps) {
           <div>
             <h2 className="text-xl font-semibold mb-4">Choose Time Slots</h2>
             <p className="text-sm text-gray-600 mb-4">
-              Available time slots are shown in Pacific Time (PT). You can reserve up to 3 hours.
-              Operating hours: 8 AM - 6 PM daily.
+              Available time slots are shown in Pacific Time (PT). You can reserve up to 6 hours.
+              Operating hours: 8 AM - 8 PM daily.
             </p>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
               {timeSlots.map((slot) => {
