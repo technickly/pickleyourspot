@@ -806,6 +806,13 @@ export default function ReservationPage({ params }: PageProps) {
                 <FaEdit className="w-4 h-4" />
                 Edit Reservation
               </button>
+              <Link
+                href={`/reservations/${reservationId}/modify`}
+                className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+              >
+                <FaUser className="w-4 h-4" />
+                Manage Participants
+              </Link>
             </div>
           )}
         </div>

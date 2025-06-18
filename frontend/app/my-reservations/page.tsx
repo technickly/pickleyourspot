@@ -7,7 +7,7 @@ import { toast } from 'react-hot-toast';
 import { formatInTimeZone } from 'date-fns-tz';
 import CopyButton from '@/app/components/CopyButton';
 import { useRouter } from 'next/navigation';
-import { FaShare, FaEdit, FaTrash, FaEye, FaCheck, FaTimes, FaSpinner } from 'react-icons/fa';
+import { FaShare, FaEdit, FaTrash, FaEye, FaCheck, FaTimes, FaSpinner, FaUser } from 'react-icons/fa';
 
 interface Participant {
   id: string;
@@ -447,9 +447,9 @@ export default function MyReservationsPage() {
                           {isNavigating ? (
                             <FaSpinner className="w-4 h-4 animate-spin" />
                           ) : (
-                            <FaEdit className="w-4 h-4" />
+                            <FaUser className="w-4 h-4" />
                           )}
-                          Modify
+                          Manage Participants
                         </Link>
                       )}
                       {reservation.isOwner && (
