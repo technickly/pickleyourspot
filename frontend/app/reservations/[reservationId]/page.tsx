@@ -135,10 +135,13 @@ export default function ReservationPage({ params }: PageProps) {
     }
   }, [reservationId]);
 
-  const isParticipant = () => {
-    if (!session?.user?.email || !reservation) return false;
-    return reservation.participants.some(p => p.user?.email === session.user.email);
-  };
+  const isParticipant = reservation?.participants?.some(
+    p => p.user?.email === session?.user?.email
+  ) ?? false;
+
+  const currentParticipant = reservation?.participants?.find(
+    p => p.user?.email === session?.user?.email
+  );
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -752,6 +755,84 @@ export default function ReservationPage({ params }: PageProps) {
               </form>
             </div>
           )}
+
+          {/* Actions */}
+          {session?.user && (
+            <div className="bg-gray-50 rounded-xl p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Your Status</h2>
+              {isParticipant ? (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-3 bg-white rounded-lg border border-gray-100">
+                    <div className="flex items-center gap-3">
+                      <div className="h-8 w-8 rounded-full bg-gray-100 flex items-center justify-center">
+                        {session.user.image ? (
+                          <img
+                            src={session.user.image}
+                            alt={session.user.name || ''}
+                            className="h-8 w-8 rounded-full"
+                          />
+                        ) : (
+                          <span className="text-sm font-medium text-gray-500">
+                            {session.user.name?.[0] || session.user.email?.[0] || '?'}
+                          </span>
+                        )}
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">
+                          {session.user.name || 'You'}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {session.user.email}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        currentParticipant?.isGoing
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-red-100 text-red-800'
+                      }`}>
+                        {currentParticipant?.isGoing ? 'Going' : 'Not Going'}
+                      </span>
+                      {reservation.paymentRequired && (
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          currentParticipant?.hasPaid
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-yellow-100 text-yellow-800'
+                        }`}>
+                          {currentParticipant?.hasPaid ? 'Paid' : 'Unpaid'}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setSelectedStatus({
+                        isGoing: currentParticipant?.isGoing ?? false,
+                        hasPaid: currentParticipant?.hasPaid ?? false
+                      });
+                      setShowStatusDialog(true);
+                    }}
+                    disabled={isUpdating}
+                    className="w-full px-4 py-2 text-sm font-medium text-white bg-blue-500 rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isUpdating ? 'Updating...' : 'Update Status'}
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => {
+                    setSelectedStatus({ isGoing: true, hasPaid: false });
+                    setShowStatusDialog(true);
+                  }}
+                  disabled={isUpdating}
+                  className="w-full px-4 py-2 text-sm font-medium text-white bg-blue-500 rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isUpdating ? 'Joining...' : 'Join Reservation'}
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -770,7 +851,7 @@ export default function ReservationPage({ params }: PageProps) {
                     onClick={() => setSelectedStatus({ ...selectedStatus, isGoing: true })}
                     className={`flex-1 px-4 py-2 text-sm font-medium rounded-lg ${
                       selectedStatus.isGoing
-                        ? 'bg-blue-500 text-white'
+                        ? 'bg-green-100 text-green-800 border-2 border-green-500'
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                     }`}
                   >
@@ -780,7 +861,7 @@ export default function ReservationPage({ params }: PageProps) {
                     onClick={() => setSelectedStatus({ ...selectedStatus, isGoing: false })}
                     className={`flex-1 px-4 py-2 text-sm font-medium rounded-lg ${
                       !selectedStatus.isGoing
-                        ? 'bg-blue-500 text-white'
+                        ? 'bg-red-100 text-red-800 border-2 border-red-500'
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                     }`}
                   >
@@ -798,7 +879,7 @@ export default function ReservationPage({ params }: PageProps) {
                       onClick={() => setSelectedStatus({ ...selectedStatus, hasPaid: true })}
                       className={`flex-1 px-4 py-2 text-sm font-medium rounded-lg ${
                         selectedStatus.hasPaid
-                          ? 'bg-blue-500 text-white'
+                          ? 'bg-green-100 text-green-800 border-2 border-green-500'
                           : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                       }`}
                     >
@@ -808,7 +889,7 @@ export default function ReservationPage({ params }: PageProps) {
                       onClick={() => setSelectedStatus({ ...selectedStatus, hasPaid: false })}
                       className={`flex-1 px-4 py-2 text-sm font-medium rounded-lg ${
                         !selectedStatus.hasPaid
-                          ? 'bg-blue-500 text-white'
+                          ? 'bg-red-100 text-red-800 border-2 border-red-500'
                           : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                       }`}
                     >
@@ -817,14 +898,14 @@ export default function ReservationPage({ params }: PageProps) {
                   </div>
                 </div>
               )}
-              <div className="flex gap-2 mt-6">
+              <div className="flex gap-2 mt-6 pt-4 border-t border-gray-200">
                 <button
                   onClick={() => {
                     handleStatusUpdate(selectedStatus.isGoing, selectedStatus.hasPaid);
                     setShowStatusDialog(false);
                   }}
                   disabled={isUpdating}
-                  className="flex-1 px-4 py-2 text-sm font-medium text-white bg-blue-500 rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
                 >
                   {isUpdating ? 'Updating...' : 'Save Changes'}
                 </button>
