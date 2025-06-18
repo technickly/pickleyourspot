@@ -20,6 +20,7 @@ export async function POST(
 ) {
   try {
     const session = await getServerSession(authOptions);
+    const reservationId = await params.reservationId;
     
     if (!session?.user?.email) {
       return NextResponse.json(
@@ -39,7 +40,7 @@ export async function POST(
 
     // Verify the user is the owner of the reservation
     const reservation = await prisma.reservation.findUnique({
-      where: { id: params.reservationId },
+      where: { id: reservationId },
       include: {
         owner: true,
         participants: {
@@ -93,7 +94,7 @@ export async function POST(
         const participantStatus = await prisma.participantStatus.create({
           data: {
             userId: userToAdd.id,
-            reservationId: params.reservationId,
+            reservationId: reservationId,
             isGoing: true,
             hasPaid: false,
           },
@@ -121,7 +122,7 @@ export async function POST(
 
     // Get updated reservation with all participants
     const updatedReservation = await prisma.reservation.findUnique({
-      where: { id: params.reservationId },
+      where: { id: reservationId },
       include: {
         participants: {
           include: {

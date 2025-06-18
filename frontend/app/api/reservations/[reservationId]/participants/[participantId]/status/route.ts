@@ -9,6 +9,9 @@ export async function PUT(
 ) {
   try {
     const session = await getServerSession();
+    const reservationId = await params.reservationId;
+    const participantId = await params.participantId;
+
     if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -23,7 +26,7 @@ export async function PUT(
 
     // Get the user
     const user = await prisma.user.findUnique({
-      where: { id: params.participantId },
+      where: { id: participantId },
     });
 
     if (!user) {
@@ -43,7 +46,7 @@ export async function PUT(
 
     // Get the reservation
     const reservation = await prisma.reservation.findUnique({
-      where: { id: params.reservationId },
+      where: { id: reservationId },
       include: { participants: true },
     });
 
@@ -68,7 +71,7 @@ export async function PUT(
         // Add user to participants if not already there
         if (!isParticipant) {
           await prisma.reservation.update({
-            where: { id: params.reservationId },
+            where: { id: reservationId },
             data: {
               participants: {
                 connect: { id: user.id },
@@ -79,7 +82,7 @@ export async function PUT(
       } else {
         // Remove user from participants
         await prisma.reservation.update({
-          where: { id: params.reservationId },
+          where: { id: reservationId },
           data: {
             participants: {
               disconnect: { id: user.id },
@@ -93,7 +96,7 @@ export async function PUT(
         where: {
           userId_reservationId: {
             userId: user.id,
-            reservationId: params.reservationId,
+            reservationId: reservationId,
           },
         },
         data: {
@@ -104,7 +107,7 @@ export async function PUT(
 
     // Return updated reservation with participants
     const updatedReservation = await prisma.reservation.findUnique({
-      where: { id: params.reservationId },
+      where: { id: reservationId },
       include: {
         participants: {
           include: {
