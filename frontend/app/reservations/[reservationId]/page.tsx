@@ -525,15 +525,15 @@ export default function ReservationPage({ params }: PageProps) {
               {reservation.isOwner && (
                 <Link
                   href={`/reservations/${reservation.id}/modify`}
-                  className="flex items-center gap-1 bg-blue-600 text-white px-3 py-1.5 rounded text-sm hover:bg-blue-700 transition-colors"
+                  className="flex items-center gap-1 bg-green-600 text-white px-3 py-1.5 rounded text-sm hover:bg-green-700 transition-colors"
                   onClick={() => setIsNavigating(true)}
                 >
                   {isNavigating ? (
                     <FaSpinner className="w-3 h-3 animate-spin" />
                   ) : (
-                    <FaEdit className="w-3 h-3" />
+                    <FaUser className="w-3 h-3" />
                   )}
-                  Modify
+                  Manage Participants
                 </Link>
               )}
             </div>
@@ -806,13 +806,6 @@ export default function ReservationPage({ params }: PageProps) {
                 <FaEdit className="w-4 h-4" />
                 Edit Reservation
               </button>
-              <Link
-                href={`/reservations/${reservationId}/modify`}
-                className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
-              >
-                <FaUser className="w-4 h-4" />
-                Manage Participants
-              </Link>
             </div>
           )}
         </div>
