@@ -44,7 +44,9 @@ interface Participant {
 interface Court {
   id: string;
   name: string;
-  address: string;
+  location: string;
+  city: string;
+  state: string;
 }
 
 interface Reservation {
@@ -509,7 +511,7 @@ export default function ReservationPage({ params }: PageProps) {
               <div>
                 <p className="text-sm font-medium text-gray-500 mb-1">Location</p>
                 <p className="text-gray-900">{reservation.court?.name || 'Unknown Court'}</p>
-                <p className="text-gray-600">{reservation.court?.address || 'No address available'}</p>
+                <p className="text-gray-600">{reservation.court?.location || 'No location available'}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-500 mb-1">Date & Time</p>
