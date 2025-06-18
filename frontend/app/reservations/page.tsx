@@ -8,6 +8,7 @@ import { formatInTimeZone } from 'date-fns-tz';
 import CopyButton from '@/app/components/CopyButton';
 import { useRouter } from 'next/navigation';
 import { FaShare, FaEdit, FaTrash, FaEye, FaCheck, FaTimes, FaSpinner, FaDollarSign, FaUserCheck, FaUserTimes } from 'react-icons/fa';
+import StatusUpdateDialog from '../components/StatusUpdateDialog';
 
 interface Participant {
   id: string;
@@ -46,6 +47,9 @@ interface Reservation {
   shortUrl: string;
   passwordRequired: boolean;
   messages?: Message[];
+  court: {
+    name: string;
+  };
 }
 
 const timeZone = 'America/Los_Angeles';
@@ -64,6 +68,8 @@ export default function ReservationsPage() {
   const [newMessage, setNewMessage] = useState<Record<string, string>>({});
   const [isSendingMessage, setIsSendingMessage] = useState<Record<string, boolean>>({});
   const [updatingStatus, setUpdatingStatus] = useState<Record<string, boolean>>({});
+  const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null);
+  const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false);
 
   const fetchReservations = async () => {
     try {
@@ -125,67 +131,31 @@ export default function ReservationsPage() {
     }
   };
 
-  const handleStatusUpdate = async (
-    reservationId: string,
-    type: 'isGoing' | 'hasPaid',
-    newValue: boolean
-  ) => {
-    if (!session?.user?.email) {
-      toast.error('You must be logged in to update your status');
-      return;
-    }
-
-    // Find the current user's participant ID
-    const reservation = reservations.find(r => r.id === reservationId);
-    if (!reservation) {
-      toast.error('Reservation not found');
-      return;
-    }
-
-    const currentParticipant = reservation.participants.find(
-      p => p.user?.email === session.user.email
-    );
-
-    if (!currentParticipant?.user?.id) {
-      console.error('Participant not found:', {
-        userEmail: session.user.email,
-        participants: reservation.participants
-      });
-      toast.error('You are not a participant in this reservation');
-      return;
-    }
-
-    setUpdatingStatus((prev) => ({ ...prev, [reservationId]: true }));
+  const handleStatusUpdate = async (reservationId: string, isGoing: boolean, hasPaid: boolean) => {
     try {
-      console.log('Updating status:', {
-        reservationId,
-        participantId: currentParticipant.user.id,
-        type,
-        newValue
-      });
-
-      const response = await fetch(`/api/reservations/${reservationId}/participants/${currentParticipant.user.id}/status`, {
+      const response = await fetch(`/api/reservations/${reservationId}/participants/status`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type, value: newValue }),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          isGoing,
+          hasPaid,
+        }),
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        console.error('Status update failed:', {
-          status: response.status,
-          error: errorData
-        });
-        throw new Error(errorData.error || 'Failed to update status');
+        throw new Error('Failed to update status');
       }
 
-      await fetchReservations();
-      toast.success(`${type === 'isGoing' ? 'Attendance' : 'Payment'} status updated`);
+      const updatedReservation = await response.json();
+      setReservations(prev => 
+        prev.map(r => r.id === reservationId ? updatedReservation : r)
+      );
+      router.push('/reservations');
     } catch (error) {
       console.error('Error updating status:', error);
-      toast.error('Failed to update status');
-    } finally {
-      setUpdatingStatus((prev) => ({ ...prev, [reservationId]: false }));
+      throw error;
     }
   };
 
@@ -470,7 +440,7 @@ export default function ReservationsPage() {
                                               : 'bg-gray-200 text-gray-700 border-gray-300'
                                           } hover:shadow transition`}
                                           disabled={updatingStatus[reservation.id]}
-                                          onClick={() => handleStatusUpdate(reservation.id, 'isGoing', !participant.isGoing)}
+                                          onClick={() => handleStatusUpdate(reservation.id, !participant.isGoing, participant.hasPaid)}
                                         >
                                           {participant.isGoing ? <FaUserCheck className="w-3 h-3" /> : <FaUserTimes className="w-3 h-3" />}
                                           {participant.isGoing ? 'Going' : 'Not Going'}
@@ -483,7 +453,7 @@ export default function ReservationsPage() {
                                                 : 'bg-yellow-200 text-yellow-800 border-yellow-400'
                                             } hover:shadow transition`}
                                             disabled={updatingStatus[reservation.id]}
-                                            onClick={() => handleStatusUpdate(reservation.id, 'hasPaid', !participant.hasPaid)}
+                                            onClick={() => handleStatusUpdate(reservation.id, participant.isGoing, !participant.hasPaid)}
                                           >
                                             <FaDollarSign className="w-3 h-3" />
                                             {participant.hasPaid ? 'Paid' : 'Unpaid'}
@@ -549,7 +519,7 @@ export default function ReservationsPage() {
                                               : 'bg-gray-200 text-gray-700 border-gray-300'
                                           } hover:shadow transition`}
                                           disabled={updatingStatus[reservation.id]}
-                                          onClick={() => handleStatusUpdate(reservation.id, 'isGoing', !participant.isGoing)}
+                                          onClick={() => handleStatusUpdate(reservation.id, !participant.isGoing, participant.hasPaid)}
                                         >
                                           {participant.isGoing ? <FaUserCheck className="w-3 h-3" /> : <FaUserTimes className="w-3 h-3" />}
                                           {participant.isGoing ? 'Going' : 'Not Going'}
@@ -562,7 +532,7 @@ export default function ReservationsPage() {
                                                 : 'bg-yellow-200 text-yellow-800 border-yellow-400'
                                             } hover:shadow transition`}
                                             disabled={updatingStatus[reservation.id]}
-                                            onClick={() => handleStatusUpdate(reservation.id, 'hasPaid', !participant.hasPaid)}
+                                            onClick={() => handleStatusUpdate(reservation.id, participant.isGoing, !participant.hasPaid)}
                                           >
                                             <FaDollarSign className="w-3 h-3" />
                                             {participant.hasPaid ? 'Paid' : 'Unpaid'}
@@ -723,6 +693,22 @@ export default function ReservationsPage() {
           </div>
         )}
       </div>
+
+      {selectedReservation && (
+        <StatusUpdateDialog
+          isOpen={isUpdateDialogOpen}
+          onClose={() => {
+            setIsUpdateDialogOpen(false);
+            setSelectedReservation(null);
+          }}
+          onUpdate={async (isGoing, hasPaid) => {
+            await handleStatusUpdate(selectedReservation.id, isGoing, hasPaid);
+          }}
+          initialIsGoing={selectedReservation.participants.find(p => p.user?.email === session.user?.email)?.isGoing ?? false}
+          initialHasPaid={selectedReservation.participants.find(p => p.user?.email === session.user?.email)?.hasPaid ?? false}
+          paymentRequired={selectedReservation.paymentRequired}
+        />
+      )}
     </div>
   );
 } 

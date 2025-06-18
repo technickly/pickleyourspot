@@ -55,6 +55,8 @@ interface Reservation {
   paymentAmount: number | null;
   paymentDetails: string | null;
   shortUrl: string;
+  description?: string;
+  paymentInfo?: string;
 }
 
 const timeZone = 'America/Los_Angeles';
@@ -317,45 +319,35 @@ export default function ReservationPage({ params }: { params: Promise<{ reservat
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
             <div className="space-y-4">
               <div>
+                <p className="text-sm font-medium text-gray-500 mb-1">Location</p>
+                <p className="text-gray-900">{reservation.court?.name || 'Unknown Court'}</p>
+                <p className="text-gray-600">{reservation.court?.address || 'No address available'}</p>
+              </div>
+              <div>
                 <p className="text-sm font-medium text-gray-500 mb-1">Date & Time</p>
                 <p className="text-gray-900">
-                  {formatDate(reservation.startTime, 'EEEE, MMMM d, yyyy')}
+                  {formatInTimeZone(new Date(reservation.startTime), 'America/Los_Angeles', 'EEEE, MMMM d, yyyy')}
                 </p>
-                <p className="text-gray-900">
-                  {formatDate(reservation.startTime, 'h:mm a')} - {formatDate(reservation.endTime, 'h:mm a')}
+                <p className="text-gray-600">
+                  {formatInTimeZone(new Date(reservation.startTime), 'America/Los_Angeles', 'h:mm a')} -{' '}
+                  {formatInTimeZone(new Date(reservation.endTime), 'America/Los_Angeles', 'h:mm a')}
                 </p>
               </div>
-
-              <div>
-                <p className="text-sm font-medium text-gray-500 mb-1">Location</p>
-                <p className="text-gray-900">{reservation.court.name}</p>
-                <p className="text-gray-600">{reservation.court.address}</p>
-              </div>
-
               <div>
                 <p className="text-sm font-medium text-gray-500 mb-1">Organizer</p>
-                <div className="flex items-center gap-2">
-                  {reservation.owner.image ? (
-                    <img
-                      src={reservation.owner.image}
-                      alt={reservation.owner.name || reservation.owner.email}
-                      className="w-6 h-6 rounded-full"
-                    />
-                  ) : (
-                    <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center">
-                      <FaUser className="w-3 h-3 text-gray-500" />
-                    </div>
-                  )}
-                  <p className="text-gray-900">
-                    {reservation.owner.name || reservation.owner.email}
-                  </p>
-                </div>
+                <p className="text-gray-900">{reservation.owner?.name || 'Unknown Organizer'}</p>
+                <p className="text-gray-600">{reservation.owner?.email || 'No email available'}</p>
               </div>
-
-              {reservation.paymentDetails && (
+              {reservation.description && (
+                <div>
+                  <p className="text-sm font-medium text-gray-500 mb-1">Description</p>
+                  <p className="text-gray-900">{reservation.description}</p>
+                </div>
+              )}
+              {reservation.paymentRequired && (
                 <div>
                   <p className="text-sm font-medium text-gray-500 mb-1">Payment Information</p>
-                  <p className="text-gray-700">{reservation.paymentDetails}</p>
+                  <p className="text-gray-900">{reservation.paymentInfo || 'No payment information available'}</p>
                 </div>
               )}
             </div>
