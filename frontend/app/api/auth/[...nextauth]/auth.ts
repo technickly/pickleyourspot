@@ -55,9 +55,29 @@ export const authOptions: AuthOptions = {
         if (existingUser) {
           console.log('👤 User exists:', existingUser.id, 'with', existingUser.accounts.length, 'linked accounts');
           
-          // If user has no linked accounts, allow linking this Google account
+          // If user has no linked accounts, manually link this Google account
           if (existingUser.accounts.length === 0) {
-            console.log('✅ User exists but has no linked accounts - allowing link');
+            console.log('🔗 Manually linking Google account to existing user');
+            try {
+              await prisma.account.create({
+                data: {
+                  userId: existingUser.id,
+                  type: account?.type || 'oauth',
+                  provider: account?.provider || 'google',
+                  providerAccountId: account?.providerAccountId || '',
+                  access_token: account?.access_token || null,
+                  expires_at: account?.expires_at || null,
+                  refresh_token: account?.refresh_token || null,
+                  scope: account?.scope || null,
+                  token_type: account?.token_type || null,
+                  id_token: account?.id_token || null,
+                  session_state: account?.session_state || null,
+                }
+              });
+              console.log('✅ Successfully linked Google account to existing user');
+            } catch (linkError) {
+              console.error('❌ Error linking account:', linkError);
+            }
             return true;
           }
           
