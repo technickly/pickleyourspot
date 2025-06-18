@@ -11,6 +11,8 @@ import CopyButton from '@/app/components/CopyButton';
 import { use } from 'react';
 import UserSearch from '@/app/components/UserSearch';
 import StatusUpdateDialog from '../../components/StatusUpdateDialog';
+import { format } from 'date-fns';
+import { Calendar, Clock, MapPin, Users, DollarSign, Share2, Copy, Check, X } from 'lucide-react';
 
 interface Message {
   id: string;
@@ -37,17 +39,27 @@ interface Participant {
   user: User;
 }
 
+interface Court {
+  id: string;
+  name: string;
+  address: string;
+}
+
 interface Reservation {
   id: string;
   name: string;
   startTime: string;
   endTime: string;
-  court: {
-    name: string;
-  };
+  court: Court;
   participants: Participant[];
   paymentRequired: boolean;
   isOwner: boolean;
+  description: string | null;
+  shortUrl: string;
+}
+
+interface PageProps {
+  params: Promise<{ reservationId: string }>;
 }
 
 const timeZone = 'America/Los_Angeles';
@@ -76,7 +88,7 @@ const formatDate = (dateTime: string, format: string) => {
   }
 };
 
-export default function ReservationPage({ params }: { params: Promise<{ reservationId: string }> }) {
+export default function ReservationPage({ params }: PageProps) {
   const router = useRouter();
   const { data: session, status } = useSession();
   const [reservation, setReservation] = useState<Reservation | null>(null);
@@ -90,6 +102,10 @@ export default function ReservationPage({ params }: { params: Promise<{ reservat
   const [isAddingParticipants, setIsAddingParticipants] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [isCopied, setIsCopied] = useState(false);
+  const [showStatusDialog, setShowStatusDialog] = useState(false);
+  const [selectedStatus, setSelectedStatus] = useState<{ isGoing: boolean; hasPaid: boolean } | null>(null);
 
   useEffect(() => {
     const fetchReservation = async () => {
@@ -153,6 +169,7 @@ export default function ReservationPage({ params }: { params: Promise<{ reservat
     if (!session?.user?.email || !reservation) return;
 
     try {
+      setIsUpdating(true);
       // Find the current user's participant ID
       const currentParticipant = reservation.participants.find(
         p => p.user?.email === session.user?.email
@@ -167,7 +184,7 @@ export default function ReservationPage({ params }: { params: Promise<{ reservat
       }
 
       console.log('Updating status for participant:', {
-        reservationId: params.reservationId,
+        reservationId,
         participantId: currentParticipant.user.id,
         isGoing,
         hasPaid
@@ -175,7 +192,7 @@ export default function ReservationPage({ params }: { params: Promise<{ reservat
 
       // First update isGoing status
       const goingResponse = await fetch(
-        `/api/reservations/${params.reservationId}/participants/${currentParticipant.user.id}/status`,
+        `/api/reservations/${reservationId}/participants/${currentParticipant.user.id}/status`,
         {
           method: 'PUT',
           headers: {
@@ -201,7 +218,7 @@ export default function ReservationPage({ params }: { params: Promise<{ reservat
       // Then update hasPaid status if payment is required
       if (reservation.paymentRequired) {
         const paidResponse = await fetch(
-          `/api/reservations/${params.reservationId}/participants/${currentParticipant.user.id}/status`,
+          `/api/reservations/${reservationId}/participants/${currentParticipant.user.id}/status`,
           {
             method: 'PUT',
             headers: {
@@ -226,7 +243,7 @@ export default function ReservationPage({ params }: { params: Promise<{ reservat
       }
 
       // Get the updated reservation
-      const updatedResponse = await fetch(`/api/reservations/${params.reservationId}`);
+      const updatedResponse = await fetch(`/api/reservations/${reservationId}`);
       if (!updatedResponse.ok) {
         throw new Error('Failed to fetch updated reservation');
       }
@@ -237,6 +254,8 @@ export default function ReservationPage({ params }: { params: Promise<{ reservat
     } catch (error) {
       console.error('Error updating status:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to update status');
+    } finally {
+      setIsUpdating(false);
     }
   };
 
@@ -269,6 +288,20 @@ export default function ReservationPage({ params }: { params: Promise<{ reservat
       toast.error('Failed to add participants');
     } finally {
       setIsAddingParticipants(false);
+    }
+  };
+
+  const handleShare = async () => {
+    try {
+      await navigator.clipboard.writeText(
+        `${window.location.origin}/reservations/${reservationId}`
+      );
+      setIsCopied(true);
+      toast.success('Link copied to clipboard!');
+      setTimeout(() => setIsCopied(false), 2000);
+    } catch (error) {
+      console.error('Error copying to clipboard:', error);
+      toast.error('Failed to copy link');
     }
   };
 
@@ -345,8 +378,17 @@ export default function ReservationPage({ params }: { params: Promise<{ reservat
                 text={`${window.location.origin}/r/${reservation.shortUrl}`}
                 label={
                   <span className="flex items-center gap-1 bg-gray-600 text-white px-3 py-1.5 rounded text-sm hover:bg-gray-700 transition-colors">
-                    <FaShare className="w-3 h-3" />
-                    Share
+                    {isCopied ? (
+                      <>
+                        <Check className="h-4 w-4" />
+                        Copied!
+                      </>
+                    ) : (
+                      <>
+                        <Share2 className="h-4 w-4" />
+                        Share
+                      </>
+                    )}
                   </span>
                 }
                 className="hover:bg-gray-700"
@@ -378,11 +420,11 @@ export default function ReservationPage({ params }: { params: Promise<{ reservat
               <div>
                 <p className="text-sm font-medium text-gray-500 mb-1">Date & Time</p>
                 <p className="text-gray-900">
-                  {formatInTimeZone(new Date(reservation.startTime), 'America/Los_Angeles', 'EEEE, MMMM d, yyyy')}
+                  {format(new Date(reservation.startTime), 'EEEE, MMMM d, yyyy')}
                 </p>
                 <p className="text-gray-600">
-                  {formatInTimeZone(new Date(reservation.startTime), 'America/Los_Angeles', 'h:mm a')} -{' '}
-                  {formatInTimeZone(new Date(reservation.endTime), 'America/Los_Angeles', 'h:mm a')}
+                  {format(new Date(`2000-01-01T${reservation.startTime}`), 'h:mm a')} -{' '}
+                  {format(new Date(`2000-01-01T${reservation.endTime}`), 'h:mm a')}
                 </p>
               </div>
               <div>
@@ -466,7 +508,13 @@ export default function ReservationPage({ params }: { params: Promise<{ reservat
                             </span>
                             {session?.user?.email === participant.user?.email && (
                               <button
-                                onClick={() => setIsUpdateDialogOpen(true)}
+                                onClick={() => {
+                                  setSelectedStatus({
+                                    isGoing: participant.isGoing,
+                                    hasPaid: participant.hasPaid
+                                  });
+                                  setShowStatusDialog(true);
+                                }}
                                 className="px-3 py-1 text-sm font-medium text-blue-600 hover:text-blue-700"
                               >
                                 Update
@@ -526,7 +574,13 @@ export default function ReservationPage({ params }: { params: Promise<{ reservat
                             </span>
                             {session?.user?.email === participant.user?.email && (
                               <button
-                                onClick={() => setIsUpdateDialogOpen(true)}
+                                onClick={() => {
+                                  setSelectedStatus({
+                                    isGoing: participant.isGoing,
+                                    hasPaid: participant.hasPaid
+                                  });
+                                  setShowStatusDialog(true);
+                                }}
                                 className="px-3 py-1 text-sm font-medium text-blue-600 hover:text-blue-700"
                               >
                                 Update
@@ -666,15 +720,89 @@ export default function ReservationPage({ params }: { params: Promise<{ reservat
         </div>
       </div>
 
-      {isUpdateDialogOpen && (
-        <StatusUpdateDialog
-          isOpen={isUpdateDialogOpen}
-          onClose={() => setIsUpdateDialogOpen(false)}
-          onUpdate={handleStatusUpdate}
-          initialIsGoing={reservation.participants.find(p => p.user?.email === session.user?.email)?.isGoing ?? false}
-          initialHasPaid={reservation.participants.find(p => p.user?.email === session.user?.email)?.hasPaid ?? false}
-          paymentRequired={reservation.paymentRequired}
-        />
+      {/* Status Update Dialog */}
+      {showStatusDialog && selectedStatus && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl p-6 max-w-md w-full">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Update Your Status</h2>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Are you going?
+                </label>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setSelectedStatus({ ...selectedStatus, isGoing: true })}
+                    className={`flex-1 px-4 py-2 text-sm font-medium rounded-lg ${
+                      selectedStatus.isGoing
+                        ? 'bg-blue-500 text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    Yes
+                  </button>
+                  <button
+                    onClick={() => setSelectedStatus({ ...selectedStatus, isGoing: false })}
+                    className={`flex-1 px-4 py-2 text-sm font-medium rounded-lg ${
+                      !selectedStatus.isGoing
+                        ? 'bg-blue-500 text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    No
+                  </button>
+                </div>
+              </div>
+              {reservation.paymentRequired && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Have you paid?
+                  </label>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setSelectedStatus({ ...selectedStatus, hasPaid: true })}
+                      className={`flex-1 px-4 py-2 text-sm font-medium rounded-lg ${
+                        selectedStatus.hasPaid
+                          ? 'bg-blue-500 text-white'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      Yes
+                    </button>
+                    <button
+                      onClick={() => setSelectedStatus({ ...selectedStatus, hasPaid: false })}
+                      className={`flex-1 px-4 py-2 text-sm font-medium rounded-lg ${
+                        !selectedStatus.hasPaid
+                          ? 'bg-blue-500 text-white'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      No
+                    </button>
+                  </div>
+                </div>
+              )}
+              <div className="flex gap-2 mt-6">
+                <button
+                  onClick={() => setShowStatusDialog(false)}
+                  className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    handleStatusUpdate(selectedStatus.isGoing, selectedStatus.hasPaid);
+                    setShowStatusDialog(false);
+                  }}
+                  disabled={isUpdating}
+                  className="flex-1 px-4 py-2 text-sm font-medium text-white bg-blue-500 rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isUpdating ? 'Updating...' : 'Save Changes'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </main>
   );
