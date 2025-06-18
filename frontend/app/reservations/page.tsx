@@ -33,7 +33,7 @@ interface Reservation {
   isOwner: boolean;
   participants: Participant[];
   shortUrl: string;
-  password?: string;
+  passwordRequired: boolean;
 }
 
 const timeZone = 'America/Los_Angeles';
@@ -229,11 +229,13 @@ export default function ReservationsPage() {
                             Owner
                           </span>
                         )}
-                        {reservation.password && (
-                          <span className="px-2 py-0.5 rounded-full text-xs bg-purple-100 text-purple-800">
-                            Password Protected
-                          </span>
-                        )}
+                        <span className={`px-2 py-0.5 rounded-full text-xs ${
+                          reservation.passwordRequired 
+                            ? 'bg-purple-100 text-purple-800'
+                            : 'bg-green-100 text-green-800'
+                        }`}>
+                          {reservation.passwordRequired ? 'Private' : 'Public'}
+                        </span>
                       </div>
                       <p className="text-gray-600">{reservation.courtName}</p>
                     </div>
