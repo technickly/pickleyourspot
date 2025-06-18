@@ -152,7 +152,7 @@ export async function GET() {
         ...r,
         isOwner: true,
         courtName: r.court.name,
-        name: r.name && r.name.trim() ? r.name : `${r.court.name} - ${new Date(r.startTime).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`,
+        name: r.name
       })),
       ...participantReservations
         .filter((r: ReservationWithRelations) => r.owner.email !== session.user.email)
@@ -160,7 +160,7 @@ export async function GET() {
           ...r,
           isOwner: false,
           courtName: r.court.name,
-          name: r.name && r.name.trim() ? r.name : `${r.court.name} - ${new Date(r.startTime).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`,
+          name: r.name
         })),
     ];
 
