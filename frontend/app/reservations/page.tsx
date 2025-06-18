@@ -133,16 +133,7 @@ export default function ReservationsPage() {
   ) => {
     setUpdatingStatus((prev) => ({ ...prev, [reservationId]: true }));
     try {
-      // Get the user ID from the participant
-      const participant = reservations
-        .find(r => r.id === reservationId)
-        ?.participants.find(p => p.id === participantId);
-      
-      if (!participant?.user?.id) {
-        throw new Error('Participant not found');
-      }
-
-      const response = await fetch(`/api/reservations/${reservationId}/participants/${participant.user.id}/status`, {
+      const response = await fetch(`/api/reservations/${reservationId}/participants/${participantId}/status`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ type, value: newValue }),
@@ -423,7 +414,7 @@ export default function ReservationsPage() {
                                               : 'bg-gray-200 text-gray-700 border-gray-300'
                                           } hover:shadow transition`}
                                           disabled={updatingStatus[reservation.id]}
-                                          onClick={() => handleStatusUpdate(reservation.id, participant.id, 'isGoing', !participant.isGoing)}
+                                          onClick={() => handleStatusUpdate(reservation.id, participant.user?.id || '', 'isGoing', !participant.isGoing)}
                                         >
                                           {participant.isGoing ? <FaUserCheck className="w-3 h-3" /> : <FaUserTimes className="w-3 h-3" />}
                                           {participant.isGoing ? 'Going' : 'Not Going'}
@@ -436,7 +427,7 @@ export default function ReservationsPage() {
                                                 : 'bg-yellow-200 text-yellow-800 border-yellow-400'
                                             } hover:shadow transition`}
                                             disabled={updatingStatus[reservation.id]}
-                                            onClick={() => handleStatusUpdate(reservation.id, participant.id, 'hasPaid', !participant.hasPaid)}
+                                            onClick={() => handleStatusUpdate(reservation.id, participant.user?.id || '', 'hasPaid', !participant.hasPaid)}
                                           >
                                             <FaDollarSign className="w-3 h-3" />
                                             {participant.hasPaid ? 'Paid' : 'Unpaid'}
@@ -486,7 +477,7 @@ export default function ReservationsPage() {
                                               : 'bg-gray-200 text-gray-700 border-gray-300'
                                           } hover:shadow transition`}
                                           disabled={updatingStatus[reservation.id]}
-                                          onClick={() => handleStatusUpdate(reservation.id, participant.id, 'isGoing', !participant.isGoing)}
+                                          onClick={() => handleStatusUpdate(reservation.id, participant.user?.id || '', 'isGoing', !participant.isGoing)}
                                         >
                                           {participant.isGoing ? <FaUserCheck className="w-3 h-3" /> : <FaUserTimes className="w-3 h-3" />}
                                           {participant.isGoing ? 'Going' : 'Not Going'}
@@ -499,7 +490,7 @@ export default function ReservationsPage() {
                                                 : 'bg-yellow-200 text-yellow-800 border-yellow-400'
                                             } hover:shadow transition`}
                                             disabled={updatingStatus[reservation.id]}
-                                            onClick={() => handleStatusUpdate(reservation.id, participant.id, 'hasPaid', !participant.hasPaid)}
+                                            onClick={() => handleStatusUpdate(reservation.id, participant.user?.id || '', 'hasPaid', !participant.hasPaid)}
                                           >
                                             <FaDollarSign className="w-3 h-3" />
                                             {participant.hasPaid ? 'Paid' : 'Unpaid'}
