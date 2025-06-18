@@ -124,6 +124,8 @@ export default function ReservationPage({ params }: PageProps) {
     password: '',
     passwordRequired: false,
   });
+  const [participantToModify, setParticipantToModify] = useState<Participant | null>(null);
+  const [modifyingParticipant, setModifyingParticipant] = useState(false);
 
   const isPastEvent = (endTime: string) => {
     const end = new Date(endTime);
@@ -410,27 +412,83 @@ export default function ReservationPage({ params }: PageProps) {
   };
 
   const handleRemoveParticipant = async (participantId: string, participantEmail: string) => {
-    if (!session?.user?.email) {
-      toast.error('You must be logged in to remove participants');
-      return;
-    }
+    if (!reservation) return;
 
     setRemovingParticipant(prev => ({ ...prev, [participantId]: true }));
     try {
-      const response = await fetch(`/api/reservations/${reservationId}/participants?email=${encodeURIComponent(participantEmail)}`, {
+      const response = await fetch(`/api/reservations/${reservationId}/participants`, {
         method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          participantId,
+        }),
       });
-      
-      if (!response.ok) throw new Error('Failed to remove participant');
-      
-      await refreshReservation();
+
+      if (!response.ok) {
+        throw new Error('Failed to remove participant');
+      }
+
       toast.success('Participant removed successfully');
-      setParticipantToRemove(null);
+      await refreshReservation();
     } catch (error) {
       console.error('Error removing participant:', error);
       toast.error('Failed to remove participant');
     } finally {
       setRemovingParticipant(prev => ({ ...prev, [participantId]: false }));
+      setParticipantToRemove(null);
+    }
+  };
+
+  const handleParticipantStatusUpdate = async (participantId: string, isGoing: boolean, hasPaid: boolean) => {
+    if (!reservation) return;
+
+    setModifyingParticipant(true);
+    try {
+      const response = await fetch(`/api/reservations/${reservationId}/participant-status`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: participantId,
+          type: 'attendance',
+          value: isGoing,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update attendance status');
+      }
+
+      // Update payment status if needed
+      if (reservation.paymentRequired) {
+        const paymentResponse = await fetch(`/api/reservations/${reservationId}/participant-status`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            userId: participantId,
+            type: 'payment',
+            value: hasPaid,
+          }),
+        });
+
+        if (!paymentResponse.ok) {
+          throw new Error('Failed to update payment status');
+        }
+      }
+
+      toast.success('Participant status updated successfully');
+      await refreshReservation();
+      setParticipantToModify(null);
+    } catch (error) {
+      console.error('Error updating participant status:', error);
+      toast.error('Failed to update participant status');
+    } finally {
+      setModifyingParticipant(false);
     }
   };
 
@@ -524,16 +582,16 @@ export default function ReservationPage({ params }: PageProps) {
               />
               {reservation.isOwner && (
                 <Link
-                  href={`/reservations/${reservation.id}/modify`}
-                  className="flex items-center gap-1 bg-green-600 text-white px-3 py-1.5 rounded text-sm hover:bg-green-700 transition-colors"
+                  href={`/reservations/${reservationId}/edit`}
+                  className="flex items-center gap-1 bg-blue-600 text-white px-3 py-1.5 rounded text-sm hover:bg-blue-700 transition-colors"
                   onClick={() => setIsNavigating(true)}
                 >
                   {isNavigating ? (
                     <FaSpinner className="w-3 h-3 animate-spin" />
                   ) : (
-                    <FaUser className="w-3 h-3" />
+                    <FaEdit className="w-3 h-3" />
                   )}
-                  Manage Participants
+                  Modify Reservation
                 </Link>
               )}
             </div>
@@ -668,17 +726,26 @@ export default function ReservationPage({ params }: PageProps) {
                             )}
                           </span>
                           {reservation.isOwner && !isPastEvent(reservation.endTime) && (
-                            <button
-                              onClick={() => setParticipantToRemove({
-                                id: participant.id,
-                                name: participant.user?.name || participant.user?.email || 'Anonymous',
-                                email: participant.user?.email || ''
-                              })}
-                              className="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium border border-red-300 text-red-700 hover:bg-red-50 transition-colors"
-                            >
-                              <FaTrash className="w-3 h-3" />
-                              Remove
-                            </button>
+                            <>
+                              <button
+                                onClick={() => setParticipantToModify(participant)}
+                                className="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium border border-blue-300 text-blue-700 hover:bg-blue-50 transition-colors"
+                              >
+                                <FaEdit className="w-3 h-3" />
+                                Modify Status
+                              </button>
+                              <button
+                                onClick={() => setParticipantToRemove({
+                                  id: participant.id,
+                                  name: participant.user?.name || participant.user?.email || 'Anonymous',
+                                  email: participant.user?.email || ''
+                                })}
+                                className="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium border border-red-300 text-red-700 hover:bg-red-50 transition-colors"
+                              >
+                                <FaTrash className="w-3 h-3" />
+                                Remove
+                              </button>
+                            </>
                           )}
                         </div>
                       </div>
@@ -731,17 +798,26 @@ export default function ReservationPage({ params }: PageProps) {
                             )}
                           </span>
                           {reservation.isOwner && !isPastEvent(reservation.endTime) && (
-                            <button
-                              onClick={() => setParticipantToRemove({
-                                id: participant.id,
-                                name: participant.user?.name || participant.user?.email || 'Anonymous',
-                                email: participant.user?.email || ''
-                              })}
-                              className="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium border border-red-300 text-red-700 hover:bg-red-50 transition-colors"
-                            >
-                              <FaTrash className="w-3 h-3" />
-                              Remove
-                            </button>
+                            <>
+                              <button
+                                onClick={() => setParticipantToModify(participant)}
+                                className="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium border border-blue-300 text-blue-700 hover:bg-blue-50 transition-colors"
+                              >
+                                <FaEdit className="w-3 h-3" />
+                                Modify Status
+                              </button>
+                              <button
+                                onClick={() => setParticipantToRemove({
+                                  id: participant.id,
+                                  name: participant.user?.name || participant.user?.email || 'Anonymous',
+                                  email: participant.user?.email || ''
+                                })}
+                                className="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium border border-red-300 text-red-700 hover:bg-red-50 transition-colors"
+                              >
+                                <FaTrash className="w-3 h-3" />
+                                Remove
+                              </button>
+                            </>
                           )}
                         </div>
                       </div>
@@ -1032,6 +1108,105 @@ export default function ReservationPage({ params }: PageProps) {
                   'Remove Participant'
                 )}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Participant Status Modification Dialog */}
+      {participantToModify && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              Modify Status for {participantToModify.user?.name || participantToModify.user?.email || 'Participant'}
+            </h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Are they going?
+                </label>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setParticipantToModify(prev => prev ? { ...prev, isGoing: true } : null)}
+                    className={`flex-1 px-4 py-2 text-sm font-medium rounded-lg ${
+                      participantToModify.isGoing
+                        ? 'bg-green-100 text-green-800 border-2 border-green-500'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    Yes
+                  </button>
+                  <button
+                    onClick={() => setParticipantToModify(prev => prev ? { ...prev, isGoing: false } : null)}
+                    className={`flex-1 px-4 py-2 text-sm font-medium rounded-lg ${
+                      !participantToModify.isGoing
+                        ? 'bg-red-100 text-red-800 border-2 border-red-500'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    No
+                  </button>
+                </div>
+              </div>
+              {reservation.paymentRequired && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Have they paid?
+                  </label>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setParticipantToModify(prev => prev ? { ...prev, hasPaid: true } : null)}
+                      className={`flex-1 px-4 py-2 text-sm font-medium rounded-lg ${
+                        participantToModify.hasPaid
+                          ? 'bg-green-100 text-green-800 border-2 border-green-500'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      Yes
+                    </button>
+                    <button
+                      onClick={() => setParticipantToModify(prev => prev ? { ...prev, hasPaid: false } : null)}
+                      className={`flex-1 px-4 py-2 text-sm font-medium rounded-lg ${
+                        !participantToModify.hasPaid
+                          ? 'bg-red-100 text-red-800 border-2 border-red-500'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      No
+                    </button>
+                  </div>
+                </div>
+              )}
+              <div className="flex justify-end gap-4 pt-4 border-t border-gray-200">
+                <button
+                  onClick={() => setParticipantToModify(null)}
+                  className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    if (participantToModify) {
+                      handleParticipantStatusUpdate(
+                        participantToModify.id,
+                        participantToModify.isGoing,
+                        participantToModify.hasPaid
+                      );
+                    }
+                  }}
+                  disabled={modifyingParticipant}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+                >
+                  {modifyingParticipant ? (
+                    <span className="flex items-center gap-2">
+                      <FaSpinner className="w-4 h-4 animate-spin" />
+                      Updating...
+                    </span>
+                  ) : (
+                    'Save Changes'
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         </div>
