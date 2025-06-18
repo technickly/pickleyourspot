@@ -63,8 +63,8 @@ export default function ReservePage() {
   const [requirePayment, setRequirePayment] = useState(false);
   const [paymentDescription, setPaymentDescription] = useState('');
   const [password, setPassword] = useState('');
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [passwordRequired, setPasswordRequired] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
   useEffect(() => {
     if (!session && status !== 'loading') {
@@ -220,32 +220,38 @@ export default function ReservePage() {
       return;
     }
 
+    const requestBody = {
+      courtId: courtId,
+      name: reservationName.trim(),
+      startTime: selectedTimeSlots[0].startTime,
+      endTime: getReservationEndTime(),
+      participantIds: participants.map(p => p.email),
+      description: description.trim() || null,
+      paymentRequired: requirePayment,
+      paymentInfo: paymentDescription.trim() || null,
+      password: password.trim() || null,
+      passwordRequired: passwordRequired,
+    };
+
+    console.log('Request body:', requestBody); // Add logging
+
     try {
       const response = await fetch('/api/reservations', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          courtId: courtId,
-          name: reservationName.trim(),
-          startTime: selectedTimeSlots[0].startTime,
-          endTime: getReservationEndTime(),
-          participantIds: participants.map(p => p.email),
-          description: description.trim() || null,
-          paymentRequired: requirePayment,
-          paymentInfo: paymentDescription.trim() || null,
-          password: password.trim() || null,
-          passwordRequired: passwordRequired,
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       if (response.ok) {
         const data = await response.json();
+        console.log('Response data:', data); // Add logging
         toast.success('Reservation created successfully');
         router.push(`/reservations/${data.id}`);
       } else {
         const data = await response.json();
+        console.error('Error response:', data); // Add logging
         toast.error(data.error || 'Failed to create reservation');
       }
     } catch (error) {
@@ -503,10 +509,10 @@ export default function ReservePage() {
                 </label>
                 <input
                   id="eventPassword"
-                  type="password"
+                  type="text"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter a password for the event"
+                  placeholder="Enter a password for participants to join"
                   className="w-full p-3 border rounded text-gray-700 placeholder-gray-400"
                 />
               </div>

@@ -58,25 +58,25 @@ model Court {
 }
 
 model Reservation {
-  id              String              @id @default(cuid())
-  name            String
-  description     String?
-  startTime       DateTime
-  endTime         DateTime
-  courtId         String
-  ownerId         String
-  shortUrl        String              @unique @default(cuid())
-  paymentRequired Boolean             @default(false)
-  paymentInfo     String?
-  passwordRequired Boolean            @default(false)
-  password        String?
-  createdAt       DateTime            @default(now())
-  updatedAt       DateTime            @updatedAt
-  invites         Invite[]
-  messages        Message[]
-  participants    ParticipantStatus[]
-  court           Court               @relation(fields: [courtId], references: [id])
-  owner           User                @relation("UserReservations", fields: [ownerId], references: [id])
+  id               String              @id @default(cuid())
+  name             String
+  description      String?
+  startTime        DateTime
+  endTime          DateTime
+  courtId          String
+  ownerId          String
+  shortUrl         String              @unique @default(cuid())
+  paymentRequired  Boolean             @default(false)
+  paymentInfo      String?
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+  password         String?
+  passwordRequired Boolean             @default(false)
+  invites          Invite[]
+  messages         Message[]
+  participants     ParticipantStatus[]
+  court            Court               @relation(fields: [courtId], references: [id])
+  owner            User                @relation("UserReservations", fields: [ownerId], references: [id])
 
   @@index([courtId])
   @@index([ownerId])
