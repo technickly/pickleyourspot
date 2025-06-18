@@ -228,18 +228,27 @@ export default function ShortUrlPage({ params }: { params: Promise<{ shortUrl: s
                   <h2 className="text-lg font-semibold mb-2">Description</h2>
                   <div className="text-gray-700 prose prose-sm max-w-none bg-gray-50 p-3 rounded-lg">
                     {reservation.description.split('\n').map((line, i) => {
-                      // Remove @ symbol if present and check if the line is an image URL
+                      // Check if the line is a URL (with or without @ prefix)
                       const cleanLine = line.trim().replace(/^@/, '');
-                      if (cleanLine.match(/^https?:\/\/.*\.(jpg|jpeg|png|gif|webp)$/i)) {
+                      if (cleanLine.match(/^https?:\/\/.*\.(jpg|jpeg|png|gif|webp|svg)$/i)) {
                         return (
                           <div key={i} className="my-4">
                             <img 
                               src={cleanLine} 
                               alt="Reservation image" 
-                              className="rounded-lg max-w-full h-auto"
+                              className="rounded-lg max-w-full h-auto shadow-md hover:shadow-lg transition-shadow duration-200"
+                              loading="lazy"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.style.display = 'none';
+                              }}
                             />
                           </div>
                         );
+                      }
+                      // If the line contains a URL but isn't just a URL, render it as text
+                      if (cleanLine.includes('http')) {
+                        return <p key={i}>{line}</p>;
                       }
                       return <p key={i}>{line}</p>;
                     })}
