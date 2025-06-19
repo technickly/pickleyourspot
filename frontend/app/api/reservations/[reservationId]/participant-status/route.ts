@@ -26,7 +26,7 @@ export async function PUT(
     }
 
     // Only allow the participant themselves to update their status
-    if (session.user.id !== userId && session.user.email !== userId) {
+    if (session.user.id !== userId) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
