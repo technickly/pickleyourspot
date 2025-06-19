@@ -444,7 +444,7 @@ export default function ReservationPage({ params }: PageProps) {
     }
   };
 
-  const handleParticipantStatusUpdate = async (participantId: string, isGoing: boolean, hasPaid: boolean) => {
+  const handleParticipantStatusUpdate = async (userId: string, isGoing: boolean, hasPaid: boolean) => {
     if (!reservation) return;
 
     setModifyingParticipant(true);
@@ -455,7 +455,7 @@ export default function ReservationPage({ params }: PageProps) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          userId: participantId,
+          userId,
           type: 'attendance',
           value: isGoing,
         }),
@@ -473,7 +473,7 @@ export default function ReservationPage({ params }: PageProps) {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            userId: participantId,
+            userId,
             type: 'payment',
             value: hasPaid,
           }),
@@ -1193,7 +1193,7 @@ export default function ReservationPage({ params }: PageProps) {
                   onClick={() => {
                     if (participantToModify) {
                       handleParticipantStatusUpdate(
-                        participantToModify.id,
+                        participantToModify.user.id,
                         participantToModify.isGoing,
                         participantToModify.hasPaid
                       );
